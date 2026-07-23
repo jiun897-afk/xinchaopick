@@ -181,8 +181,8 @@ export default function OwnerPlacesPage() {
         {t("← 사장님 센터")}
       </Link>
       <span style={{ float: "right", marginTop: 2 }}><LangToggle lang={lang} setLang={setLang} /></span>
-      <div style={{ display: "flex", alignItems: "center", marginTop: 10 }}>
-        <div>
+      <div style={{ display: "flex", alignItems: "center", marginTop: 10, flexWrap: "wrap", rowGap: 12 }}>
+        <div style={{ flex: "1 1 240px", minWidth: 0 }}>
           <h1 style={{ fontSize: 22, fontWeight: 900 }}>{t("내 업체 관리")}</h1>
           <div style={{ fontSize: 12.5, color: "var(--ink3)", marginTop: 3 }}>
             {t("업체를 등록하면 업체 목록에 노출되고, 캠페인도 열 수 있어요 (여러 개 등록 가능)")}

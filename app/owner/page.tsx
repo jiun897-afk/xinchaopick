@@ -184,8 +184,8 @@ export default function OwnerPage() {
 
   return (
     <div className="wrap" style={{ maxWidth: 720, paddingTop: 24, paddingBottom: 90 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", rowGap: 12 }}>
+        <div style={{ flex: "1 1 220px", minWidth: 0 }}>
           <h1 style={{ fontSize: 22, fontWeight: 900 }}>{t("사장님 센터")}</h1>
           <div style={{ fontSize: 12.5, color: "var(--ink3)", marginTop: 3 }}>
             {t("캠페인을 올리고, 신청한 리뷰어를 선정하세요")}
