@@ -37,6 +37,7 @@ export default function AuthButton() {
         </Link>
         <Link
           href="/login"
+          className="authchip"
           style={{
             display: "flex",
             alignItems: "center",
@@ -64,8 +65,8 @@ export default function AuthButton() {
           >
             {userEmail[0].toUpperCase()}
           </span>
-          {short}
-          <span style={{ color: "var(--green)", fontSize: 11, fontWeight: 800 }}>로그인됨</span>
+          <span className="authmail">{short}</span>
+          <span className="authmail" style={{ color: "var(--green)", fontSize: 11, fontWeight: 800 }}>로그인됨</span>
         </Link>
       </div>
     );
