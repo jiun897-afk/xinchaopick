@@ -15,6 +15,7 @@ type Place = {
   phone: string;
   description: string;
   image_url: string | null;
+  photos: string[] | null;
 };
 type Camp = { id: string; offer: string; mission_type: string; quota: number; applied: number; status: string };
 type Review = { id: string; user_id: string; rating: number; content: string; verified: boolean; created_at: string; nickname?: string };
@@ -126,17 +127,28 @@ export default function PlaceDetailPage() {
         ← 업체 목록
       </Link>
 
-      <div
-        style={{
-          marginTop: 14,
-          height: 180,
-          borderRadius: 18,
-          backgroundColor: "var(--chip)",
-          backgroundImage: place.image_url ? "url(" + place.image_url + ")" : undefined,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      />
+      {(place.photos ?? []).length > 1 ? (
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", marginTop: 14, scrollSnapType: "x mandatory" }} className="regionrow">
+          {(place.photos ?? []).map((u) => (
+            <div
+              key={u}
+              style={{ flex: "0 0 82%", maxWidth: 460, height: 200, borderRadius: 18, backgroundImage: "url(" + u + ")", backgroundSize: "cover", backgroundPosition: "center", scrollSnapAlign: "start" }}
+            />
+          ))}
+        </div>
+      ) : (
+        <div
+          style={{
+            marginTop: 14,
+            height: 180,
+            borderRadius: 18,
+            backgroundColor: "var(--chip)",
+            backgroundImage: place.image_url ? "url(" + place.image_url + ")" : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+          }}
+        />
+      )}
 
       <div style={{ marginTop: 16 }}>
         <div style={{ fontSize: 12, fontWeight: 800, color: "var(--brand-dark)" }}>

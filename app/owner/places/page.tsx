@@ -6,6 +6,7 @@ import { getSupabase } from "../../../lib/supabase";
 import { PLACE_CATS, PLACE_AREAS, PLACE_DEFAULT_IMG } from "../../../lib/placeCats";
 import { useLang, LangToggle, mkT } from "../../../lib/i18n";
 import MapPicker from "../../../components/MapPicker";
+import PhotoUploader from "../../../components/PhotoUploader";
 
 
 const VI: Record<string, string> = {
@@ -18,6 +19,9 @@ const VI: Record<string, string> = {
   "업체 수정": "Sửa cửa hàng",
   "새 업체 등록": "Đăng ký cửa hàng mới",
   "업체 이름": "Tên cửa hàng",
+  "가게 사진 (최대 10장, 첫 장이 대표)": "Ảnh cửa hàng (tối đa 10, ảnh đầu là ảnh đại diện)",
+  "사진 추가": "Thêm ảnh",
+  "대표": "Đại diện",
   "예: 허벌 스파 다낭": "VD: Herbal Spa Đà Nẵng",
   "업종": "Ngành",
   "세부 업종": "Ngành chi tiết",
@@ -100,6 +104,7 @@ type Place = {
   image_url: string | null;
   lat: number | null;
   lng: number | null;
+  photos: string[] | null;
 };
 
 const inp: React.CSSProperties = {
@@ -114,7 +119,7 @@ const inp: React.CSSProperties = {
 };
 const lbl: React.CSSProperties = { display: "block", fontSize: 12.5, fontWeight: 800, margin: "14px 0 6px" };
 
-const EMPTY = { name: "", category: "음식점", subcategory: "", area: "다낭", address: "", maps_url: "", phone: "", description: "", lat: null as number | null, lng: null as number | null };
+const EMPTY = { name: "", category: "음식점", subcategory: "", area: "다낭", address: "", maps_url: "", phone: "", description: "", lat: null as number | null, lng: null as number | null, photos: [] as string[] };
 
 export default function OwnerPlacesPage() {
   const supabase = getSupabase();
@@ -201,7 +206,8 @@ export default function OwnerPlacesPage() {
       maps_url: form.maps_url.trim(),
       phone: form.phone.trim(),
       description: form.description.trim(),
-      image_url: PLACE_DEFAULT_IMG[form.category] ?? PLACE_DEFAULT_IMG["기타"],
+      image_url: form.photos[0] ?? PLACE_DEFAULT_IMG[form.category] ?? PLACE_DEFAULT_IMG["기타"],
+      photos: form.photos,
       lat: form.lat,
       lng: form.lng,
     };
@@ -252,6 +258,14 @@ export default function OwnerPlacesPage() {
       {open && (
         <div style={{ border: "2px solid var(--brand)", borderRadius: 16, padding: "16px 18px", marginTop: 16 }}>
           <div style={{ fontSize: 15, fontWeight: 900 }}>{form.id ? t("업체 수정") : t("새 업체 등록")}</div>
+
+          <label style={lbl}>{t("가게 사진 (최대 10장, 첫 장이 대표)")}</label>
+          <PhotoUploader
+            photos={form.photos}
+            onChange={(urls) => setForm((f) => ({ ...f, photos: urls }))}
+            addLabel={t("사진 추가")}
+            mainLabel={t("대표")}
+          />
 
           <label style={lbl}>{t("업체 이름")}</label>
           <input style={inp} value={form.name} onChange={(e) => set("name", e.target.value)} placeholder={t("예: 허벌 스파 다낭")} />
@@ -378,7 +392,7 @@ export default function OwnerPlacesPage() {
               className="btn ghost"
               style={{ padding: "8px 13px", fontSize: 12, flexShrink: 0 }}
               onClick={() => {
-                setForm({ ...p, subcategory: p.subcategory ?? "", maps_url: p.maps_url ?? "", phone: p.phone ?? "", description: p.description ?? "", address: p.address ?? "" });
+                setForm({ ...p, subcategory: p.subcategory ?? "", maps_url: p.maps_url ?? "", phone: p.phone ?? "", description: p.description ?? "", address: p.address ?? "", photos: p.photos ?? [] });
                 setOpen(true);
                 window.scrollTo({ top: 0, behavior: "smooth" });
               }}
