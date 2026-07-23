@@ -95,7 +95,7 @@ export default function MePage() {
           { href: "/saved", label: "찜한 캠페인" },
           { href: "/app.html", label: "앱 디자인 시안 (설계도)" },
           { href: "/admin.html", label: "운영 콘솔 (관리자)" },
-          { href: "/doitac.html", label: "사장님 입점 안내 (Tiếng Việt)" },
+          { href: "/partner", label: "사장님 입점 안내" },
         ].map((m) => (
           <Link
             key={m.href}

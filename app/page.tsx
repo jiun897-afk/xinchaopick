@@ -62,7 +62,7 @@ export default async function Home() {
           <Logo />
           <nav className="hnav">
             <a href="#campaigns">체험단 찾기</a>
-            <a href="/doitac.html">사장님 입점 문의</a>
+            <a href="/partner">사장님 입점 문의</a>
           </nav>
           <AuthButton />
         </div>
@@ -127,7 +127,7 @@ export default async function Home() {
             <br />
             고객센터 1666-0464 · 카카오톡 채널 @베자뷰 · help@bejaview.com
             <br />
-            <a href="/doitac.html" style={{ textDecoration: "underline" }}>Dành cho chủ cửa hàng (Tiếng Việt)</a> · <a href="/app.html" style={{ textDecoration: "underline" }}>앱 디자인 시안</a> · <a href="/admin.html" style={{ textDecoration: "underline" }}>운영 콘솔</a>
+            <a href="/partner" style={{ textDecoration: "underline" }}>사장님 입점 안내</a> · <a href="/app.html" style={{ textDecoration: "underline" }}>앱 디자인 시안</a> · <a href="/admin.html" style={{ textDecoration: "underline" }}>운영 콘솔</a>
           </div>
         </div>
       </footer>
