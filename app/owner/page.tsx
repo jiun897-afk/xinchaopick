@@ -52,6 +52,7 @@ const VI: Record<string, string> = {
   "선정": "Chọn",
   "취소": "Hủy",
   "리뷰": "Review",
+  "채팅": "Chat",
   "리뷰 승인": "Duyệt review",
   "문제제기": "Báo vấn đề",
   "해결됨·승인": "Đã ổn · Duyệt",
@@ -301,6 +302,11 @@ export default function OwnerPage() {
                         </div>
                       </div>
                       <span style={{ background: b.bg, color: b.c, fontSize: 10.5, fontWeight: 800, borderRadius: 7, padding: "4px 9px" }}>{b.t}</span>
+                      {(a.status === "selected" || a.status === "completed") && (
+                        <Link href={"/chatroom?id=" + a.id} style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)", flexShrink: 0 }}>
+                          💬{t("채팅")}
+                        </Link>
+                      )}
                       {a.review_url && (
                         <a href={a.review_url} target="_blank" rel="noreferrer" style={{ fontSize: 11.5, fontWeight: 800, textDecoration: "underline", color: "var(--brand-dark)", flexShrink: 0 }}>
                           {t("리뷰")}

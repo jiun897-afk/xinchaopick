@@ -93,6 +93,7 @@ export default function MePage() {
         {[
           { href: "/my", label: "내 신청 내역" },
           { href: "/wallet", label: "포인트 · 출금" },
+          { href: "/chat", label: "채팅 (선정된 캠페인)" },
           { href: "/owner", label: "사장님 센터 (캠페인 등록·선정)" },
           { href: "/owner/places", label: "내 업체 관리" },
           { href: "/owner/topup", label: "크레딧 충전 (사장님)" },

@@ -175,6 +175,13 @@ export default function MyPage() {
                 </span>
               </Link>
 
+              {(r.status === "selected" || r.status === "completed") && (
+                <div style={{ borderTop: "1px solid var(--line)", padding: "10px 16px", background: "#fff" }}>
+                  <Link href={"/chatroom?id=" + r.id} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, fontWeight: 800, color: "var(--brand-dark)" }}>
+                    💬 사장님과 채팅 — 방문 일정 정하기
+                  </Link>
+                </div>
+              )}
               {r.status === "selected" && !r.review_url && (
                 <div style={{ borderTop: "1px solid var(--line)", padding: "12px 16px", background: "#FBFAF8" }}>
                   <div style={{ fontSize: 12.5, fontWeight: 800, marginBottom: 8 }}>
