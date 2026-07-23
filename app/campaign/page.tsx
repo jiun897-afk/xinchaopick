@@ -25,14 +25,14 @@ type Campaign = {
   place_id: string | null;
 };
 
-type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string } | null;
+type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string; photos: string[] | null } | null;
 
 async function getPlace(id: string): Promise<PlaceInfo> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   try {
-    const res = await fetch(url + "/rest/v1/places?id=eq." + encodeURIComponent(id) + "&select=id,name,address,maps_url,phone&limit=1", {
+    const res = await fetch(url + "/rest/v1/places?id=eq." + encodeURIComponent(id) + "&select=id,name,address,maps_url,phone,photos&limit=1", {
       headers: { apikey: key, Authorization: "Bearer " + key },
       next: { revalidate: 60 },
     });
@@ -106,36 +106,43 @@ export default async function CampaignPage({
         <Link href="/" style={{ fontSize: 13, fontWeight: 800, color: "var(--ink3)" }}>
           ← 체험단 목록
         </Link>
-        <div
-          style={{
-            marginTop: 14,
-            height: 280,
-            borderRadius: 20,
-            backgroundColor: "var(--chip)",
-            backgroundImage: c.image_url ? "url(" + c.image_url + ")" : undefined,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            position: "relative",
-          }}
-        >
-          {(c.quota > 0 && c.applied / c.quota >= 0.8) || (c.created_at && Date.now() - new Date(c.created_at).getTime() < 7 * 86400000) ? (
-            <span
-              style={{
-                position: "absolute",
-                left: 16,
-                top: 16,
-                background: "var(--brand)",
-                color: "#fff",
-                fontSize: 12,
-                fontWeight: 800,
-                borderRadius: 9,
-                padding: "5px 12px",
-              }}
-            >
-              {c.quota > 0 && c.applied / c.quota >= 0.8 ? "마감임박" : "NEW"}
+        {(() => {
+          const photos = place?.photos?.length ? place.photos : c.image_url ? [c.image_url] : [];
+          const badge =
+            c.quota > 0 && c.applied / c.quota >= 0.8
+              ? "마감임박"
+              : c.created_at && Date.now() - new Date(c.created_at).getTime() < 7 * 86400000
+              ? "NEW"
+              : null;
+          const badgeEl = badge ? (
+            <span style={{ position: "absolute", left: 16, top: 16, background: "var(--brand)", color: "#fff", fontSize: 12, fontWeight: 800, borderRadius: 9, padding: "5px 12px" }}>
+              {badge}
             </span>
-          ) : null}
-        </div>
+          ) : null;
+          if (photos.length > 1)
+            return (
+              <div style={{ display: "flex", gap: 8, overflowX: "auto", marginTop: 14, scrollSnapType: "x mandatory", scrollbarWidth: "none" }}>
+                {photos.map((u: string, i: number) => (
+                  <div
+                    key={u}
+                    style={{ flex: "0 0 84%", maxWidth: 520, height: 260, borderRadius: 20, backgroundImage: "url(" + u + ")", backgroundSize: "cover", backgroundPosition: "center", scrollSnapAlign: "start", position: "relative", backgroundColor: "var(--chip)" }}
+                  >
+                    {i === 0 && badgeEl}
+                    <span style={{ position: "absolute", right: 12, bottom: 12, background: "rgba(20,15,10,.6)", color: "#fff", fontSize: 10.5, fontWeight: 800, borderRadius: 7, padding: "3px 8px" }}>
+                      {i + 1}/{photos.length}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          return (
+            <div
+              style={{ marginTop: 14, height: 280, borderRadius: 20, backgroundColor: "var(--chip)", backgroundImage: photos[0] ? "url(" + photos[0] + ")" : undefined, backgroundSize: "cover", backgroundPosition: "center", position: "relative" }}
+            >
+              {badgeEl}
+            </div>
+          );
+        })()}
 
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: "var(--brand-dark)" }}>{c.category}</div>
