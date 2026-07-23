@@ -27,6 +27,8 @@ type App = {
   dispute_status: string | null;
   dispute_reason: string | null;
   nickname?: string;
+  blogGrade?: string | null;
+  blogVerified?: boolean;
 };
 
 const VI: Record<string, string> = {
@@ -129,10 +131,15 @@ export default function OwnerPage() {
       let rows = (data as App[]) ?? [];
       if (rows.length) {
         const ids = Array.from(new Set(rows.map((r) => r.user_id)));
-        const { data: profs } = await supabase.from("profiles").select("id, nickname").in("id", ids);
-        const nameMap: Record<string, string> = {};
-        (profs ?? []).forEach((p: any) => (nameMap[p.id] = p.nickname));
-        rows = rows.map((r) => ({ ...r, nickname: nameMap[r.user_id] ?? "리뷰어" }));
+        const { data: profs } = await supabase.from("profiles").select("id, nickname, blog_grade, blog_verified").in("id", ids);
+        const nameMap: Record<string, any> = {};
+        (profs ?? []).forEach((p: any) => (nameMap[p.id] = p));
+        rows = rows.map((r) => ({
+          ...r,
+          nickname: nameMap[r.user_id]?.nickname ?? "리뷰어",
+          blogGrade: nameMap[r.user_id]?.blog_grade ?? null,
+          blogVerified: !!nameMap[r.user_id]?.blog_verified,
+        }));
       }
       setApps((a) => ({ ...a, [cid]: rows }));
     }
@@ -339,7 +346,14 @@ export default function OwnerPage() {
                         {(a.nickname ?? "리")[0].toUpperCase()}
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13.5, fontWeight: 800 }}>{a.nickname}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: 800 }}>
+                          {a.nickname}
+                          {a.blogGrade && (
+                            <span style={{ marginLeft: 6, fontSize: 9.5, fontWeight: 900, borderRadius: 5, padding: "2px 6px", background: a.blogGrade === "파워" ? "#FFF0E8" : a.blogGrade === "인기" ? "#E8F0FE" : a.blogGrade === "성장" ? "#E8F7EF" : "#FFF4E0", color: a.blogGrade === "파워" ? "#F04E1A" : a.blogGrade === "인기" ? "#1A56DB" : a.blogGrade === "성장" ? "#1FA45B" : "#8A6D1A" }}>
+                              {a.blogGrade}{a.blogVerified ? "✓" : ""}
+                            </span>
+                          )}
+                        </div>
                         <div style={{ fontSize: 10.5, color: "var(--ink3)" }}>
                           {new Date(a.created_at).toLocaleDateString(dateLoc)} {t("신청함")}
                         </div>

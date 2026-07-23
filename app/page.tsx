@@ -4,6 +4,7 @@ import Logo from "../components/Logo";
 import HomeBanner from "../components/HomeBanner";
 import RegionRow from "../components/RegionRow";
 import HomeSearch from "../components/HomeSearch";
+import CampaignGrid from "../components/CampaignGrid";
 
 export const revalidate = 60;
 
@@ -57,7 +58,7 @@ async function getCampaigns(): Promise<{ list: Campaign[]; live: boolean }> {
   if (!url || !key) return { list: FALLBACK, live: false };
   try {
     const res = await fetch(
-      url + "/rest/v1/campaigns?status=eq.active&order=priority.desc,created_at.desc&limit=12",
+      url + "/rest/v1/campaigns?status=eq.active&order=priority.desc,created_at.desc&limit=100",
       {
         headers: { apikey: key, Authorization: "Bearer " + key },
         next: { revalidate: 60 },
@@ -70,25 +71,6 @@ async function getCampaigns(): Promise<{ list: Campaign[]; live: boolean }> {
   } catch {
     return { list: FALLBACK, live: false };
   }
-}
-
-const MISSION_SHORT: Record<string, string> = {
-  "네이버 블로그": "블로그",
-  "유튜브 쇼츠": "쇼츠",
-  "네이버 클립": "클립",
-  "인스타그램": "인스타",
-  "영상": "영상",
-};
-
-function cardBadge(c: Campaign): string | null {
-  if (c.quota > 0 && c.applied / c.quota >= 0.8) return "마감임박";
-  if (c.created_at && Date.now() - new Date(c.created_at).getTime() < 7 * 86400000) return "NEW";
-  return null;
-}
-
-function fmtDistance(m: number | null) {
-  if (m == null) return "";
-  return m >= 1000 ? (m / 1000).toFixed(1) + "km" : m + "m";
 }
 
 export default async function Home() {
@@ -134,43 +116,7 @@ export default async function Home() {
             </div>
           </div>
           <RegionRow />
-          <div className="chips">
-            <span className="chip on">전체</span><span className="chip">오늘 가능</span><span className="chip">로컬맛집</span><span className="chip">한식</span><span className="chip">마사지·스파</span><span className="chip">카페·디저트</span><span className="chip">투어·액티비티</span>
-          </div>
-          <div className="grid">
-            {list.map((c) => (
-              <Link className="gcard" key={c.id} href={"/campaign?id=" + c.id} style={{ display: "block" }}>
-                <div
-                  className="gthumb"
-                  style={c.image_url ? { backgroundImage: "url(" + c.image_url + ")" } : undefined}
-                >
-                  {cardBadge(c) ? <span className="gbadge hot">{cardBadge(c)}</span> : null}
-                  {(c.reward_points ?? 0) > 0 && (
-                    <span className="gbadge" style={{ left: "auto", right: 12, background: "rgba(20,15,10,.78)" }}>
-                      +{Number(c.reward_points).toLocaleString()}P
-                    </span>
-                  )}
-                  <span className="gbadge" style={{ top: "auto", bottom: 12, background: "rgba(20,15,10,.66)" }}>
-                    {c.applied}/{c.quota}팀
-                  </span>
-                </div>
-                <div className="ginfo">
-                  <div className="gcat">{c.category}</div>
-                  <div className="gname">{c.store_name}</div>
-                  <div className="goffer">{c.offer}</div>
-                  <div className="gmeta">
-                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {c.area ?? "다낭"} · 1팀 {c.party_size ?? 2}인
-                    </span>
-                    <span className="gpoint">{MISSION_SHORT[c.mission_type] ?? c.mission_type}</span>
-                    {c.today_available && (
-                      <span className="gpoint" style={{ marginLeft: 0, background: "#E8F7EF", color: "#1FA45B" }}>오늘</span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <CampaignGrid list={list} />
         </div>
       </section>
 

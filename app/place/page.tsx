@@ -170,9 +170,20 @@ export default function PlaceDetailPage() {
       </div>
 
       <div style={{ display: "flex", gap: 8, marginTop: 14, flexWrap: "wrap" }}>
-        {place.maps_url && (
-          <a className="btn pri" style={{ padding: "11px 18px", fontSize: 13.5 }} href={place.maps_url} target="_blank" rel="noreferrer">
-            지도에서 보기
+        {(place.maps_url || ((place as any).lat != null && (place as any).lng != null) || place.address) && (
+          <a
+            className="btn pri"
+            style={{ padding: "11px 18px", fontSize: 13.5 }}
+            href={
+              place.maps_url ||
+              ((place as any).lat != null
+                ? "https://www.google.com/maps/dir/?api=1&destination=" + (place as any).lat + "," + (place as any).lng
+                : "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(place.address))
+            }
+            target="_blank"
+            rel="noreferrer"
+          >
+            구글맵 길찾기
           </a>
         )}
         {place.phone && (

@@ -25,14 +25,44 @@ type Campaign = {
   place_id: string | null;
 };
 
-type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string; photos: string[] | null } | null;
+type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string; photos: string[] | null; lat: number | null; lng: number | null } | null;
+
+type PlaceReviewInfo = { avg: number; count: number; latest: { rating: number; content: string; verified: boolean }[] };
+
+async function getPlaceReviews(placeId: string): Promise<PlaceReviewInfo> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const empty = { avg: 0, count: 0, latest: [] as PlaceReviewInfo["latest"] };
+  if (!url || !key) return empty;
+  try {
+    const H = { apikey: key, Authorization: "Bearer " + key };
+    const [stats, latest] = await Promise.all([
+      fetch(url + "/rest/v1/place_stats?place_id=eq." + placeId, { headers: H, next: { revalidate: 60 } }).then((r) => r.json()),
+      fetch(url + "/rest/v1/place_reviews?place_id=eq." + placeId + "&select=rating,content,verified&order=created_at.desc&limit=2", { headers: H, next: { revalidate: 60 } }).then((r) => r.json()),
+    ]);
+    return {
+      avg: Number(stats?.[0]?.avg_rating ?? 0),
+      count: Number(stats?.[0]?.review_count ?? 0),
+      latest: Array.isArray(latest) ? latest : [],
+    };
+  } catch {
+    return empty;
+  }
+}
+
+function mapsHref(p: NonNullable<PlaceInfo>): string | null {
+  if (p.maps_url) return p.maps_url;
+  if (p.lat != null && p.lng != null) return "https://www.google.com/maps/dir/?api=1&destination=" + p.lat + "," + p.lng;
+  if (p.address) return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(p.address);
+  return null;
+}
 
 async function getPlace(id: string): Promise<PlaceInfo> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   try {
-    const res = await fetch(url + "/rest/v1/places?id=eq." + encodeURIComponent(id) + "&select=id,name,address,maps_url,phone,photos&limit=1", {
+    const res = await fetch(url + "/rest/v1/places?id=eq." + encodeURIComponent(id) + "&select=id,name,address,maps_url,phone,photos,lat,lng&limit=1", {
       headers: { apikey: key, Authorization: "Bearer " + key },
       next: { revalidate: 60 },
     });
@@ -80,6 +110,7 @@ export default async function CampaignPage({
   const id = searchParams?.id ?? "";
   const c = id ? await getCampaign(id) : null;
   const place = c?.place_id ? await getPlace(c.place_id) : null;
+  const pr = place ? await getPlaceReviews(place.id) : null;
 
   if (!c) {
     return (
@@ -188,10 +219,32 @@ export default async function CampaignPage({
                 </Link>
                 {place.address && <div style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 3 }}>{place.address}</div>}
               </div>
-              {place.maps_url && (
-                <a className="btn pri" style={{ padding: "10px 16px", fontSize: 13, flexShrink: 0 }} href={place.maps_url} target="_blank" rel="noreferrer">
-                  지도에서 보기
+              {mapsHref(place) && (
+                <a className="btn pri" style={{ padding: "10px 16px", fontSize: 13, flexShrink: 0 }} href={mapsHref(place)!} target="_blank" rel="noreferrer">
+                  구글맵 길찾기
                 </a>
+              )}
+            </div>
+            <div style={{ marginTop: 12, borderTop: "1px solid var(--line)", paddingTop: 12 }}>
+              {pr && pr.count > 0 ? (
+                <>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}>
+                    <span style={{ color: "#F59E0B" }}>★ {pr.avg.toFixed(1)}</span>
+                    <span style={{ color: "var(--ink3)", fontWeight: 700 }}> 업체 후기 {pr.count}개</span>
+                    <Link href={"/place?id=" + place.id} style={{ float: "right", fontSize: 12, color: "var(--brand-dark)", textDecoration: "underline" }}>
+                      전체 보기 →
+                    </Link>
+                  </div>
+                  {pr.latest.map((rv, i) => (
+                    <div key={i} style={{ marginTop: 8, fontSize: 12.5, color: "var(--ink2)", lineHeight: 1.6 }}>
+                      <span style={{ color: "#F59E0B", fontWeight: 800 }}>{"★".repeat(rv.rating)}</span>
+                      {rv.verified && <span style={{ marginLeft: 5, fontSize: 9.5, fontWeight: 900, background: "var(--brand-bg)", color: "var(--brand-dark)", borderRadius: 5, padding: "1px 6px" }}>체험단 인증</span>}
+                      <span style={{ marginLeft: 6 }}>{rv.content}</span>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div style={{ fontSize: 12.5, color: "var(--ink3)" }}>아직 업체 후기가 없어요 — 첫 후기의 주인공이 되어보세요!</div>
               )}
             </div>
           </div>
