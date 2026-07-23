@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 const TABS = [
   { href: "/", label: "홈", icon: "home" },
   { href: "/my", label: "내 캠페인", icon: "file" },
+  { href: "/places", label: "업체", icon: "store" },
   { href: "/saved", label: "찜", icon: "heart" },
-  { href: "/community", label: "커뮤니티", icon: "chat" },
   { href: "/me", label: "마이", icon: "user" },
 ];
 
@@ -31,6 +31,14 @@ function Icon({ name }: { name: string }) {
       return (
         <svg viewBox="0 0 24 24">
           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+      );
+    case "store":
+      return (
+        <svg viewBox="0 0 24 24">
+          <path d="M3 9l1.5-5h15L21 9" />
+          <path d="M4 9h16v11a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z" />
+          <path d="M9 21v-6h6v6" />
         </svg>
       );
     case "chat":

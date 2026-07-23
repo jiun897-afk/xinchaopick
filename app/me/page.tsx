@@ -94,10 +94,13 @@ export default function MePage() {
           { href: "/my", label: "내 신청 내역" },
           { href: "/wallet", label: "포인트 · 출금" },
           { href: "/owner", label: "사장님 센터 (캠페인 등록·선정)" },
+          { href: "/owner/places", label: "내 업체 관리" },
+          { href: "/owner/topup", label: "크레딧 충전 (사장님)" },
           { href: "/saved", label: "찜한 캠페인" },
           { href: "/app.html", label: "앱 디자인 시안 (설계도)" },
           { href: "/admin/banners", label: "홈 배너 관리 (운영자)" },
           { href: "/admin/withdrawals", label: "출금 관리 (운영자)" },
+          { href: "/admin/topups", label: "충전 관리 (운영자)" },
           { href: "/admin.html", label: "운영 콘솔 (관리자)" },
           { href: "/partner", label: "사장님 입점 안내" },
         ].map((m) => (

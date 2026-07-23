@@ -131,6 +131,15 @@ export default function OwnerPage() {
         </Link>
       </div>
 
+      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+        <Link href="/owner/places" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+          내 업체 관리
+        </Link>
+        <Link href="/owner/topup" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+          크레딧 충전
+        </Link>
+      </div>
+
       {guest && (
         <div style={{ marginTop: 24 }}>
           <div style={{ background: "var(--chip)", borderRadius: 12, padding: "14px 16px", fontSize: 14 }}>
