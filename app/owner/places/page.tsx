@@ -139,12 +139,24 @@ export default function OwnerPlacesPage() {
     if (!form.address.trim()) return setGeoMsg({ ok: false, text: t("주소를 먼저 입력해주세요.") });
     setGeoBusy(true);
     const cityMap: Record<string, string> = { "다낭": "Da Nang", "호이안": "Hoi An", "나트랑": "Nha Trang", "푸꾸옥": "Phu Quoc", "호치민": "Ho Chi Minh City", "하노이": "Ha Noi" };
-    const q = form.address.trim() + ", " + (cityMap[form.area] ?? "") + ", Vietnam";
-    try {
+    // 구글맵에서 복사한 주소의 한글(베트남, 다낭 등)·중복 국가명 자동 제거
+    const cleaned = form.address
+      .replace(/[가-힣]+/g, " ")
+      .replace(/việt\s*nam|vietnam/gi, " ")
+      .replace(/\s*,\s*(?:,\s*)*/g, ", ")
+      .replace(/\s+/g, " ")
+      .replace(/^[,\s]+|[,\s]+$/g, "");
+    async function search(q: string) {
       const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(q), {
         headers: { "Accept-Language": "en" },
       });
       const d = await r.json();
+      return Array.isArray(d) && d[0] ? d[0] : null;
+    }
+    try {
+      let hit = await search(cleaned + ", " + (cityMap[form.area] ?? "") + ", Vietnam");
+      if (!hit) hit = await search(cleaned + ", Vietnam");
+      const d = hit ? [hit] : [];
       if (Array.isArray(d) && d[0]) {
         const la = parseFloat(d[0].lat);
         const ln = parseFloat(d[0].lon);
