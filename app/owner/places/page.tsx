@@ -26,6 +26,7 @@ const VI: Record<string, string> = {
   "업종": "Ngành",
   "세부 업종": "Ngành chi tiết",
   "선택 안 함": "Không chọn",
+  "업종을 직접 입력 (예: 세탁소, 렌트카)": "Nhập ngành trực tiếp (VD: giặt ủi, thuê xe)",
   "지역": "Khu vực",
   "전화번호 (선택)": "Số điện thoại (tùy chọn)",
   "주소": "Địa chỉ",
@@ -300,12 +301,22 @@ export default function OwnerPlacesPage() {
             </div>
             <div style={{ flex: 1 }}>
               <label style={lbl}>{t("세부 업종")}</label>
-              <select style={inp} value={form.subcategory} onChange={(e) => set("subcategory", e.target.value)}>
-                <option value="">{t("선택 안 함")}</option>
-                {(PLACE_CATS[form.category] ?? []).map((s) => (
-                  <option key={s} value={s}>{t(s)}</option>
-                ))}
-              </select>
+              {(PLACE_CATS[form.category] ?? []).length > 0 ? (
+                <select style={inp} value={form.subcategory} onChange={(e) => set("subcategory", e.target.value)}>
+                  <option value="">{t("선택 안 함")}</option>
+                  {(PLACE_CATS[form.category] ?? []).map((s) => (
+                    <option key={s} value={s}>{t(s)}</option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  style={inp}
+                  value={form.subcategory}
+                  onChange={(e) => set("subcategory", e.target.value)}
+                  placeholder={t("업종을 직접 입력 (예: 세탁소, 렌트카)")}
+                  maxLength={20}
+                />
+              )}
             </div>
           </div>
 
