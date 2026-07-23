@@ -106,7 +106,7 @@ export default async function Home() {
           </div>
           <div className="grid">
             {list.map((c) => (
-              <div className="gcard" key={c.id}>
+              <Link className="gcard" key={c.id} href={"/campaign?id=" + c.id} style={{ display: "block" }}>
                 <div
                   className="gthumb"
                   style={c.image_url ? { backgroundImage: "url(" + c.image_url + ")" } : undefined}
@@ -123,7 +123,7 @@ export default async function Home() {
                     <span className="gpoint">{c.mission_type}</span>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
