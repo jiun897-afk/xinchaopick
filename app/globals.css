@@ -199,7 +199,6 @@ footer.site { border-top: 1px solid var(--line); padding: 30px 0 46px; }
   .hbar { height: 60px; }
   .authchip { display: none !important; }
   .authload { width: 0 !important; }
-  .msearchwrap { display: block; padding-bottom: 11px; }
   .regionrow { scrollbar-width: none; }
   .regionrow::-webkit-scrollbar { display: none; }
   footer.site { padding-bottom: 40px; }

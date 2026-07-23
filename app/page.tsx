@@ -86,15 +86,6 @@ export default async function Home() {
           </nav>
           <AuthButton />
         </div>
-        <div className="wrap msearchwrap">
-          <a href="/search" className="msearch">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--ink3)" strokeWidth="2.4" strokeLinecap="round">
-              <circle cx="11" cy="11" r="7" />
-              <path d="M21 21l-4.3-4.3" />
-            </svg>
-            맛집, 마사지, 업체 이름 검색
-          </a>
-        </div>
       </header>
 
       <div className="hero">
