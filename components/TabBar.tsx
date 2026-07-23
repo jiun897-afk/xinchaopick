@@ -7,7 +7,7 @@ const TABS = [
   { href: "/", label: "홈", icon: "home" },
   { href: "/my", label: "내 캠페인", icon: "file" },
   { href: "/places", label: "업체", icon: "store" },
-  { href: "/saved", label: "찜", icon: "heart" },
+  { href: "/community", label: "커뮤니티", icon: "chat" },
   { href: "/me", label: "마이", icon: "user" },
 ];
 
