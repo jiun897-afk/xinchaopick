@@ -37,7 +37,7 @@ export default function SearchPage() {
           .from("campaigns")
           .select("id, store_name, category, offer, image_url, applied, quota")
           .eq("status", "active")
-          .or(`store_name.ilike.${like},offer.ilike.${like},category.ilike.${like}`)
+          .or(`store_name.ilike.${like},offer.ilike.${like},category.ilike.${like},area.ilike.${like}`)
           .limit(20),
         supabase
           .from("places")
