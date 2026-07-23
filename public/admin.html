@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>씬짜오PICK 관리자 콘솔 v2</title>
+<style>
+:root{
+  --brand:#F55B24; --brand-dark:#D9420F; --brand-bg:#FFF0E8;
+  --ink:#26211C; --ink2:#5C554D; --ink3:#9B948B;
+  --line:#ECE7E0; --chip:#F5F2ED; --bg:#FAF8F5; --green:#1FA45B;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif}
+body{background:var(--bg);color:var(--ink);display:flex;min-height:100vh}
+svg.ic{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+.side{width:232px;background:#231E19;min-height:100vh;padding:20px 13px;display:flex;flex-direction:column;position:fixed;top:0;bottom:0;overflow-y:auto}
+.slogo{display:flex;align-items:center;gap:10px;padding:0 8px 18px;border-bottom:1px solid #3A342D;margin-bottom:12px}
+.slogo .mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#FF7A45,#F04E1A);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.slogo b{color:#fff;font-size:15px;font-weight:800}
+.slogo small{display:block;color:#8A8378;font-size:10px;font-weight:600;letter-spacing:1px}
+.ngroup{font-size:10px;font-weight:800;color:#6B6459;letter-spacing:1.5px;padding:12px 12px 6px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nitem{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;color:#B7B0A6;font-size:13px;font-weight:600;cursor:pointer}
+.nitem:hover{background:#2E2822;color:#fff}
+.nitem.on{background:var(--brand);color:#fff;font-weight:800}
+.nitem .cnt{margin-left:auto;background:#3A342D;color:#D8D2C8;font-size:10.5px;font-weight:800;border-radius:9px;padding:2px 8px}
+.nitem.on .cnt{background:rgba(255,255,255,.25);color:#fff}
+.nitem .cnt.hot{background:#E0392B;color:#fff}
+.sfoot{margin-top:auto;padding:14px 8px 0;border-top:1px solid #3A342D;color:#8A8378;font-size:10.5px;line-height:1.6}
+
+.main{flex:1;margin-left:232px;padding:0 32px 44px}
+.topbar{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);margin-bottom:22px;position:sticky;top:0;background:var(--bg);z-index:20}
+.topbar h1{font-size:19px;font-weight:800}
+.tsearch{margin-left:auto;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 14px;width:270px;color:var(--ink3);font-size:12.5px}
+.admin-chip{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:11px;padding:7px 12px;font-size:12.5px;font-weight:700}
+.admin-chip .av{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+
+.sec{display:none}
+.sec.on{display:block}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.kpi .kl{font-size:11.5px;color:var(--ink3);font-weight:600}
+.kpi .kv{font-size:26px;font-weight:900;margin-top:5px}
+.kpi .kd{font-size:10.5px;font-weight:700;margin-top:3px}
+.up{color:var(--green)} .down{color:#E0392B}
+.panel{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 20px;margin-bottom:16px}
+.panel h3{font-size:14px;font-weight:800;margin-bottom:13px;display:flex;align-items:center;gap:8px}
+.panel h3 .more{margin-left:auto;font-size:11.5px;color:var(--brand-dark);font-weight:700;cursor:pointer}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+.frow{display:flex;align-items:center;gap:12px;margin-bottom:8px}
+.frow .fl{width:78px;font-size:11.5px;color:var(--ink2);font-weight:600;text-align:right}
+.frow .fb{flex:1;height:24px;background:var(--chip);border-radius:7px;overflow:hidden}
+.frow .fb i{display:block;height:100%;border-radius:7px;background:#3A342F}
+.frow .fv{width:66px;font-size:12px;font-weight:800}
+
+table{width:100%;border-collapse:collapse}
+th{font-size:10.5px;color:var(--ink3);font-weight:700;text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{font-size:12px;padding:11px 9px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.b{font-weight:800}
+.sub{font-size:10.5px;color:var(--ink3);margin-top:2px}
+.tag{display:inline-block;font-size:10px;font-weight:800;border-radius:7px;padding:3px 8px;white-space:nowrap}
+.tag.red{background:#FDECEC;color:#C0392B}
+.tag.amber{background:#FFF4E0;color:#8A6D1A}
+.tag.green{background:#E8F7EF;color:var(--green)}
+.tag.blue{background:#EEF3FB;color:#3B82F6}
+.tag.gray{background:var(--chip);color:var(--ink3)}
+.tag.orange{background:var(--brand-bg);color:var(--brand-dark)}
+.tag.purple{background:#F0EDFA;color:#7C5CBF}
+.btn{display:inline-flex;align-items:center;justify-content:center;border-radius:9px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+.btn.pri{background:var(--brand);color:#fff}
+.btn.ghost{border:1px solid var(--line);color:var(--ink2);background:#fff}
+.btn.danger{border:1px solid #F2C4C0;color:#C0392B;background:#FDECEC}
+.btnrow{display:flex;gap:5px}
+.avatar{width:29px;height:29px;border-radius:50%;color:#fff;font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.who{display:flex;align-items:center;gap:9px}
+.filters{display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap;align-items:center}
+.fchip{border:1px solid var(--line);background:#fff;border-radius:18px;padding:7px 13px;font-size:11.5px;font-weight:600;color:var(--ink2);cursor:pointer}
+.fchip.on{border-color:var(--brand);background:var(--brand-bg);color:var(--brand-dark);font-weight:800}
+
+.form label{display:block;font-size:12px;font-weight:800;margin:14px 0 6px}
+.form input[type=text],.form textarea,.form select{width:100%;border:1px solid var(--line);border-radius:11px;padding:11px 13px;font-size:12.5px;background:#fff;color:var(--ink)}
+.form textarea{min-height:160px;resize:vertical;line-height:1.7}
+.checks{display:flex;gap:16px;margin-top:11px;font-size:12px;font-weight:600;color:var(--ink2);flex-wrap:wrap}
+.checks label{display:flex;align-items:center;gap:6px;margin:0;font-weight:600}
+.mini{font-size:10.5px;color:var(--ink3)}
+.statmini{display:flex;gap:10px}
+.statmini>div{flex:1;background:var(--chip);border-radius:12px;padding:11px 13px;text-align:center}
+.statmini b{display:block;font-size:18px;font-weight:900}
+.statmini span{font-size:10px;color:var(--ink3)}
+.todo{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.todo:last-child{border-bottom:none}
+.todo .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.todo b{margin-left:auto;font-size:12px;color:var(--brand-dark);cursor:pointer;white-space:nowrap}
+.checkli{display:flex;align-items:center;gap:7px;font-size:11px;font-weight:700}
+.ok{color:var(--green)} .bad{color:#C0392B}
+.setrow{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:none}
+.setrow .sl{flex:1}
+.setrow .sl b{font-size:12.5px;font-weight:800;display:block}
+.setrow .sl span{font-size:10.5px;color:var(--ink3)}
+.setval{border:1px solid var(--line);border-radius:9px;padding:7px 12px;font-size:12px;font-weight:800;background:#fff;min-width:74px;text-align:center}
+</style>
+</head>
+<body>
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></symbol>
+  <symbol id="i-dollar" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+  <symbol id="i-set" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+</svg>
+
+<div class="side">
+  <div class="slogo">
+    <div class="mark"><svg width="19" height="20" viewBox="0 0 120 124" style="stroke:none">
+      <path d="M60 118 C60 118 30 86 30 61 A30 30 0 1 1 90 61 C90 86 60 118 60 118 Z" fill="#ffffff"/>
+      <circle cx="60" cy="59" r="12.5" fill="#F55B24"/>
+      <path d="M60 6 C64 6 88 26 94 34 L26 34 C32 26 56 6 60 6 Z" fill="#FFDDBB"/>
+      <path d="M18 34 Q60 46 102 34 Q98 40 60 42 Q22 40 18 34 Z" fill="#F3A469"/>
+    </svg></div>
+    <div><b>씬짜오PICK</b><small>ADMIN CONSOLE</small></div>
+  </div>
+  <div class="nav">
+    <div class="nitem on" data-sec="dash"><svg class="ic"><use href="#i-home"/></svg>대시보드</div>
+    <div class="ngroup">운영 큐</div>
+    <div class="nitem" data-sec="review"><svg class="ic"><use href="#i-edit"/></svg>리뷰 검수함<span class="cnt hot">4</span></div>
+    <div class="nitem" data-sec="report"><svg class="ic"><use href="#i-flag"/></svg>신고 처리함<span class="cnt hot">3</span></div>
+    <div class="nitem" data-sec="penalty"><svg class="ic"><use href="#i-shield"/></svg>제재 · 이의신청<span class="cnt">2</span></div>
+    <div class="ngroup">관리</div>
+    <div class="nitem" data-sec="campaign"><svg class="ic"><use href="#i-file"/></svg>캠페인 관리<span class="cnt">1</span></div>
+    <div class="nitem" data-sec="member"><svg class="ic"><use href="#i-users"/></svg>회원 · 광고주</div>
+    <div class="nitem" data-sec="chat"><svg class="ic"><use href="#i-chat"/></svg>채팅 · Walk-in</div>
+    <div class="ngroup">성장 · 정산</div>
+    <div class="nitem" data-sec="notice"><svg class="ic"><use href="#i-bell"/></svg>공지 · 이벤트</div>
+    <div class="nitem" data-sec="commission"><svg class="ic"><use href="#i-dollar"/></svg>커미션 집계</div>
+    <div class="ngroup">시스템</div>
+    <div class="nitem" data-sec="settings"><svg class="ic"><use href="#i-set"/></svg>운영 설정 · 권한</div>
+  </div>
+  <div class="sfoot">접속: /admin (role=admin)<br>주식회사 더제이엠그룹<br>v2 프로토타입</div>
+</div>
+
+<div class="main">
+  <div class="topbar">
+    <h1 id="ptitle">대시보드</h1>
+    <div class="tsearch"><svg class="ic" style="width:14px;height:14px"><use href="#i-search"/></svg>회원 · 가게 · 캠페인 · URL 검색</div>
+    <div class="admin-chip"><span class="av">이</span>이삼식 (슈퍼관리자) <svg class="ic" style="width:13px;height:13px;color:var(--ink3)"><use href="#i-down"/></svg></div>
+  </div>
+
+  <!-- ═══ 대시보드 ═══ -->
+  <div class="sec on" id="sec-dash">
+    <div class="kpis">
+      <div class="kpi"><div class="kl">오늘 신규 가입</div><div class="kv">24</div><div class="kd up">▲ 8 vs 어제 · 리뷰어 21 / 광고주 3</div></div>
+      <div class="kpi"><div class="kl">진행 중 캠페인</div><div class="kv">47</div><div class="kd up">▲ 5 이번 주 · 승인 대기 1</div></div>
+      <div class="kpi"><div class="kl">이번 주 리뷰 발행</div><div class="kv">31</div><div class="kd up">▲ 12 vs 지난주 · 검수 대기 4</div></div>
+      <div class="kpi"><div class="kl">노쇼율 (7일)</div><div class="kv">3.2%</div><div class="kd up">▼ 0.9%p 개선 · 목표 5% 이하</div></div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="kl">활성 리뷰어 (WAU)</div><div class="kv">412</div><div class="kd mini">전체 1,240명 중</div></div>
+      <div class="kpi"><div class="kl">평균 선정 경쟁률</div><div class="kv">3.1:1</div><div class="kd mini">신청 대비 선정</div></div>
+      <div class="kpi"><div class="kl">채팅 응답 중앙값</div><div class="kv">14분</div><div class="kd mini">사장님 첫 응답 기준</div></div>
+      <div class="kpi"><div class="kl">번역 API 사용량</div><div class="kv">62%</div><div class="kd mini">월 무료 한도 대비 · 8월 요금 예상 $12</div></div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>이번 주 퍼널 <span class="more">자세히 →</span></h3>
+        <div class="frow"><div class="fl">앱 노출</div><div class="fb"><i style="width:100%"></i></div><div class="fv">18,420</div></div>
+        <div class="frow"><div class="fl">캠페인 조회</div><div class="fb"><i style="width:38%"></i></div><div class="fv">6,980</div></div>
+        <div class="frow"><div class="fl">신청</div><div class="fb"><i style="width:9%;background:#8A7F76"></i></div><div class="fv">1,640</div></div>
+        <div class="frow"><div class="fl">선정</div><div class="fb"><i style="width:3.4%;background:#8A7F76"></i></div><div class="fv">62</div></div>
+        <div class="frow"><div class="fl">방문 완료</div><div class="fb"><i style="width:2.9%;background:#8A7F76"></i></div><div class="fv">53</div></div>
+        <div class="frow"><div class="fl">리뷰 발행</div><div class="fb"><i style="width:1.7%;background:var(--brand)"></i></div><div class="fv">31</div></div>
+        <div class="mini" style="margin-top:8px">발행 전환율 58% (선정 대비) · 기한 내 제출률 91% · 평균 발행 소요 4.2일</div>
+      </div>
+      <div class="panel">
+        <h3>오늘 할 일</h3>
+        <div class="todo"><span class="dot" style="background:#E0392B"></span>리뷰 검수 4건 (SLA 임박 1건)<b>바로가기 →</b></div>
+        <div class="todo"><span class="dot" style="background:#E0392B"></span>신고 처리 3건 (24h SLA)<b>바로가기 →</b></div>
+        <div class="todo"><span class="dot" style="background:#8A6D1A"></span>제재 이의신청 검토 2건<b>바로가기 →</b></div>
+        <div class="todo"><span class="dot" style="background:#3B82F6"></span>신규 캠페인 승인 1건 (서울갈비)<b>바로가기 →</b></div>
+        <div class="todo"><span class="dot" style="background:var(--green)"></span>7월 커미션 정산 마감 D-9<b>바로가기 →</b></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>지역 · 카테고리 현황</h3>
+        <table>
+          <tr><th>지역</th><th>가게</th><th>진행 캠페인</th><th>이번 주 발행</th><th>평균 이행률</th></tr>
+          <tr><td class="b">다낭 미케비치</td><td>28</td><td>21</td><td>16</td><td><span class="tag green">98%</span></td></tr>
+          <tr><td class="b">다낭 안탕</td><td>17</td><td>14</td><td>9</td><td><span class="tag green">96%</span></td></tr>
+          <tr><td class="b">다낭 한시장·시내</td><td>11</td><td>8</td><td>4</td><td><span class="tag amber">91%</span></td></tr>
+          <tr><td class="b">호이안</td><td>6</td><td>4</td><td>2</td><td><span class="tag green">100%</span></td></tr>
+        </table>
+        <div class="mini" style="margin-top:8px">인기 카테고리: 마사지·스파(9) > 로컬맛집(12) > 카페(7) · 다음 오픈 후보: 호이안 올드타운</div>
+      </div>
+      <div class="panel">
+        <h3>최근 활동 <span class="more">감사 로그 전체 →</span></h3>
+        <table>
+          <tr><td style="width:70px" class="mini">방금</td><td><span class="tag green">발행</span></td><td>다낭한달살기중 — 허벌 스파 URL 제출 → 검수함</td></tr>
+          <tr><td class="mini">6분 전</td><td><span class="tag red">신고</span></td><td>커뮤니티 글 신고 (스팸·광고성)</td></tr>
+          <tr><td class="mini">22분 전</td><td><span class="tag blue">캠페인</span></td><td>서울갈비 "4인 갈비세트" 등록 (영업: Nguyen Van A)</td></tr>
+          <tr><td class="mini">1시간 전</td><td><span class="tag amber">제재</span></td><td>rev_0192 노쇼 1회 → 30일 자동 정지</td></tr>
+          <tr><td class="mini">2시간 전</td><td><span class="tag purple">Walk-in</span></td><td>미케비치 "지금 가능?" 요청 3건 · 수락 2건</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 리뷰 검수함 ═══ -->
+  <div class="sec" id="sec-review">
+    <div class="filters">
+      <span class="fchip on">검수 대기 4</span><span class="fchip">보완 요청 중 2</span><span class="fchip">이번 주 승인 27</span><span class="fchip">반려 1</span>
+      <span class="fchip" style="margin-left:auto">채널: 전체 ▾</span>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><th>제출</th><th>리뷰어 / 캠페인</th><th>채널 · URL</th><th>자동 검증</th><th>SLA</th><th>처리</th></tr>
+        <tr>
+          <td class="mini">10분 전</td>
+          <td><div class="b">다낭한달살기중</div><div class="sub">허벌 스파 · 아로마 90분 2인 #C-0231</div></td>
+          <td><span class="tag green">네이버 블로그</span><div class="sub">blog.naver.com/danang_month/2234… <u>열기</u></div></td>
+          <td>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>URL 소유자 일치</div>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>협찬 표기 감지 (첫 문단)</div>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>사진 17장 (기준 15+)</div>
+          </td>
+          <td><span class="tag green">44h 남음</span></td>
+          <td><div class="btnrow"><span class="btn pri">승인</span><span class="btn ghost">보완 요청</span><span class="btn danger">반려</span></div></td>
+        </tr>
+        <tr>
+          <td class="mini">3시간 전</td>
+          <td><div class="b">여행에미치다_다낭</div><div class="sub">분짜 꽌 안토이 · 쇼츠 #C-0228</div></td>
+          <td><span class="tag red">유튜브 쇼츠</span><div class="sub">youtube.com/shorts/xK2… <u>열기</u></div></td>
+          <td>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>URL 소유자 일치</div>
+            <div class="checkli bad">✕ 협찬 표기 미감지 — 설명란 확인 필요</div>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>길이 42초 (기준 30초+)</div>
+          </td>
+          <td><span class="tag amber">7h 남음</span></td>
+          <td><div class="btnrow"><span class="btn ghost">보완 요청</span><span class="btn danger">반려</span></div></td>
+        </tr>
+        <tr>
+          <td class="mini">어제</td>
+          <td><div class="b">푸꾸옥말고다낭</div><div class="sub">코코넛 커피 랩 · 클립 #C-0219</div></td>
+          <td><span class="tag green">네이버 클립</span><div class="sub">naver.me/cl2… <u>열기</u></div></td>
+          <td>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>URL 소유자 일치</div>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>협찬 표기 감지</div>
+            <div class="checkli bad">✕ 발행일 &lt; 선정일 — 재사용 의심</div>
+          </td>
+          <td><span class="tag amber">18h 남음</span></td>
+          <td><div class="btnrow"><span class="btn danger">반려</span><span class="btn ghost">소명 요청</span></div></td>
+        </tr>
+        <tr>
+          <td class="mini">어제</td>
+          <td><div class="b">미케맘</div><div class="sub">서울갈비 · 블로그 #C-0201</div></td>
+          <td><span class="tag green">네이버 블로그</span><div class="sub">blog.naver.com/mkmom/22… <u>열기</u></div></td>
+          <td>
+            <div class="checkli ok"><svg class="ic" style="width:11px;height:11px"><use href="#i-check"/></svg>자동 검증 3/3 통과</div>
+          </td>
+          <td><span class="tag green">39h 남음</span></td>
+          <td><div class="btnrow"><span class="btn pri">승인</span><span class="btn ghost">보완 요청</span></div></td>
+        </tr>
+      </table>
+    </div>
+    <div class="grid3">
+      <div class="panel"><h3>검수 기준 (자동 + 수동)</h3>
+        <div class="mini" style="line-height:1.9">자동: URL 소유자 일치 · 협찬 표기 감지 · 발행일 &gt; 선정일 · 전역 URL 중복 · 사진 수/영상 길이<br>수동: 내용 성의 · 허위·비방 여부 · 가게명/위치 정확성</div>
+      </div>
+      <div class="panel"><h3>보완 요청 중 2</h3>
+        <table>
+          <tr><td class="b">호이안러버</td><td class="mini">협찬 표기 위치 수정 요청 (D-2)</td></tr>
+          <tr><td class="b">danangfoodie</td><td class="mini">사진 추가 요청 12→15장 (D-1)</td></tr>
+        </table>
+      </div>
+      <div class="panel"><h3>이번 주 검수 통계</h3>
+        <div class="statmini"><div><b>27</b><span>승인</span></div><div><b>4</b><span>보완</span></div><div><b>1</b><span>반려</span></div><div><b>3.1h</b><span>평균 처리</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 신고 처리함 ═══ -->
+  <div class="sec" id="sec-report">
+    <div class="filters">
+      <span class="fchip on">대기 3</span><span class="fchip">처리 완료 12</span><span class="fchip">전체 15</span>
+      <span class="fchip" style="margin-left:auto">유형: 전체 ▾</span><span class="fchip">기간: 30일 ▾</span>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><th>접수</th><th>유형</th><th>사유</th><th>대상 콘텐츠</th><th>신고자</th><th>피신고자 이력</th><th>SLA</th><th>처리</th></tr>
+        <tr>
+          <td class="mini">6분 전</td><td><span class="tag blue">커뮤니티</span></td><td class="b">스팸 · 광고성</td>
+          <td>"다낭 환전 최고가 텔레그램…" <div class="sub">신고 3회 누적 · 유사 글 2건 자동 감지</div></td>
+          <td>다낭한달살기중</td><td><span class="tag amber">경고 1회</span></td><td><span class="tag green">23h</span></td>
+          <td><div class="btnrow"><span class="btn danger">삭제+정지</span><span class="btn ghost">삭제만</span><span class="btn ghost">무혐의</span></div></td>
+        </tr>
+        <tr>
+          <td class="mini">3시간 전</td><td><span class="tag orange">채팅</span></td><td class="b">욕설 · 혐오</td>
+          <td>캠페인 #C-0231 채팅방 <div class="sub">대화 열람 (신고 구간 하이라이트)</div></td>
+          <td>사장님(광고주)</td><td><span class="tag gray">이력 없음</span></td><td><span class="tag green">21h</span></td>
+          <td><div class="btnrow"><span class="btn danger">제재</span><span class="btn ghost">경고</span><span class="btn ghost">무혐의</span></div></td>
+        </tr>
+        <tr>
+          <td class="mini">어제</td><td><span class="tag gray">프로필</span></td><td class="b">사기 의심</td>
+          <td>rev_0844 — 타인 블로그 도용 의심 <div class="sub">채널 인증 로그 · URL 불일치 3회</div></td>
+          <td>시스템 자동</td><td><span class="tag red">정지 이력 1회</span></td><td><span class="tag amber">4h</span></td>
+          <td><div class="btnrow"><span class="btn danger">영구 정지</span><span class="btn ghost">소명 요청</span></div></td>
+        </tr>
+      </table>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h3>처리 규칙</h3>
+        <div class="mini" style="line-height:1.9">삭제+정지: 콘텐츠 삭제 + 페널티 규칙 적용 · 신고자에게 자동 알림<br>무혐의: 신고자에게 사유 통보 · 동일 대상 반복 무혐의 신고 시 신고자 제한<br>모든 처리는 감사 로그 기록 · 처리 취소는 슈퍼관리자만</div>
+      </div>
+      <div class="panel"><h3>이번 달 신고 통계</h3>
+        <div class="statmini"><div><b>15</b><span>접수</span></div><div><b>9</b><span>조치</span></div><div><b>3</b><span>무혐의</span></div><div><b>5.2h</b><span>평균 처리</span></div></div>
+        <div class="mini" style="margin-top:10px">유형별: 스팸 7 · 욕설 3 · 사기 의심 2 · 개인정보 1 · 기타 2</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 제재 · 이의신청 ═══ -->
+  <div class="sec" id="sec-penalty">
+    <div class="filters">
+      <span class="fchip on">활성 제재 7</span><span class="fchip">이의신청 2</span><span class="fchip">만료 예정 (7일 내) 1</span><span class="fchip">전체 이력</span>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><th>회원</th><th>사유</th><th>제재</th><th>적용</th><th>만료</th><th>이의신청</th><th>액션</th></tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#C98E8E">김</span><div><div class="b">김다낭</div><div class="sub">rev_0192 · Lv.2 · 완료 3회</div></div></div></td>
+          <td>노쇼 1회 (7/19 허벌 스파)</td><td><span class="tag amber">30일 정지</span></td>
+          <td class="mini">7/20 자동</td><td class="mini">8/19</td>
+          <td><span class="tag red">접수</span><div class="sub">"급성 장염, 진단서 첨부" · 첨부 1</div></td>
+          <td><div class="btnrow"><span class="btn pri">인용 (해제)</span><span class="btn ghost">기각</span></div></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#7DA9C9">박</span><div><div class="b">박호이안</div><div class="sub">rev_0501 · Lv.1</div></div></div></td>
+          <td>리뷰 미제출 (마감 +7일, 연장 1회 사용)</td><td><span class="tag amber">30일 정지</span></td>
+          <td class="mini">7/18 자동</td><td class="mini">8/17</td><td class="mini">—</td>
+          <td><div class="btnrow"><span class="btn ghost">상세</span></div></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#8A6D1A">?</span><div><div class="b">rev_0844</div><div class="sub">채널 도용 의심</div></div></div></td>
+          <td>허위 채널 인증 시도 3회</td><td><span class="tag red">영구 정지 (검토 중)</span></td>
+          <td class="mini">7/21 수동</td><td class="mini">—</td>
+          <td><span class="tag red">접수</span><div class="sub">"내 블로그 맞다" · 재인증 요구 가능</div></td>
+          <td><div class="btnrow"><span class="btn pri">재인증 요구</span><span class="btn ghost">기각</span></div></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#8FB99A">분</span><div><div class="b">분짜 하이번</div><div class="sub">광고주 str_0077</div></div></div></td>
+          <td>제공 내역 미이행 2회 (음료 제외 제공)</td><td><span class="tag amber">노출 제한 30일</span></td>
+          <td class="mini">7/15 수동</td><td class="mini">8/15</td><td class="mini">—</td>
+          <td><div class="btnrow"><span class="btn ghost">상세</span><span class="btn ghost">조기 해제</span></div></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#B7A6D9">최</span><div><div class="b">최다낭러버</div><div class="sub">rev_0333</div></div></div></td>
+          <td>발행 후 글 삭제 (재발행 불응)</td><td><span class="tag amber">90일 정지</span></td>
+          <td class="mini">7/02 자동</td><td class="mini">9/30</td><td class="mini">기각 (7/05)</td>
+          <td><div class="btnrow"><span class="btn ghost">상세</span></div></td>
+        </tr>
+      </table>
+    </div>
+    <div class="panel"><h3>자동 제재 규칙 (운영 설정에서 변경)</h3>
+      <div class="mini" style="line-height:1.9">노쇼·당일취소: 30일 → 90일 → 영구 · 리뷰 미제출: 연장 1회 후 30/90/영구 · 발행 6개월 내 삭제: 재발행 요청 → 불응 시 90일 · 허위 방문 인증: 즉시 영구 + 배상 청구 · 광고주 제공 미이행: 경고 → 노출 제한 → 퇴출</div>
+    </div>
+  </div>
+
+  <!-- ═══ 캠페인 관리 ═══ -->
+  <div class="sec" id="sec-campaign">
+    <div class="filters">
+      <span class="fchip on">승인 대기 1</span><span class="fchip">진행 중 47</span><span class="fchip">모집 마감 12</span><span class="fchip">중단 2</span><span class="fchip">종료 89</span>
+      <span class="fchip" style="margin-left:auto">지역 ▾</span><span class="fchip">카테고리 ▾</span>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><th>캠페인</th><th>가게</th><th>미션</th><th>제공 내역</th><th>가능 날짜</th><th>신청/정원</th><th>노출</th><th>상태</th><th>액션</th></tr>
+        <tr style="background:var(--brand-bg)">
+          <td class="b">4인 갈비세트 120만동 <div class="sub">#C-0235 · 오늘 등록 · 영업 Nguyen Van A</div></td>
+          <td>서울갈비 다낭점</td><td><span class="tag green">블로그</span></td>
+          <td class="mini">갈비세트 4인<br>120만동 한도 · 주류 제외</td>
+          <td class="mini">7/26–8/10<br>화·수 제외</td>
+          <td class="b">—</td><td class="mini">일반</td>
+          <td><span class="tag amber">승인 대기</span></td>
+          <td><div class="btnrow"><span class="btn pri">승인</span><span class="btn ghost">반려</span></div></td>
+        </tr>
+        <tr>
+          <td class="b">아로마 마사지 90분 2인 <div class="sub">#C-0231 · 마감 D-2</div></td>
+          <td>허벌 스파 다낭</td><td><span class="tag green">블로그</span></td>
+          <td class="mini">아로마 90분×2<br>70만동 한도 · 팁 포함</td>
+          <td class="mini">7/23–7/31<br>매일</td>
+          <td class="b">8 / 10</td><td><span class="tag orange">AD 상단</span></td>
+          <td><span class="tag green">진행 중</span></td>
+          <td><div class="btnrow"><span class="btn ghost">순위 ▾</span><span class="btn danger">중단</span></div></td>
+        </tr>
+        <tr>
+          <td class="b">2인 식사 40만동 <div class="sub">#C-0228</div></td>
+          <td>분짜 꽌 안토이</td><td><span class="tag blue">쇼츠</span></td>
+          <td class="mini">2인 식사 + 음료</td>
+          <td class="mini">7/25–8/03<br>주말만</td>
+          <td class="b">12 / 15</td><td class="mini">일반</td>
+          <td><span class="tag green">진행 중</span></td>
+          <td><div class="btnrow"><span class="btn ghost">순위 ▾</span><span class="btn danger">중단</span></div></td>
+        </tr>
+        <tr>
+          <td class="b">음료 2잔 + 디저트 <div class="sub">#C-0219</div></td>
+          <td>코코넛 커피 랩</td><td><span class="tag gray">클립</span></td>
+          <td class="mini">음료 2 + 디저트 1<br>15만동 한도</td>
+          <td class="mini">7/20–8/01</td>
+          <td class="b">5 / 10</td><td class="mini">일반</td>
+          <td><span class="tag red">중단 (미이행 신고)</span></td>
+          <td><div class="btnrow"><span class="btn ghost">재개</span><span class="btn ghost">이력</span></div></td>
+        </tr>
+      </table>
+    </div>
+    <div class="grid2">
+      <div class="panel"><h3>승인 체크리스트 (신규 캠페인)</h3>
+        <div class="mini" style="line-height:1.9">① 제공 내역·한도 금액·인원 명확 ② 금지 문구 없음("리뷰 보장", 지도 리뷰 조건 등) ③ 가능 날짜 설정됨 ④ 가게 정보·지도 핀 정확 ⑤ 미션 요구사항 현실적(사진 수·글자 수)</div>
+      </div>
+      <div class="panel"><h3>노출 관리</h3>
+        <div class="mini" style="line-height:1.9">기본 정렬: 거리순 · AD 상단 고정: priority 필드 수동 지정 (광고 상품 판매 전) · "오늘 가능" 필터 대상: 당일 슬롯 보유 캠페인 자동 포함 · 신규 가게 부스트: 첫 캠페인 7일간 +가중치</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 회원 · 광고주 ═══ -->
+  <div class="sec" id="sec-member">
+    <div class="filters">
+      <span class="fchip on">리뷰어 1,240</span><span class="fchip">광고주 62</span><span class="fchip">영업사원 4</span><span class="fchip">탈퇴 요청 1</span>
+      <span class="fchip" style="margin-left:auto">등급 ▾</span><span class="fchip">상태 ▾</span><span class="fchip">가입 경로 ▾</span>
+    </div>
+    <div class="panel">
+      <table>
+        <tr><th>회원</th><th>등급 · 픽스코어</th><th>인증 채널</th><th>체험 / 제출률</th><th>사장님 평점</th><th>노쇼/지각</th><th>상태</th><th></th></tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#E8967A">다</span><div><div class="b">다낭한달살기중</div><div class="sub">rev_0001 · 카카오 · 26.05.02 가입 · 폰인증 완료</div></div></div></td>
+          <td><span class="tag orange">Lv.4</span> <span class="b">1,420</span></td>
+          <td><span class="tag green">블로그</span> <span class="tag green">유튜브</span></td>
+          <td class="b">14 / 100%</td><td class="b">4.9</td><td class="mini">0 / 0</td>
+          <td><span class="tag green">정상</span></td>
+          <td><span class="btn ghost">상세</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#7DA9C9">여</span><div><div class="b">여행에미치다_다낭</div><div class="sub">rev_0034 · 네이버 · 폰인증 완료</div></div></div></td>
+          <td><span class="tag orange">Lv.3</span> <span class="b">1,180</span></td>
+          <td><span class="tag green">유튜브</span> <span class="tag amber">인스타 대기</span></td>
+          <td class="b">11 / 91%</td><td class="b">4.7</td><td class="mini">0 / 1</td>
+          <td><span class="tag green">정상</span></td>
+          <td><span class="btn ghost">상세</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#8FB99A">허</span><div><div class="b">허벌 스파 다낭</div><div class="sub">광고주 str_0012 · 담당 Nguyen Van A · 한국어</div></div></div></td>
+          <td><span class="tag blue">광고주</span></td>
+          <td class="mini">Zalo 연결 · 사업자 서류 확인</td>
+          <td class="b">캠페인 6 · 발행 21</td><td class="b">이행률 100%</td><td class="mini">응답 9분</td>
+          <td><span class="tag green">활성</span></td>
+          <td><span class="btn ghost">상세</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#D9A05B">분</span><div><div class="b">분짜 꽌 안토이</div><div class="sub">광고주 str_0031 · 베트남어 센터</div></div></div></td>
+          <td><span class="tag blue">광고주</span></td>
+          <td class="mini">Zalo 연결</td>
+          <td class="b">캠페인 3 · 발행 8</td><td class="b">이행률 96%</td><td class="mini">응답 22분</td>
+          <td><span class="tag green">활성</span></td>
+          <td><span class="btn ghost">상세</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#C98E8E">김</span><div><div class="b">김다낭</div><div class="sub">rev_0192</div></div></div></td>
+          <td><span class="tag gray">Lv.2</span> <span class="b">310</span></td>
+          <td><span class="tag green">블로그</span></td>
+          <td class="b">3 / 67%</td><td class="b">4.1</td><td class="mini">1 / 0</td>
+          <td><span class="tag amber">정지 (8/19까지)</span></td>
+          <td><span class="btn ghost">상세</span></td>
+        </tr>
+      </table>
+    </div>
+    <div class="grid3">
+      <div class="panel"><h3>회원 상세에서 가능한 것</h3><div class="mini" style="line-height:1.9">활동 이력 전체 · 채널 인증 로그 · 채팅 이력(신고 시) · 등급 수동 조정 · 메모 남기기 · 알림 발송 · 탈퇴 처리(개인정보 파기)</div></div>
+      <div class="panel"><h3>탈퇴 요청 1</h3><table><tr><td class="b">nomadJK</td><td class="mini">7/21 요청 · 진행 중 미션 없음 → 승인 가능</td><td><span class="btn ghost">처리</span></td></tr></table></div>
+      <div class="panel"><h3>가입 경로 (이번 달)</h3><div class="statmini"><div><b>44%</b><span>카카오</span></div><div><b>31%</b><span>네이버</span></div><div><b>18%</b><span>구글</span></div><div><b>7%</b><span>페북</span></div></div></div>
+    </div>
+  </div>
+
+  <!-- ═══ 채팅 · Walk-in ═══ -->
+  <div class="sec" id="sec-chat">
+    <div class="kpis">
+      <div class="kpi"><div class="kl">오늘 채팅방 개설</div><div class="kv">18</div><div class="kd mini">선정 14 · Walk-in 4</div></div>
+      <div class="kpi"><div class="kl">사장님 첫 응답 중앙값</div><div class="kv">14분</div><div class="kd up">▼ 6분 개선</div></div>
+      <div class="kpi"><div class="kl">Walk-in 수락률</div><div class="kv">67%</div><div class="kd mini">요청 12 · 수락 8 (7일)</div></div>
+      <div class="kpi"><div class="kl">번역 실패 (24h)</div><div class="kv">2</div><div class="kd mini">재시도 성공 2 · 미해결 0</div></div>
+    </div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>응답 지연 경고 (2시간+ 미응답)</h3>
+        <table>
+          <tr><th>채팅방</th><th>마지막 메시지</th><th>경과</th><th>액션</th></tr>
+          <tr><td class="b">서울갈비 ↔ 미케맘 <div class="sub">#C-0201 예약 문의</div></td><td class="mini">"토요일 저녁 가능한가요?"</td><td><span class="tag amber">3.2h</span></td><td><span class="btn ghost">사장님 알림 재발송</span></td></tr>
+          <tr><td class="b">네일홀릭 ↔ danangfoodie <div class="sub">#C-0224 시간 변경</div></td><td class="mini">"2시 → 4시 변경될까요?"</td><td><span class="tag red">5.8h</span></td><td><span class="btn ghost">담당 영업 확인 요청</span></td></tr>
+        </table>
+        <div class="mini" style="margin-top:8px">24시간 무응답 시 리뷰어에게 "다른 시간대 제안" 자동 안내 · 반복 지연 가게는 이행률 반영</div>
+      </div>
+      <div class="panel">
+        <h3>채팅 열람 정책</h3>
+        <div class="mini" style="line-height:1.9">일반 채팅은 열람 불가(개인정보) · 신고 접수된 채팅방만 신고 구간 ±20개 메시지 열람 가능 · 열람 기록은 감사 로그에 남음 · 번역 원문/번역문 쌍으로 표시</div>
+        <h3 style="margin-top:16px">Walk-in 현황 (7일)</h3>
+        <div class="statmini"><div><b>12</b><span>요청</span></div><div><b>8</b><span>수락</span></div><div><b>3</b><span>만료</span></div><div><b>1</b><span>거절</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 공지 · 이벤트 ═══ -->
+  <div class="sec" id="sec-notice">
+    <div class="grid2">
+      <div class="panel form">
+        <h3>새 공지 작성</h3>
+        <label>제목</label>
+        <input type="text" value="8월 호이안 지역 오픈 안내">
+        <label>카테고리 / 대상</label>
+        <div style="display:flex;gap:8px">
+          <select style="flex:1"><option>서비스</option><option>이벤트</option><option>정책</option></select>
+          <select style="flex:1"><option>전체</option><option>리뷰어만</option><option>광고주만 (한/베 각각 발송)</option></select>
+        </div>
+        <label>내용</label>
+        <textarea>안녕하세요, 씬짜오PICK입니다.
+
+8월 1일부터 호이안 지역 캠페인이 오픈됩니다. 올드타운·안방비치 인근 맛집과 카페가 준비되어 있어요.</textarea>
+        <div class="checks">
+          <label><input type="checkbox" checked> 중요 공지 (상단 고정)</label>
+          <label><input type="checkbox" checked> 푸시 발송</label>
+          <label><input type="checkbox"> 예약 발행</label>
+          <label><input type="checkbox"> 베트남어 자동 번역본 첨부</label>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px">
+          <span class="btn pri" style="padding:10px 20px;font-size:12.5px">발행하기</span>
+          <span class="btn ghost" style="padding:10px 16px;font-size:12.5px">미리보기</span>
+        </div>
+        <div class="mini" style="margin-top:10px">마케팅성 푸시는 수신 동의자에게만 · 야간(22–08시) 발송 차단</div>
+      </div>
+      <div>
+        <div class="panel">
+          <h3>발행된 공지</h3>
+          <table>
+            <tr><td><span class="tag orange">중요</span></td><td class="b">씬짜오PICK 정식 오픈 안내</td><td class="mini">7/20 · 푸시 · 열람 71%</td></tr>
+            <tr><td><span class="tag green">이벤트</span></td><td class="b">오픈 기념 앰버서더 후보 등록</td><td class="mini">7/20 · 열람 64%</td></tr>
+            <tr><td><span class="tag amber">정책</span></td><td class="b">협찬 표기 정책 안내</td><td class="mini">7/18 · 열람 58%</td></tr>
+            <tr><td><span class="tag gray">서비스</span></td><td class="b">7월 정기 점검 안내</td><td class="mini">7/15</td></tr>
+          </table>
+        </div>
+        <div class="panel">
+          <h3>홈 배너 슬롯 (광고 자리)</h3>
+          <table>
+            <tr><td class="b">슬롯 1</td><td class="mini">"이번 주 신규 캠페인 12개 오픈"</td><td><span class="tag green">운영 중</span></td><td><span class="btn ghost">교체</span></td></tr>
+            <tr><td class="b">슬롯 2</td><td class="mini">(비어 있음 — 광고 판매 전)</td><td><span class="tag gray">대기</span></td><td><span class="btn ghost">설정</span></td></tr>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ 커미션 집계 ═══ -->
+  <div class="sec" id="sec-commission">
+    <div class="filters">
+      <span class="fchip on">2026년 7월</span><span class="fchip">6월</span><span class="fchip">5월</span>
+      <span class="fchip" style="margin-left:auto">정산표 다운로드 (Excel)</span>
+    </div>
+    <div class="panel">
+      <div class="statmini" style="margin-bottom:16px">
+        <div><b>19</b><span>가게 등록 (×5만동)</span></div>
+        <div><b>14</b><span>첫 캠페인 활성화 (×10만동)</span></div>
+        <div><b>9</b><span>첫 리뷰 발행 (×15만동)</span></div>
+        <div><b style="color:var(--brand-dark)">3,700,000₫</b><span>7월 합계</span></div>
+        <div><b>7/31</b><span>집계 마감 → 8/5 이체</span></div>
+      </div>
+      <table>
+        <tr><th>영업사원</th><th>담당 지역</th><th>등록 (5만)</th><th>활성화 (10만)</th><th>발행 (15만)</th><th>보류 · 회수</th><th>합계</th><th>정산</th></tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#1F8A7D">A</span><div><div class="b">Nguyen Van A</div><div class="sub">sale_01 · Vietcombank ***2201</div></div></div></td>
+          <td>미케비치</td><td class="b">8</td><td class="b">7</td><td class="b">5</td>
+          <td class="mini">보류 1 (서류 미비)</td>
+          <td class="b" style="color:var(--brand-dark)">1,850,000₫</td>
+          <td><span class="tag amber">이체 대기</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#7C5CBF">B</span><div><div class="b">Tran Thi B</div><div class="sub">sale_02 · Techcombank ***8830</div></div></div></td>
+          <td>안탕 · 팜반동</td><td class="b">6</td><td class="b">4</td><td class="b">3</td>
+          <td class="mini">—</td>
+          <td class="b" style="color:var(--brand-dark)">1,150,000₫</td>
+          <td><span class="tag amber">이체 대기</span></td>
+        </tr>
+        <tr>
+          <td><div class="who"><span class="avatar" style="background:#B06A2C">C</span><div><div class="b">Le Van C</div><div class="sub">sale_03 · BIDV ***4417</div></div></div></td>
+          <td>한시장 · 시내</td><td class="b">5</td><td class="b">3</td><td class="b">1</td>
+          <td class="mini">회수 1 (등록 후 즉시 폐업 확인)</td>
+          <td class="b" style="color:var(--brand-dark)">650,000₫</td>
+          <td><span class="tag green">확정</span></td>
+        </tr>
+      </table>
+      <div class="mini" style="margin-top:10px">부정 등록 방지: 등록 커미션은 가게 정보 검증 후 확정 · 30일 내 폐업/유령 가게 판명 시 회수 · 정산 확정은 슈퍼관리자 승인 필요</div>
+    </div>
+  </div>
+
+  <!-- ═══ 운영 설정 · 권한 ═══ -->
+  <div class="sec" id="sec-settings">
+    <div class="grid2">
+      <div>
+        <div class="panel">
+          <h3>운영 변수 (코드 수정 없이 변경)</h3>
+          <div class="setrow"><div class="sl"><b>선정 후 예약 확정 시한</b><span>초과 시 자동 선정 취소 + 대기자 승격</span></div><span class="setval">24시간</span></div>
+          <div class="setrow"><div class="sl"><b>리뷰 제출 기한</b><span>방문일 기준 · 연장 1회 허용</span></div><span class="setval">7일</span></div>
+          <div class="setrow"><div class="sl"><b>노쇼 페널티</b><span>1회 / 2회 / 3회</span></div><span class="setval">30·90일·영구</span></div>
+          <div class="setrow"><div class="sl"><b>검수 SLA</b><span>초과 시 관리자 알림</span></div><span class="setval">48시간</span></div>
+          <div class="setrow"><div class="sl"><b>Walk-in 요청 만료</b><span>사장님 무응답 시</span></div><span class="setval">15분</span></div>
+          <div class="setrow"><div class="sl"><b>GPS 방문 인증 반경</b><span>가게 핀 기준</span></div><span class="setval">100m</span></div>
+          <div class="setrow"><div class="sl"><b>랭킹 갱신</b><span>픽스코어 리더보드</span></div><span class="setval">매주 월 00시</span></div>
+          <div class="setrow"><div class="sl"><b>상호 평가 공개</b><span>양측 제출 또는</span></div><span class="setval">14일 후</span></div>
+        </div>
+        <div class="panel">
+          <h3>카테고리 관리</h3>
+          <div class="mini" style="line-height:2">로컬맛집 · 한식 · 카페·디저트 · 마사지·스파 · 네일·뷰티 · 투어·액티비티 · 사진·스냅 · 숙소·풀빌라 · 쇼핑·기념품 · 키즈·패밀리 · 클래스·원데이 <span class="btn ghost" style="margin-left:6px">+ 추가</span></div>
+        </div>
+      </div>
+      <div>
+        <div class="panel">
+          <h3>관리자 계정 · 권한</h3>
+          <table>
+            <tr><th>계정</th><th>역할</th><th>권한</th><th></th></tr>
+            <tr><td class="b">이삼식 <div class="sub">isamsig419@gmail.com</div></td><td><span class="tag orange">슈퍼관리자</span></td><td class="mini">전체 + 정산 승인 + 처리 취소</td><td></td></tr>
+            <tr><td class="b">운영매니저 (채용 예정)</td><td><span class="tag blue">운영</span></td><td class="mini">검수·신고·제재·캠페인</td><td><span class="btn ghost">초대</span></td></tr>
+            <tr><td class="b">CS (채용 예정)</td><td><span class="tag green">CS</span></td><td class="mini">신고 열람 · 회원 메모 · 알림 발송</td><td><span class="btn ghost">초대</span></td></tr>
+            <tr><td class="b">Nguyen Van A</td><td><span class="tag purple">영업 (읽기)</span></td><td class="mini">본인 담당 가게 + 커미션만</td><td></td></tr>
+          </table>
+          <div class="mini" style="margin-top:8px">2단계 인증 필수 · 권한 변경은 슈퍼관리자만</div>
+        </div>
+        <div class="panel">
+          <h3>감사 로그 (최근)</h3>
+          <table>
+            <tr><td class="mini">7/22 14:02</td><td class="mini"><span class="b">이삼식</span> — rev_0192 이의신청 열람</td></tr>
+            <tr><td class="mini">7/22 11:30</td><td class="mini"><span class="b">시스템</span> — C-0219 중단 (신고 임계치)</td></tr>
+            <tr><td class="mini">7/21 18:44</td><td class="mini"><span class="b">이삼식</span> — 검수 승인 #S-0882</td></tr>
+            <tr><td class="mini">7/21 09:12</td><td class="mini"><span class="b">시스템</span> — 주간 랭킹 갱신 (1,240명)</td></tr>
+          </table>
+        </div>
+        <div class="panel">
+          <h3>시스템 상태</h3>
+          <div class="statmini"><div><b class="ok">정상</b><span>Supabase</span></div><div><b class="ok">정상</b><span>번역 API</span></div><div><b class="ok">정상</b><span>FCM 푸시</span></div><div><b class="ok">정상</b><span>지도 API</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const titles={dash:'대시보드',review:'리뷰 검수함',report:'신고 처리함',penalty:'제재 · 이의신청',campaign:'캠페인 관리',member:'회원 · 광고주',chat:'채팅 · Walk-in 모니터링',notice:'공지 · 이벤트',commission:'커미션 집계',settings:'운영 설정 · 권한'};
+document.querySelectorAll('.nitem').forEach(n=>{
+  n.addEventListener('click',()=>{
+    document.querySelectorAll('.nitem').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.sec').forEach(x=>x.classList.remove('on'));
+    n.classList.add('on');
+    const k=n.dataset.sec;
+    document.getElementById('sec-'+k).classList.add('on');
+    document.getElementById('ptitle').textContent=titles[k];
+    window.scrollTo(0,0);
+  });
+});
+</script>
+</body>
+</html>
