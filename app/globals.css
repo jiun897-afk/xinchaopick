@@ -198,6 +198,8 @@ footer.site { border-top: 1px solid var(--line); padding: 30px 0 46px; }
   .hsearch-ico { display: flex; margin-left: auto; }
   .hsearch-ico ~ .hcta { margin-left: 0; }
   .authchip { display: none !important; }
+  .authstart { display: none !important; }
+  .authload { width: 0 !important; }
   .regionrow { scrollbar-width: none; }
   .regionrow::-webkit-scrollbar { display: none; }
   footer.site { padding-bottom: 40px; }

@@ -25,7 +25,7 @@ export default function AuthButton() {
   }, [supabase]);
 
   if (!ready) {
-    return <div className="hcta" style={{ width: 180 }} />;
+    return <div className="hcta authload" style={{ width: 180 }} />;
   }
 
   if (userEmail) {
@@ -77,7 +77,7 @@ export default function AuthButton() {
       <Link className="btn ghost" href="/login">
         로그인
       </Link>
-      <Link className="btn pri" href="/login">
+      <Link className="btn pri authstart" href="/login">
         시작하기
       </Link>
     </div>
