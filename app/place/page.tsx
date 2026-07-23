@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import { Coupon, couponTitle, couponCond, couponValid } from "../../lib/coupon";
 
 type Place = {
   id: string;
@@ -41,6 +42,7 @@ export default function PlaceDetailPage() {
   const [id, setId] = useState<string | null>(null);
   const [place, setPlace] = useState<Place | null>(null);
   const [camps, setCamps] = useState<Camp[]>([]);
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [me, setMe] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
@@ -75,9 +77,10 @@ export default function PlaceDetailPage() {
   useEffect(() => {
     if (!id || !supabase) return;
     (async () => {
-      const [{ data: p }, { data: c }, sess] = await Promise.all([
+      const [{ data: p }, { data: c }, { data: cp }, sess] = await Promise.all([
         supabase.from("places").select("*").eq("id", id).maybeSingle(),
         supabase.from("campaigns").select("id, offer, mission_type, quota, applied, status").eq("place_id", id).eq("status", "active"),
+        supabase.from("coupons").select("*").eq("place_id", id).eq("active", true),
         supabase.auth.getSession(),
       ]);
       if (!p) {
@@ -86,6 +89,7 @@ export default function PlaceDetailPage() {
       }
       setPlace(p as Place);
       setCamps((c as Camp[]) ?? []);
+      setCoupons(((cp as Coupon[]) ?? []).filter(couponValid));
       setMe(sess.data.session?.user?.id ?? null);
       loadReviews(id);
     })();
@@ -211,6 +215,21 @@ export default function PlaceDetailPage() {
       </div>
       {place.address && (
         <div style={{ marginTop: 10, fontSize: 12.5, color: "var(--ink2)" }}>주소: {place.address}</div>
+      )}
+
+      {coupons.length > 0 && (
+        <>
+          <h2 style={{ fontSize: 17, fontWeight: 900, marginTop: 28 }}>🎟 사용 가능한 쿠폰</h2>
+          {coupons.map((c) => (
+            <div key={c.id} style={{ border: "1.5px dashed var(--brand)", background: "var(--brand-bg)", borderRadius: 14, padding: "13px 16px", marginTop: 10 }}>
+              <div style={{ fontSize: 15, fontWeight: 900, color: "var(--brand-dark)" }}>{couponTitle(c)}</div>
+              <div style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 3 }}>{couponCond(c) || "조건 없음"}</div>
+              <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 6 }}>
+                가게에서 이 화면을 보여주고 &ldquo;베자뷰 보고 왔어요&rdquo;라고 말씀하세요!
+              </div>
+            </div>
+          ))}
+        </>
       )}
 
       {camps.length > 0 && (

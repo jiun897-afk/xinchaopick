@@ -30,6 +30,8 @@ export default function PlacesPage() {
   const [sub, setSub] = useState("전체");
   const [q, setQ] = useState("");
   const [sort, setSort] = useState("rating");
+  const [couponOnly, setCouponOnly] = useState(false);
+  const [couponPlaces, setCouponPlaces] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!supabase) {
@@ -41,6 +43,8 @@ export default function PlacesPage() {
         supabase.from("places").select("id, name, category, subcategory, area, address, image_url").order("created_at", { ascending: false }),
         supabase.from("place_stats").select("*"),
       ]);
+      const { data: cps } = await supabase.from("coupons").select("place_id").eq("active", true);
+      setCouponPlaces(new Set(((cps as any[]) ?? []).map((x) => x.place_id)));
       setList((p as Place[]) ?? []);
       const m: Record<string, Stat> = {};
       ((s as Stat[]) ?? []).forEach((x) => (m[x.place_id] = x));
@@ -53,11 +57,12 @@ export default function PlacesPage() {
     if (cat !== "전체") r = r.filter((p) => p.category === cat);
     if (sub !== "전체") r = r.filter((p) => p.subcategory === sub);
     if (q.trim()) r = r.filter((p) => (p.name + p.address + p.subcategory).toLowerCase().includes(q.trim().toLowerCase()));
+    if (couponOnly) r = r.filter((p) => couponPlaces.has(p.id));
     const st = (id: string) => stats[id] ?? { review_count: 0, avg_rating: 0 };
     if (sort === "rating") r = [...r].sort((a, b) => Number(st(b.id).avg_rating) - Number(st(a.id).avg_rating));
     if (sort === "reviews") r = [...r].sort((a, b) => st(b.id).review_count - st(a.id).review_count);
     return r;
-  }, [list, cat, sub, q, sort, stats]);
+  }, [list, cat, sub, q, sort, stats, couponOnly, couponPlaces]);
 
   return (
     <div className="wrap" style={{ maxWidth: 720, paddingTop: 24, paddingBottom: 90 }}>
@@ -104,6 +109,20 @@ export default function PlacesPage() {
       )}
 
       <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+        <span
+          onClick={() => setCouponOnly((v) => !v)}
+          style={{
+            fontSize: 12,
+            fontWeight: 800,
+            padding: "6px 12px",
+            borderRadius: 20,
+            cursor: "pointer",
+            background: couponOnly ? "var(--brand)" : "var(--chip)",
+            color: couponOnly ? "#fff" : "var(--ink2)",
+          }}
+        >
+          🎟 쿠폰
+        </span>
         {SORTS.map((s) => (
           <span
             key={s.v}
@@ -162,7 +181,10 @@ export default function PlacesPage() {
                 {p.category}
                 {p.subcategory ? " · " + p.subcategory : ""}
               </div>
-              <div style={{ fontSize: 15.5, fontWeight: 800, marginTop: 2 }}>{p.name}</div>
+              <div style={{ fontSize: 15.5, fontWeight: 800, marginTop: 2 }}>
+                {p.name}
+                {couponPlaces.has(p.id) && <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 900, background: "var(--brand-bg)", color: "var(--brand-dark)", borderRadius: 6, padding: "2px 6px" }}>🎟 쿠폰</span>}
+              </div>
               <div style={{ fontSize: 12.5, marginTop: 4 }}>
                 <b style={{ color: "#F59E0B" }}>★ {Number(st.avg_rating).toFixed(1)}</b>
                 <span style={{ color: "var(--ink3)" }}>

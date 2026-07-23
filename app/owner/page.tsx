@@ -59,6 +59,7 @@ const VI: Record<string, string> = {
   "취소": "Hủy",
   "리뷰": "Review",
   "채팅": "Chat",
+  "쿠폰": "Coupon",
   "리뷰 승인": "Duyệt review",
   "문제제기": "Báo vấn đề",
   "해결됨·승인": "Đã ổn · Duyệt",
@@ -256,6 +257,9 @@ export default function OwnerPage() {
         </Link>
         <Link href="/chat" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
           {t("채팅")}
+        </Link>
+        <Link href="/owner/coupons" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+          {t("쿠폰")}
         </Link>
       </div>
 
