@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSupabase } from "../../../lib/supabase";
 import { PLACE_CATS, PLACE_AREAS, PLACE_DEFAULT_IMG } from "../../../lib/placeCats";
 import { useLang, LangToggle, mkT } from "../../../lib/i18n";
+import MapPicker from "../../../components/MapPicker";
 
 
 const VI: Record<string, string> = {
@@ -27,6 +28,9 @@ const VI: Record<string, string> = {
   "구글맵 링크 (지도에서 보기 버튼에 사용)": "Link Google Maps (cho nút xem bản đồ)",
   "구글맵에서 가게 검색 → 공유 → 링크 복사해서 붙여넣으면 돼요": "Tìm trên Google Maps → Chia sẻ → Sao chép link rồi dán vào",
   "소개 (선택)": "Giới thiệu (tùy chọn)",
+  "지도에서 위치 지정": "Chọn vị trí trên bản đồ",
+  "지도를 탭하면 핀이 꽂혀요 — 이 위치가 지도 탭에 노출돼요": "Chạm vào bản đồ để ghim — vị trí này sẽ hiển thị trên tab bản đồ",
+  "위치 지정 완료!": "Đã chọn vị trí!",
   "가게 소개, 대표 메뉴, 한국어 가능 여부 등": "Giới thiệu, món/dịch vụ tiêu biểu, có nói tiếng Hàn không…",
   "업체 이름을 입력해주세요.": "Vui lòng nhập tên cửa hàng.",
   "로그인이 필요해요.": "Cần đăng nhập.",
@@ -89,6 +93,8 @@ type Place = {
   phone: string;
   description: string;
   image_url: string | null;
+  lat: number | null;
+  lng: number | null;
 };
 
 const inp: React.CSSProperties = {
@@ -103,7 +109,7 @@ const inp: React.CSSProperties = {
 };
 const lbl: React.CSSProperties = { display: "block", fontSize: 12.5, fontWeight: 800, margin: "14px 0 6px" };
 
-const EMPTY = { name: "", category: "음식점", subcategory: "", area: "다낭", address: "", maps_url: "", phone: "", description: "" };
+const EMPTY = { name: "", category: "음식점", subcategory: "", area: "다낭", address: "", maps_url: "", phone: "", description: "", lat: null as number | null, lng: null as number | null };
 
 export default function OwnerPlacesPage() {
   const supabase = getSupabase();
@@ -164,6 +170,8 @@ export default function OwnerPlacesPage() {
       phone: form.phone.trim(),
       description: form.description.trim(),
       image_url: PLACE_DEFAULT_IMG[form.category] ?? PLACE_DEFAULT_IMG["기타"],
+      lat: form.lat,
+      lng: form.lng,
     };
     const { error } = form.id
       ? await supabase.from("places").update(vals).eq("id", form.id)
@@ -266,6 +274,13 @@ export default function OwnerPlacesPage() {
           <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 4 }}>
             {t("구글맵에서 가게 검색 → 공유 → 링크 복사해서 붙여넣으면 돼요")}
           </div>
+
+          <label style={lbl}>{t("지도에서 위치 지정")}</label>
+          <div style={{ fontSize: 11, color: "var(--ink3)", marginBottom: 6 }}>{t("지도를 탭하면 핀이 꽂혀요 — 이 위치가 지도 탭에 노출돼요")}</div>
+          {open && <MapPicker lat={form.lat} lng={form.lng} onPick={(la, ln) => setForm((f) => ({ ...f, lat: la, lng: ln }))} />}
+          {form.lat != null && (
+            <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)", marginTop: 5 }}>{t("위치 지정 완료!")}</div>
+          )}
 
           <label style={lbl}>{t("소개 (선택)")}</label>
           <textarea

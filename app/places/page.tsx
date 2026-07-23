@@ -61,7 +61,12 @@ export default function PlacesPage() {
 
   return (
     <div className="wrap" style={{ maxWidth: 720, paddingTop: 24, paddingBottom: 90 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900 }}>다낭 업체 찾기</h1>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900 }}>다낭 업체 찾기</h1>
+        <Link href="/map" className="btn ghost" style={{ marginLeft: "auto", padding: "9px 14px", fontSize: 12.5 }}>
+          지도로 보기
+        </Link>
+      </div>
       <div style={{ fontSize: 12.5, color: "var(--ink3)", marginTop: 3 }}>
         체험단이 실제로 다녀간 곳 — 인증 후기로 믿을 수 있어요
       </div>

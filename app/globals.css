@@ -193,7 +193,8 @@ footer.site { border-top: 1px solid var(--line); padding: 30px 0 46px; }
 @media (max-width: 640px) {
   .tabbar-app { display: flex; }
   body { padding-bottom: 74px; }
-  .hero { padding: 30px 0 28px; text-align: center; }
+  .hero { display: none; }
+  header.site + .wrap { margin-top: 14px; }
   .hero h1 { font-size: 27px; }
   .hero .hsearch { display: none; }
   .hbar { height: 60px; }
