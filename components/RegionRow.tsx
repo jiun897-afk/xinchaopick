@@ -5,15 +5,14 @@ import { useState } from "react";
 type Region = { name: string; emoji: string; bg: string; open?: boolean };
 
 const MAIN: Region[] = [
-  { name: "다낭", emoji: "🏖️", bg: "#FFE9DC", open: true },
-  { name: "호이안", emoji: "🏮", bg: "#FFF3D6" },
+  { name: "다낭·호이안", emoji: "🏖️", bg: "#FFE9DC", open: true },
   { name: "나트랑", emoji: "🌊", bg: "#DFF1FF" },
   { name: "푸꾸옥", emoji: "🏝️", bg: "#E2F6E9" },
   { name: "호치민", emoji: "🏙️", bg: "#EEEAFF" },
+  { name: "하노이", emoji: "🛵", bg: "#FFE9EC" },
 ];
 
 const MORE: Region[] = [
-  { name: "하노이", emoji: "🛵", bg: "#FFE9EC" },
   { name: "달랏", emoji: "⛰️", bg: "#E6F3E6" },
   { name: "무이네", emoji: "🏜️", bg: "#FFF0DB" },
   { name: "붕따우", emoji: "⚓", bg: "#E3F0FA" },
