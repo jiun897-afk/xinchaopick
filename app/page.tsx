@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AuthButton from "../components/AuthButton";
 
 export const revalidate = 60;
 
@@ -74,10 +75,7 @@ export default async function Home() {
             <a href="/doitac.html">Tiếng Việt</a>
             <a href="/admin.html">관리자</a>
           </nav>
-          <div className="hcta">
-            <Link className="btn ghost" href="/login">로그인</Link>
-            <Link className="btn pri" href="/login">시작하기</Link>
-          </div>
+          <AuthButton />
         </div>
       </header>
 
