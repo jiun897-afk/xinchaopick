@@ -35,6 +35,10 @@ const VI: Record<string, string> = {
   "+ 새 캠페인": "+ Chiến dịch mới",
   "내 업체 관리": "Quản lý cửa hàng",
   "크레딧 충전": "Nạp credit",
+  "캠페인": "Chiến dịch",
+  "총 신청": "Tổng đơn",
+  "리뷰 대기": "Review chờ",
+  "크레딧": "Credit",
   "사장님 센터는 로그인 후 이용할 수 있어요.": "Vui lòng đăng nhập để sử dụng Trung tâm đối tác.",
   "로그인하기": "Đăng nhập",
   "불러오는 중…": "Đang tải…",
@@ -74,6 +78,8 @@ export default function OwnerPage() {
   const [open, setOpen] = useState<string | null>(null);
   const [apps, setApps] = useState<Record<string, App[]>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [credit, setCredit] = useState<number | null>(null);
+  const [pendingReviews, setPendingReviews] = useState<number>(0);
 
   useEffect(() => {
     if (!supabase) {
@@ -88,12 +94,23 @@ export default function OwnerPage() {
         setGuest(true);
         return;
       }
-      const { data } = await supabase
-        .from("campaigns")
-        .select("id, store_name, category, offer, mission_type, quota, applied, status, image_url")
-        .eq("owner_id", session.user.id)
-        .order("created_at", { ascending: false });
+      const [{ data }, { data: w }, { count: pr }] = await Promise.all([
+        supabase
+          .from("campaigns")
+          .select("id, store_name, category, offer, mission_type, quota, applied, status, image_url")
+          .eq("owner_id", session.user.id)
+          .order("created_at", { ascending: false }),
+        supabase.from("owner_wallets").select("balance").maybeSingle(),
+        supabase
+          .from("applications")
+          .select("id, campaigns!inner(owner_id)", { count: "exact", head: true })
+          .eq("campaigns.owner_id", session.user.id)
+          .not("review_url", "is", null)
+          .is("review_approved_at", null),
+      ]);
       setList((data as Campaign[]) ?? []);
+      setCredit((w as any)?.balance ?? 0);
+      setPendingReviews(pr ?? 0);
     })();
   }, [supabase]);
 
@@ -200,12 +217,38 @@ export default function OwnerPage() {
         </Link>
       </div>
 
-      <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+      {!guest && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8, marginTop: 14 }}>
+          {[
+            { v: list === null ? "…" : String(list.length), l: t("캠페인"), href: null as string | null, hot: false },
+            { v: list === null ? "…" : String((list ?? []).reduce((a, c) => a + (c.applied ?? 0), 0)), l: t("총 신청"), href: null, hot: false },
+            { v: String(pendingReviews), l: t("리뷰 대기"), href: null, hot: pendingReviews > 0 },
+            { v: credit === null ? "…" : credit.toLocaleString() + "P", l: t("크레딧"), href: "/owner/topup", hot: false },
+          ].map((s2) =>
+            s2.href ? (
+              <Link key={s2.l} href={s2.href} style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "11px 6px", textAlign: "center" }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: "var(--brand-dark)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s2.v}</div>
+                <div style={{ fontSize: 10.5, color: "var(--ink3)", fontWeight: 700, marginTop: 2 }}>{s2.l} ›</div>
+              </Link>
+            ) : (
+              <div key={s2.l} style={{ border: "1px solid var(--line)", borderRadius: 12, padding: "11px 6px", textAlign: "center", background: s2.hot ? "var(--brand-bg)" : "#fff" }}>
+                <div style={{ fontSize: 15, fontWeight: 900, color: s2.hot ? "var(--brand-dark)" : "var(--ink)" }}>{s2.v}</div>
+                <div style={{ fontSize: 10.5, color: "var(--ink3)", fontWeight: 700, marginTop: 2 }}>{s2.l}</div>
+              </div>
+            )
+          )}
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
         <Link href="/owner/places" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
           {t("내 업체 관리")}
         </Link>
         <Link href="/owner/topup" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
           {t("크레딧 충전")}
+        </Link>
+        <Link href="/chat" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+          {t("채팅")}
         </Link>
       </div>
 

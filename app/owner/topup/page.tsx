@@ -21,6 +21,8 @@ const VI: Record<string, string> = {
   "① 아래로 입금 → ② 입금 정보 입력 → ③ 운영팀 확인 후 충전 완료": "① Chuyển khoản → ② Nhập thông tin → ③ Đội vận hành xác nhận là nạp xong",
   "입금할 계좌": "Chuyển vào tài khoản",
   "한국 계좌": "TK Hàn Quốc",
+  "계좌 복사": "Sao chép STK",
+  "복사됨!": "Đã sao chép!",
   "베트남 계좌": "TK Việt Nam",
   "베트남 계좌는 준비 중이에요 — 카카오톡 채널 @베자뷰로 문의해주세요": "Tài khoản Việt Nam đang chuẩn bị — liên hệ KakaoTalk @Bejaview hoặc Zalo",
   "입금자명": "Tên người chuyển khoản",
@@ -68,6 +70,7 @@ export default function TopupPage() {
   const [depositor, setDepositor] = useState("");
   const [amount, setAmount] = useState("");
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   async function load() {
@@ -183,8 +186,23 @@ export default function TopupPage() {
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 8, background: "var(--chip)", borderRadius: 10, padding: "11px 14px", fontSize: 12.5, fontWeight: 700, color: "var(--ink2)" }}>
-            {t(ACCOUNTS[bankType].info)}
+          <div style={{ marginTop: 8, background: "var(--chip)", borderRadius: 10, padding: "11px 14px", fontSize: 12.5, fontWeight: 700, color: "var(--ink2)", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ flex: "1 1 200px" }}>{t(ACCOUNTS[bankType].info)}</span>
+            {bankType === "KR" && (
+              <button
+                className="btn pri"
+                style={{ padding: "8px 13px", fontSize: 12, flexShrink: 0 }}
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText("201-073049-01-013");
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  } catch {}
+                }}
+              >
+                {copied ? t("복사됨!") : t("계좌 복사")}
+              </button>
+            )}
           </div>
 
           <label style={lbl}>{t("입금자명")}</label>
