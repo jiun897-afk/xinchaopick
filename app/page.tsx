@@ -142,14 +142,18 @@ export default async function Home() {
                       +{Number(c.reward_points).toLocaleString()}P
                     </span>
                   )}
+                  <span className="gbadge" style={{ top: "auto", bottom: 12, background: "rgba(20,15,10,.66)" }}>
+                    {c.applied}/{c.quota}팀
+                  </span>
                 </div>
                 <div className="ginfo">
                   <div className="gcat">{c.category}</div>
                   <div className="gname">{c.store_name}</div>
                   <div className="goffer">{c.offer}</div>
                   <div className="gmeta">
-                    {fmtDistance(c.distance_m)}
-                    {c.area ? " · " + c.area : ""} · {c.applied}/{c.quota}팀 · 1팀 {c.party_size ?? 2}인
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {c.area ?? "다낭"} · 1팀 {c.party_size ?? 2}인
+                    </span>
                     <span className="gpoint">{c.mission_type}</span>
                     {c.today_available && (
                       <span className="gpoint" style={{ marginLeft: 0, background: "#E8F7EF", color: "#1FA45B" }}>오늘 가능</span>
