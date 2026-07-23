@@ -7,6 +7,7 @@ import { getSupabase } from "../../lib/supabase";
 export default function LoginPage() {
   const supabase = getSupabase();
   const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [errMsg, setErrMsg] = useState("");
   const [userEmail, setUserEmail] = useState<string | null>(null);
@@ -39,6 +40,18 @@ export default function LoginPage() {
       setStatus("error");
     } else {
       setStatus("sent");
+    }
+  }
+
+  async function pwLogin() {
+    if (!supabase || !email.includes("@") || !pw) return;
+    setStatus("sending");
+    const { error } = await supabase.auth.signInWithPassword({ email, password: pw });
+    if (error) {
+      setErrMsg(error.message === "Invalid login credentials" ? "이메일 또는 비밀번호가 맞지 않아요." : error.message);
+      setStatus("error");
+    } else {
+      setStatus("idle");
     }
   }
 
@@ -98,6 +111,21 @@ export default function LoginPage() {
               메일함을 확인하세요! 받은 링크를 누르면 이 화면으로 돌아오면서 로그인됩니다.
             </div>
           )}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "20px 0 12px" }}>
+            <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+            <span style={{ fontSize: 11.5, color: "var(--ink3)", fontWeight: 700 }}>또는 비밀번호로 로그인</span>
+            <span style={{ flex: 1, height: 1, background: "var(--line)" }} />
+          </div>
+          <input
+            type="password"
+            placeholder="비밀번호"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && pwLogin()}
+          />
+          <button className="btn ghost" style={{ width: "100%", padding: "13px 0", marginTop: 8 }} onClick={pwLogin} disabled={status === "sending"}>
+            비밀번호로 로그인
+          </button>
           {status === "error" && <div className="notice err">오류: {errMsg}</div>}
         </>
       )}

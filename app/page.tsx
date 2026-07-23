@@ -1,6 +1,8 @@
 import Link from "next/link";
 import AuthButton from "../components/AuthButton";
 import Logo from "../components/Logo";
+import HomeBanner from "../components/HomeBanner";
+import RegionRow from "../components/RegionRow";
 
 export const revalidate = 60;
 
@@ -82,6 +84,8 @@ export default async function Home() {
         </div>
       </div>
 
+      <HomeBanner />
+
       <section className="list" id="campaigns">
         <div className="wrap">
           <div className="shead">
@@ -90,6 +94,7 @@ export default async function Home() {
               <div className="ssub">다낭 · 총 {list.length}개 캠페인</div>
             </div>
           </div>
+          <RegionRow />
           <div className="chips">
             <span className="chip on">전체</span><span className="chip">오늘 가능</span><span className="chip">로컬맛집</span><span className="chip">한식</span><span className="chip">마사지·스파</span><span className="chip">카페·디저트</span><span className="chip">투어·액티비티</span>
           </div>
