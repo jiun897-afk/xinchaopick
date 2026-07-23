@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import TabBar from "../components/TabBar";
 
 export const metadata: Metadata = {
   title: "씬짜오PICK — 베트남의 모든 체험, 리뷰로 돌려받다",
@@ -22,7 +23,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <TabBar />
+      </body>
     </html>
   );
 }

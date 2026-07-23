@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AuthButton from "../components/AuthButton";
+import Logo from "../components/Logo";
 
 export const revalidate = 60;
 
@@ -58,22 +59,10 @@ export default async function Home() {
     <>
       <header className="site">
         <div className="wrap hbar">
-          <Link className="hlogo" href="/">
-            <span className="mark">
-              <svg width="21" height="22" viewBox="0 0 120 124">
-                <path d="M60 118 C60 118 30 86 30 61 A30 30 0 1 1 90 61 C90 86 60 118 60 118 Z" fill="#ffffff" />
-                <circle cx="60" cy="59" r="12.5" fill="#F55B24" />
-                <path d="M60 6 C64 6 88 26 94 34 L26 34 C32 26 56 6 60 6 Z" fill="#FFDDBB" />
-                <path d="M18 34 Q60 46 102 34 Q98 40 60 42 Q22 40 18 34 Z" fill="#F3A469" />
-              </svg>
-            </span>
-            씬짜오<span className="pick">PICK</span>
-          </Link>
+          <Logo />
           <nav className="hnav">
             <a href="#campaigns">체험단 찾기</a>
-            <a href="/app.html">앱 미리보기</a>
-            <a href="/doitac.html">Tiếng Việt</a>
-            <a href="/admin.html">관리자</a>
+            <a href="/doitac.html">사장님 입점 문의</a>
           </nav>
           <AuthButton />
         </div>
@@ -81,10 +70,7 @@ export default async function Home() {
 
       <div className="hero">
         <div className="wrap">
-          <div className={"livebadge " + (live ? "on" : "off")}>
-            <span className="dot" />
-            {live ? "실시간 — 데이터베이스 연동됨" : "미리보기 데이터 (DB 연결 대기 중)"}
-          </div>
+          <div className="launch">다낭 정식 오픈 — 신청은 무료예요</div>
           <h1>
             베트남의 모든 체험,<br />
             <em>리뷰로 돌려받다</em>
@@ -103,6 +89,9 @@ export default async function Home() {
               <div className="stitle">지금 모집 중인 체험단</div>
               <div className="ssub">다낭 · 총 {list.length}개 캠페인</div>
             </div>
+          </div>
+          <div className="chips">
+            <span className="chip on">전체</span><span className="chip">오늘 가능</span><span className="chip">로컬맛집</span><span className="chip">한식</span><span className="chip">마사지·스파</span><span className="chip">카페·디저트</span><span className="chip">투어·액티비티</span>
           </div>
           <div className="grid">
             {list.map((c) => (
@@ -137,6 +126,8 @@ export default async function Home() {
             서울특별시 서초구 방배동 451-24 현성빌딩 3층 · 사업자등록번호 352-87-00902
             <br />
             고객센터 1666-0464 · 카카오톡 채널 @씬짜오픽 · help@xinchaopick.com
+            <br />
+            <a href="/doitac.html" style={{ textDecoration: "underline" }}>Dành cho chủ cửa hàng (Tiếng Việt)</a> · <a href="/app.html" style={{ textDecoration: "underline" }}>앱 디자인 시안</a> · <a href="/admin.html" style={{ textDecoration: "underline" }}>운영 콘솔</a>
           </div>
         </div>
       </footer>
