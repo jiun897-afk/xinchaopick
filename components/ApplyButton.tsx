@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../lib/supabase";
 
-type S = "loading" | "guest" | "can" | "applied" | "full" | "busy";
+type S = "loading" | "guest" | "can" | "applied" | "full";
 
 export default function ApplyButton({
   campaignId,
@@ -46,55 +46,56 @@ export default function ApplyButton({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, campaignId]);
 
-  async function apply() {
+  // 낙관적 UI: 누르는 즉시 완료로 표시하고, 저장은 뒤에서 처리 (실패 시 되돌림)
+  function apply() {
     if (!supabase) return;
-    setState("busy");
     setMsg("");
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
-      setState("guest");
-      return;
-    }
-    const { error } = await supabase
-      .from("applications")
-      .insert({ campaign_id: campaignId, user_id: session.user.id });
-    if (error) {
-      if (error.code === "23505") {
-        setState("applied");
+    setState("applied");
+    setCount((c) => c + 1);
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setState("guest");
+        setCount((c) => Math.max(c - 1, 0));
         return;
       }
-      setMsg("신청 중 문제가 생겼어요: " + error.message);
-      setState("can");
-      return;
-    }
-    setCount((c) => c + 1);
-    setState("applied");
+      const { error } = await supabase
+        .from("applications")
+        .insert({ campaign_id: campaignId, user_id: session.user.id });
+      if (error && error.code !== "23505") {
+        setState("can");
+        setCount((c) => Math.max(c - 1, 0));
+        setMsg("연결이 불안정해서 신청이 저장되지 않았어요. 다시 눌러주세요.");
+      }
+    })();
   }
 
-  async function cancel() {
+  function cancel() {
     if (!supabase) return;
-    setState("busy");
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
-      setState("guest");
-      return;
-    }
-    const { error } = await supabase
-      .from("applications")
-      .delete()
-      .eq("campaign_id", campaignId)
-      .eq("user_id", session.user.id);
-    if (error) {
-      setMsg("취소 중 문제가 생겼어요: " + error.message);
-      setState("applied");
-      return;
-    }
-    setCount((c) => Math.max(c - 1, 0));
+    setMsg("");
     setState("can");
+    setCount((c) => Math.max(c - 1, 0));
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setState("guest");
+        return;
+      }
+      const { error } = await supabase
+        .from("applications")
+        .delete()
+        .eq("campaign_id", campaignId)
+        .eq("user_id", session.user.id);
+      if (error) {
+        setState("applied");
+        setCount((c) => c + 1);
+        setMsg("연결이 불안정해서 취소가 저장되지 않았어요. 다시 눌러주세요.");
+      }
+    })();
   }
 
   const base: React.CSSProperties = {
@@ -122,11 +123,6 @@ export default function ApplyButton({
       {state === "can" && (
         <button className="btn pri" style={base} onClick={apply}>
           신청하기 — 무료 체험
-        </button>
-      )}
-      {state === "busy" && (
-        <button className="btn pri" style={{ ...base, opacity: 0.6 }} disabled>
-          처리 중…
         </button>
       )}
       {state === "applied" && (

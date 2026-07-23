@@ -2,7 +2,7 @@ import Link from "next/link";
 import ApplyButton from "../../components/ApplyButton";
 import AuthButton from "../../components/AuthButton";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 15;
 
 type Campaign = {
   id: string;
@@ -28,7 +28,7 @@ async function getCampaign(id: string): Promise<Campaign | null> {
   try {
     const res = await fetch(url + "/rest/v1/campaigns?id=eq." + encodeURIComponent(id) + "&limit=1", {
       headers: { apikey: key, Authorization: "Bearer " + key },
-      cache: "no-store",
+      next: { revalidate: 15 },
     });
     if (!res.ok) return null;
     const data = (await res.json()) as Campaign[];
