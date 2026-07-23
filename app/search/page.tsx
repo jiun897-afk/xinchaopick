@@ -66,14 +66,14 @@ export default function SearchPage() {
       </Link>
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
         <input
-          style={{ flex: 1, border: "1.5px solid var(--line)", borderRadius: 999, padding: "13px 18px", fontSize: 14.5, fontFamily: "inherit", outline: "none", background: "#fff" }}
+          style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 999, padding: "13px 18px", fontSize: 14.5, fontFamily: "inherit", outline: "none", background: "#fff" }}
           placeholder="맛집, 마사지, 업체 이름 검색"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && go()}
           autoFocus
         />
-        <button className="btn pri" style={{ padding: "0 20px", fontSize: 14, borderRadius: 999 }} onClick={go}>
+        <button className="btn pri" style={{ padding: "0 20px", fontSize: 14, borderRadius: 999, flexShrink: 0 }} onClick={go}>
           검색
         </button>
       </div>

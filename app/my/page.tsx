@@ -182,7 +182,7 @@ export default function MyPage() {
                   </div>
                   <div style={{ display: "flex", gap: 8 }}>
                     <input
-                      style={{ flex: 1, border: "1.5px solid var(--line)", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", background: "#fff" }}
+                      style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 10, padding: "10px 12px", fontSize: 13, fontFamily: "inherit", outline: "none", background: "#fff" }}
                       placeholder="https://blog.naver.com/..."
                       value={urls[r.id] ?? ""}
                       onChange={(e) => setUrls((m) => ({ ...m, [r.id]: e.target.value }))}
