@@ -50,6 +50,8 @@ export default function PlaceDetailPage() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
   const [notFound, setNotFound] = useState(false);
+  const [rvSort, setRvSort] = useState<"latest" | "high" | "low">("latest");
+  const [verOnly, setVerOnly] = useState(false);
 
   useEffect(() => {
     const pid = new URLSearchParams(window.location.search).get("id");
@@ -255,6 +257,32 @@ export default function PlaceDetailPage() {
 
       <h2 style={{ fontSize: 17, fontWeight: 900, marginTop: 28 }}>후기 {reviews.length}</h2>
 
+      <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+        {([
+          { v: "latest", l: "최신순" },
+          { v: "high", l: "별점 높은순" },
+          { v: "low", l: "별점 낮은순" },
+        ] as const).map((s) => (
+          <span
+            key={s.v}
+            onClick={() => setRvSort(s.v)}
+            style={{ fontSize: 11.5, fontWeight: 800, padding: "6px 12px", borderRadius: 999, cursor: "pointer", background: rvSort === s.v ? "var(--ink)" : "var(--chip)", color: rvSort === s.v ? "#fff" : "var(--ink2)" }}
+          >
+            {s.l}
+          </span>
+        ))}
+        <span
+          onClick={() => setVerOnly((v) => !v)}
+          style={{ fontSize: 11.5, fontWeight: 800, padding: "6px 12px", borderRadius: 999, cursor: "pointer", background: verOnly ? "var(--brand)" : "var(--chip)", color: verOnly ? "#fff" : "var(--ink2)" }}
+        >
+          체험단 인증만
+        </span>
+      </div>
+
+      {verOnly && reviews.filter((r) => r.verified).length === 0 && (
+        <div style={{ marginTop: 14, fontSize: 13, color: "var(--ink3)" }}>체험단 인증 후기가 아직 없어요.</div>
+      )}
+
       <div style={{ border: "1px solid var(--line)", borderRadius: 14, padding: "14px 16px", marginTop: 10 }}>
         <div style={{ fontSize: 13, fontWeight: 800 }}>별점 남기기</div>
         <div style={{ marginTop: 6 }}>
@@ -272,10 +300,14 @@ export default function PlaceDetailPage() {
         </button>
       </div>
 
-      {reviews.map((r) => (
+      {(verOnly ? reviews.filter((r) => r.verified) : [...reviews])
+        .sort((a, b) => (rvSort === "high" ? b.rating - a.rating : rvSort === "low" ? a.rating - b.rating : 0))
+        .map((r) => (
         <div key={r.id} style={{ borderBottom: "1px solid var(--line)", padding: "14px 2px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <b style={{ fontSize: 13.5 }}>{r.nickname}</b>
+            <Link href={"/reviewer?id=" + r.user_id} style={{ fontSize: 13.5, fontWeight: 800, textDecoration: "underline" }}>
+              {r.nickname}
+            </Link>
             {r.verified && (
               <span style={{ fontSize: 10, fontWeight: 900, background: "var(--brand-bg)", color: "var(--brand-dark)", borderRadius: 6, padding: "2px 7px" }}>
                 체험단 인증
