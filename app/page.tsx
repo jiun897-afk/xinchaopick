@@ -29,6 +29,23 @@ const FALLBACK: Campaign[] = [
   { id: "f6", store_name: "미케 발 마사지", category: "마사지·스파", offer: "발 마사지 60분 1인 · 25만동 한도", mission_type: "인스타그램", quota: 6, applied: 2, distance_m: 450, area: "미케비치", image_url: "https://images.unsplash.com/photo-1693578538512-fc66f318c833?w=800&q=75&fm=jpg&fit=crop", badge: "오늘 가능" },
 ];
 
+async function getBanners() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return [];
+  try {
+    const res = await fetch(url + "/rest/v1/banners?active=eq.true&order=sort.asc&select=id,tag,title,sub,href,bg,art,dark", {
+      headers: { apikey: key, Authorization: "Bearer " + key },
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
 async function getCampaigns(): Promise<{ list: Campaign[]; live: boolean }> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -56,7 +73,7 @@ function fmtDistance(m: number | null) {
 }
 
 export default async function Home() {
-  const { list, live } = await getCampaigns();
+  const [{ list, live }, banners] = await Promise.all([getCampaigns(), getBanners()]);
   return (
     <>
       <header className="site">
@@ -84,7 +101,7 @@ export default async function Home() {
         </div>
       </div>
 
-      <HomeBanner />
+      <HomeBanner banners={banners} />
 
       <section className="list" id="campaigns">
         <div className="wrap">

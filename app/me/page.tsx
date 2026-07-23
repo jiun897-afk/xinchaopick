@@ -95,6 +95,7 @@ export default function MePage() {
           { href: "/owner", label: "사장님 센터 (캠페인 등록·선정)" },
           { href: "/saved", label: "찜한 캠페인" },
           { href: "/app.html", label: "앱 디자인 시안 (설계도)" },
+          { href: "/admin/banners", label: "홈 배너 관리 (운영자)" },
           { href: "/admin.html", label: "운영 콘솔 (관리자)" },
           { href: "/partner", label: "사장님 입점 안내" },
         ].map((m) => (
