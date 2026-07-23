@@ -92,6 +92,7 @@ export default function MePage() {
       <div style={{ marginTop: 18, borderTop: "1px solid var(--line)" }}>
         {[
           { href: "/my", label: "내 신청 내역" },
+          { href: "/owner", label: "사장님 센터 (캠페인 등록·선정)" },
           { href: "/saved", label: "찜한 캠페인" },
           { href: "/app.html", label: "앱 디자인 시안 (설계도)" },
           { href: "/admin.html", label: "운영 콘솔 (관리자)" },

@@ -123,6 +123,11 @@ export default function PartnerPage() {
               <span>카카오톡 채널 @베자뷰</span>
               <span>help@bejaview.com</span>
             </div>
+            <div style={{ marginTop: 20 }}>
+              <Link className="btn pri" style={{ padding: "13px 24px", fontSize: 15, background: "#fff", color: "var(--ink)" }} href="/owner/new">
+                직접 캠페인 등록하기 (셀프, 10분)
+              </Link>
+            </div>
           </div>
         </div>
       </section>
