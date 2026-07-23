@@ -92,6 +92,23 @@ export default function PlaceDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, supabase]);
 
+  async function report(reviewId: string) {
+    if (!supabase) return;
+    if (!me) return setMsg("신고하려면 로그인해주세요.");
+    const reason = prompt("이 후기를 신고하는 이유를 알려주세요. (예: 허위 후기, 욕설, 광고)");
+    if (!reason || !reason.trim()) return;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
+    const { error } = await supabase.from("review_reports").insert({ review_id: reviewId, reporter_id: session.user.id, reason: reason.trim() });
+    if (error) {
+      alert(error.message.includes("duplicate") ? "이미 신고한 후기예요." : "신고 접수에 실패했어요.");
+    } else {
+      alert("신고가 접수됐어요. 운영팀이 확인 후 조치할게요.");
+    }
+  }
+
   async function submitReview() {
     if (!supabase || !id) return;
     setMsg("");
@@ -247,6 +264,9 @@ export default function PlaceDetailPage() {
             )}
             <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink3)" }}>
               {new Date(r.created_at).toLocaleDateString("ko-KR")}
+            </span>
+            <span onClick={() => report(r.id)} style={{ fontSize: 10.5, color: "var(--ink3)", cursor: "pointer", textDecoration: "underline", flexShrink: 0 }}>
+              신고
             </span>
           </div>
           <div style={{ marginTop: 4 }}>
