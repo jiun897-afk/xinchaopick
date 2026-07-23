@@ -3,6 +3,7 @@ import AuthButton from "../components/AuthButton";
 import Logo from "../components/Logo";
 import HomeBanner from "../components/HomeBanner";
 import RegionRow from "../components/RegionRow";
+import HomeSearch from "../components/HomeSearch";
 
 export const revalidate = 60;
 
@@ -89,7 +90,9 @@ export default async function Home() {
 
       <div className="hero">
         <div className="wrap">
-          <div className="launch">다낭 정식 오픈 — 신청은 무료예요</div>
+          <div className="launch">
+            <b>다낭 정식 오픈</b>&nbsp;· 신청 무료
+          </div>
           <h1>
             베트남의 모든 체험,<br />
             <em>리뷰로 돌려받다</em>
@@ -98,6 +101,7 @@ export default async function Home() {
             다낭 맛집·마사지·액티비티를 무료로 체험하고<br />
             네이버 블로그·유튜브·인스타그램에 솔직한 리뷰를 남겨보세요.
           </div>
+          <HomeSearch />
         </div>
       </div>
 

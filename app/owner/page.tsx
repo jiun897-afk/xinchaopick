@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import { useLang, LangToggle, mkT } from "../../lib/i18n";
 
 type Campaign = {
   id: string;
@@ -28,8 +29,45 @@ type App = {
   nickname?: string;
 };
 
+const VI: Record<string, string> = {
+  "사장님 센터": "Trung tâm đối tác",
+  "캠페인을 올리고, 신청한 리뷰어를 선정하세요": "Đăng chiến dịch và chọn reviewer",
+  "+ 새 캠페인": "+ Chiến dịch mới",
+  "내 업체 관리": "Quản lý cửa hàng",
+  "크레딧 충전": "Nạp credit",
+  "사장님 센터는 로그인 후 이용할 수 있어요.": "Vui lòng đăng nhập để sử dụng Trung tâm đối tác.",
+  "로그인하기": "Đăng nhập",
+  "불러오는 중…": "Đang tải…",
+  "아직 등록한 캠페인이 없어요": "Chưa có chiến dịch nào",
+  "첫 캠페인을 올리면 한국인 리뷰어들이 신청하기 시작해요.": "Đăng chiến dịch đầu tiên để reviewer Hàn Quốc bắt đầu ứng tuyển.",
+  "등록은 10분이면 충분해요.": "Chỉ mất khoảng 10 phút.",
+  "첫 캠페인 등록하기": "Đăng chiến dịch đầu tiên",
+  "신청": "Đơn",
+  "신청자 불러오는 중…": "Đang tải danh sách ứng tuyển…",
+  "아직 신청자가 없어요.": "Chưa có ai ứng tuyển.",
+  "선정됨": "Đã chọn",
+  "미선정": "Không chọn",
+  "완료": "Hoàn tất",
+  "대기": "Chờ",
+  "선정": "Chọn",
+  "취소": "Hủy",
+  "리뷰": "Review",
+  "리뷰 승인": "Duyệt review",
+  "문제제기": "Báo vấn đề",
+  "해결됨·승인": "Đã ổn · Duyệt",
+  "분쟁 신청": "Nhờ phân xử",
+  "운영팀 중재 중": "Đang phân xử",
+  "신청함": "ứng tuyển",
+  "어떤 문제가 있나요? (예: 사진과 다른 내용, 방문 확인 안 됨 등)\n문제제기하면 3일 자동확정이 멈추고 리뷰어와 협의하게 돼요.":
+    "Có vấn đề gì? (VD: nội dung không đúng, không xác nhận được lượt ghé thăm)\nSau khi báo vấn đề, tự động duyệt sau 3 ngày sẽ tạm dừng để hai bên trao đổi.",
+  "운영팀 중재(분쟁)를 신청할까요? 운영팀이 리뷰와 사유를 검토해 결정해요.":
+    "Yêu cầu đội vận hành phân xử? Đội vận hành sẽ xem review và lý do rồi quyết định.",
+};
+
 export default function OwnerPage() {
   const supabase = getSupabase();
+  const [lang, setLang] = useLang();
+  const t = mkT(lang, VI);
   const [guest, setGuest] = useState(false);
   const [list, setList] = useState<Campaign[] | null>(null);
   const [open, setOpen] = useState<string | null>(null);
@@ -97,7 +135,7 @@ export default function OwnerPage() {
 
   async function raiseIssue(cid: string, appId: string) {
     if (!supabase) return;
-    const reason = prompt("어떤 문제가 있나요? (예: 사진과 다른 내용, 방문 확인 안 됨 등)\n문제제기하면 3일 자동확정이 멈추고 리뷰어와 협의하게 돼요.");
+    const reason = prompt(t("어떤 문제가 있나요? (예: 사진과 다른 내용, 방문 확인 안 됨 등)\n문제제기하면 3일 자동확정이 멈추고 리뷰어와 협의하게 돼요."));
     if (!reason || !reason.trim()) return;
     setBusy(appId);
     const { error } = await supabase.rpc("raise_issue", { p_app_id: appId, p_reason: reason.trim() });
@@ -109,7 +147,7 @@ export default function OwnerPage() {
 
   async function escalate(cid: string, appId: string) {
     if (!supabase) return;
-    if (!confirm("운영팀 중재(분쟁)를 신청할까요? 운영팀이 리뷰와 사유를 검토해 결정해요.")) return;
+    if (!confirm(t("운영팀 중재(분쟁)를 신청할까요? 운영팀이 리뷰와 사유를 검토해 결정해요."))) return;
     setBusy(appId);
     const { error } = await supabase.rpc("escalate_dispute", { p_app_id: appId });
     if (!error) {
@@ -135,59 +173,64 @@ export default function OwnerPage() {
 
   const badge = (s: string) =>
     s === "selected"
-      ? { t: "선정됨", bg: "#E8F7EF", c: "#1FA45B" }
+      ? { t: t("선정됨"), bg: "#E8F7EF", c: "#1FA45B" }
       : s === "rejected"
-      ? { t: "미선정", bg: "#F5F2ED", c: "#9B948B" }
+      ? { t: t("미선정"), bg: "#F5F2ED", c: "#9B948B" }
       : s === "completed"
-      ? { t: "완료", bg: "#E8F0FE", c: "#1A56DB" }
-      : { t: "대기", bg: "#FFF4E0", c: "#8A6D1A" };
+      ? { t: t("완료"), bg: "#E8F0FE", c: "#1A56DB" }
+      : { t: t("대기"), bg: "#FFF4E0", c: "#8A6D1A" };
+
+  const dateLoc = lang === "vi" ? "vi-VN" : "ko-KR";
 
   return (
     <div className="wrap" style={{ maxWidth: 720, paddingTop: 24, paddingBottom: 90 }}>
-      <div style={{ display: "flex", alignItems: "center" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <div>
-          <h1 style={{ fontSize: 22, fontWeight: 900 }}>사장님 센터</h1>
+          <h1 style={{ fontSize: 22, fontWeight: 900 }}>{t("사장님 센터")}</h1>
           <div style={{ fontSize: 12.5, color: "var(--ink3)", marginTop: 3 }}>
-            캠페인을 올리고, 신청한 리뷰어를 선정하세요
+            {t("캠페인을 올리고, 신청한 리뷰어를 선정하세요")}
           </div>
         </div>
-        <Link className="btn pri" style={{ marginLeft: "auto", padding: "11px 16px", fontSize: 13.5 }} href="/owner/new">
-          + 새 캠페인
+        <span style={{ marginLeft: "auto" }}>
+          <LangToggle lang={lang} setLang={setLang} />
+        </span>
+        <Link className="btn pri" style={{ padding: "11px 16px", fontSize: 13.5, flexShrink: 0 }} href="/owner/new">
+          {t("+ 새 캠페인")}
         </Link>
       </div>
 
       <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
         <Link href="/owner/places" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
-          내 업체 관리
+          {t("내 업체 관리")}
         </Link>
         <Link href="/owner/topup" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
-          크레딧 충전
+          {t("크레딧 충전")}
         </Link>
       </div>
 
       {guest && (
         <div style={{ marginTop: 24 }}>
           <div style={{ background: "var(--chip)", borderRadius: 12, padding: "14px 16px", fontSize: 14 }}>
-            사장님 센터는 로그인 후 이용할 수 있어요.
+            {t("사장님 센터는 로그인 후 이용할 수 있어요.")}
           </div>
           <Link className="btn pri" style={{ marginTop: 14, padding: "13px 26px" }} href="/login">
-            로그인하기
+            {t("로그인하기")}
           </Link>
         </div>
       )}
 
-      {!guest && list === null && <div style={{ marginTop: 24, color: "var(--ink3)", fontSize: 14 }}>불러오는 중…</div>}
+      {!guest && list === null && <div style={{ marginTop: 24, color: "var(--ink3)", fontSize: 14 }}>{t("불러오는 중…")}</div>}
 
       {!guest && list !== null && list.length === 0 && (
         <div style={{ marginTop: 24, textAlign: "center", padding: "40px 20px" }}>
-          <div style={{ fontSize: 16, fontWeight: 800 }}>아직 등록한 캠페인이 없어요</div>
+          <div style={{ fontSize: 16, fontWeight: 800 }}>{t("아직 등록한 캠페인이 없어요")}</div>
           <p style={{ fontSize: 13.5, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
-            첫 캠페인을 올리면 한국인 리뷰어들이 신청하기 시작해요.
+            {t("첫 캠페인을 올리면 한국인 리뷰어들이 신청하기 시작해요.")}
             <br />
-            등록은 10분이면 충분해요.
+            {t("등록은 10분이면 충분해요.")}
           </p>
           <Link className="btn pri" style={{ marginTop: 18, padding: "13px 26px" }} href="/owner/new">
-            첫 캠페인 등록하기
+            {t("첫 캠페인 등록하기")}
           </Link>
         </div>
       )}
@@ -221,19 +264,19 @@ export default function OwnerPage() {
                 <div style={{ fontSize: 14, fontWeight: 900, color: "var(--brand-dark)" }}>
                   {c.applied}/{c.quota}
                 </div>
-                <div style={{ fontSize: 10.5, color: "var(--ink3)" }}>신청</div>
+                <div style={{ fontSize: 10.5, color: "var(--ink3)" }}>{t("신청")}</div>
               </div>
             </div>
             {open === c.id && (
               <div style={{ borderTop: "1px solid var(--line)", padding: "6px 16px 14px", background: "#FBFAF8" }}>
-                {!apps[c.id] && <div style={{ padding: "12px 0", fontSize: 13, color: "var(--ink3)" }}>신청자 불러오는 중…</div>}
+                {!apps[c.id] && <div style={{ padding: "12px 0", fontSize: 13, color: "var(--ink3)" }}>{t("신청자 불러오는 중…")}</div>}
                 {apps[c.id] && apps[c.id].length === 0 && (
-                  <div style={{ padding: "12px 0", fontSize: 13, color: "var(--ink3)" }}>아직 신청자가 없어요.</div>
+                  <div style={{ padding: "12px 0", fontSize: 13, color: "var(--ink3)" }}>{t("아직 신청자가 없어요.")}</div>
                 )}
                 {(apps[c.id] ?? []).map((a) => {
                   const b = badge(a.status);
                   return (
-                    <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", borderBottom: "1px solid var(--line)" }}>
+                    <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 0", borderBottom: "1px solid var(--line)", flexWrap: "wrap" }}>
                       <div
                         style={{
                           width: 34,
@@ -253,23 +296,25 @@ export default function OwnerPage() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13.5, fontWeight: 800 }}>{a.nickname}</div>
-                        <div style={{ fontSize: 10.5, color: "var(--ink3)" }}>{new Date(a.created_at).toLocaleDateString("ko-KR")} 신청</div>
+                        <div style={{ fontSize: 10.5, color: "var(--ink3)" }}>
+                          {new Date(a.created_at).toLocaleDateString(dateLoc)} {t("신청함")}
+                        </div>
                       </div>
                       <span style={{ background: b.bg, color: b.c, fontSize: 10.5, fontWeight: 800, borderRadius: 7, padding: "4px 9px" }}>{b.t}</span>
                       {a.review_url && (
                         <a href={a.review_url} target="_blank" rel="noreferrer" style={{ fontSize: 11.5, fontWeight: 800, textDecoration: "underline", color: "var(--brand-dark)", flexShrink: 0 }}>
-                          리뷰
+                          {t("리뷰")}
                         </a>
                       )}
                       {a.review_url && !a.review_approved_at && a.dispute_status === "dispute" ? (
-                        <span style={{ fontSize: 11, fontWeight: 800, color: "#C0392B", flexShrink: 0 }}>운영팀 중재 중</span>
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#C0392B", flexShrink: 0 }}>{t("운영팀 중재 중")}</span>
                       ) : a.review_url && !a.review_approved_at && a.dispute_status === "issue" ? (
                         <>
                           <button className="btn pri" style={{ padding: "8px 11px", fontSize: 11.5 }} disabled={busy === a.id} onClick={() => approveReview(c.id, a.id)}>
-                            해결됨·승인
+                            {t("해결됨·승인")}
                           </button>
                           <button className="btn ghost" style={{ padding: "8px 11px", fontSize: 11.5, color: "#C0392B" }} disabled={busy === a.id} onClick={() => escalate(c.id, a.id)}>
-                            분쟁 신청
+                            {t("분쟁 신청")}
                           </button>
                         </>
                       ) : a.review_url && !a.review_approved_at ? (
@@ -280,10 +325,10 @@ export default function OwnerPage() {
                             disabled={busy === a.id}
                             onClick={() => approveReview(c.id, a.id)}
                           >
-                            리뷰 승인
+                            {t("리뷰 승인")}
                           </button>
                           <button className="btn ghost" style={{ padding: "8px 10px", fontSize: 11.5 }} disabled={busy === a.id} onClick={() => raiseIssue(c.id, a.id)}>
-                            문제제기
+                            {t("문제제기")}
                           </button>
                         </>
                       ) : a.review_approved_at ? null : a.status !== "selected" ? (
@@ -293,7 +338,7 @@ export default function OwnerPage() {
                           disabled={busy === a.id}
                           onClick={() => setStatus(c.id, a.id, "selected")}
                         >
-                          선정
+                          {t("선정")}
                         </button>
                       ) : (
                         <button
@@ -302,7 +347,7 @@ export default function OwnerPage() {
                           disabled={busy === a.id}
                           onClick={() => setStatus(c.id, a.id, "pending")}
                         >
-                          취소
+                          {t("취소")}
                         </button>
                       )}
                     </div>

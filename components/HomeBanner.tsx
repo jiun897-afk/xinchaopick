@@ -98,19 +98,7 @@ export default function HomeBanner({ banners }: { banners?: BannerData[] }) {
           }}
         >
           {list.map((b) => (
-            <a
-              key={b.id}
-              href={b.href}
-              style={{
-                flex: "0 0 100%",
-                position: "relative",
-                display: "block",
-                background: b.bg,
-                padding: "22px 24px 24px",
-                minHeight: 128,
-                overflow: "hidden",
-              }}
-            >
+            <a key={b.id} href={b.href} className="bnr" style={{ background: b.bg }}>
               {ARTS[b.art] ?? null}
               <span
                 style={{
@@ -126,16 +114,7 @@ export default function HomeBanner({ banners }: { banners?: BannerData[] }) {
               >
                 {b.tag}
               </span>
-              <div
-                style={{
-                  marginTop: 8,
-                  fontSize: 18.5,
-                  fontWeight: 900,
-                  lineHeight: 1.32,
-                  letterSpacing: "-0.02em",
-                  color: b.dark ? "#fff" : "var(--ink)",
-                }}
-              >
+              <div className="bnrt" style={{ color: b.dark ? "#fff" : "var(--ink)" }}>
                 {b.title.split("\n").map((t, k) => (
                   <span key={k}>
                     {k > 0 && <br />}
@@ -143,9 +122,7 @@ export default function HomeBanner({ banners }: { banners?: BannerData[] }) {
                   </span>
                 ))}
               </div>
-              <div style={{ marginTop: 6, fontSize: 12.5, fontWeight: 600, color: b.dark ? "rgba(255,255,255,.82)" : "var(--ink2)" }}>
-                {b.sub}
-              </div>
+              <div className="bnrs" style={{ color: b.dark ? "rgba(255,255,255,.82)" : "var(--ink2)" }}>{b.sub}</div>
             </a>
           ))}
         </div>
