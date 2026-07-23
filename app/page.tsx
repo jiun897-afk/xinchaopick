@@ -84,6 +84,12 @@ export default async function Home() {
             <a href="#campaigns">체험단 찾기</a>
             <a href="/partner">사장님 입점 문의</a>
           </nav>
+          <a href="/search" className="hsearch-ico" aria-label="검색">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2.4" strokeLinecap="round">
+              <circle cx="11" cy="11" r="7" />
+              <path d="M21 21l-4.3-4.3" />
+            </svg>
+          </a>
           <AuthButton />
         </div>
       </header>
