@@ -20,7 +20,29 @@ type Campaign = {
   today_available: boolean;
   deadline: string | null;
   created_at: string;
+  reward_points: number | null;
+  party_size: number | null;
+  place_id: string | null;
 };
+
+type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string } | null;
+
+async function getPlace(id: string): Promise<PlaceInfo> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  try {
+    const res = await fetch(url + "/rest/v1/places?id=eq." + encodeURIComponent(id) + "&select=id,name,address,maps_url,phone&limit=1", {
+      headers: { apikey: key, Authorization: "Bearer " + key },
+      next: { revalidate: 60 },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data[0] ?? null;
+  } catch {
+    return null;
+  }
+}
 
 async function getCampaign(id: string): Promise<Campaign | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -57,6 +79,7 @@ export default async function CampaignPage({
 }) {
   const id = searchParams?.id ?? "";
   const c = id ? await getCampaign(id) : null;
+  const place = c?.place_id ? await getPlace(c.place_id) : null;
 
   if (!c) {
     return (
@@ -119,6 +142,7 @@ export default async function CampaignPage({
           <h1 style={{ fontSize: 27, fontWeight: 900, marginTop: 4 }}>{c.store_name}</h1>
           <div style={{ fontSize: 13.5, color: "var(--ink3)", marginTop: 6 }}>
             {c.area ?? "다낭"}
+            {" · 1팀 " + (c.party_size ?? 2) + "인 · " + c.quota + "팀 모집"}
             {c.distance_m != null
               ? " · " + (c.distance_m >= 1000 ? (c.distance_m / 1000).toFixed(1) + "km" : c.distance_m + "m")
               : ""}
@@ -137,10 +161,34 @@ export default async function CampaignPage({
         >
           <div style={{ fontSize: 12, fontWeight: 800, color: "var(--brand-dark)" }}>제공 내역</div>
           <div style={{ fontSize: 16.5, fontWeight: 800, marginTop: 5, lineHeight: 1.5 }}>{c.offer}</div>
+          {(c.reward_points ?? 0) > 0 && (
+            <div style={{ marginTop: 10, display: "inline-block", background: "var(--brand)", color: "#fff", fontSize: 13.5, fontWeight: 900, borderRadius: 10, padding: "7px 13px" }}>
+              + 포인트 {Number(c.reward_points).toLocaleString()}P 지급 (리뷰 승인 시)
+            </div>
+          )}
           <div style={{ fontSize: 12, color: "var(--ink2)", marginTop: 8 }}>
             체험 비용은 전액 무료예요. 명시된 한도를 넘는 부분만 직접 결제합니다.
           </div>
         </div>
+
+        {place && (
+          <div style={{ marginTop: 14, border: "1px solid var(--line)", borderRadius: 16, padding: "16px 20px" }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink3)" }}>방문 장소</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
+              <div style={{ flex: "1 1 200px", minWidth: 0 }}>
+                <Link href={"/place?id=" + place.id} style={{ fontSize: 15.5, fontWeight: 800, textDecoration: "underline" }}>
+                  {place.name}
+                </Link>
+                {place.address && <div style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 3 }}>{place.address}</div>}
+              </div>
+              {place.maps_url && (
+                <a className="btn pri" style={{ padding: "10px 16px", fontSize: 13, flexShrink: 0 }} href={place.maps_url} target="_blank" rel="noreferrer">
+                  지도에서 보기
+                </a>
+              )}
+            </div>
+          </div>
+        )}
 
         <div style={{ marginTop: 14, border: "1px solid var(--line)", borderRadius: 16, padding: "18px 20px" }}>
           <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink3)" }}>미션</div>

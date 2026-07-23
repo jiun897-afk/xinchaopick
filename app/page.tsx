@@ -19,6 +19,8 @@ type Campaign = {
   area: string | null;
   image_url: string | null;
   badge: string | null;
+  reward_points?: number | null;
+  party_size?: number | null;
 };
 
 const FALLBACK: Campaign[] = [
@@ -127,6 +129,11 @@ export default async function Home() {
                   style={c.image_url ? { backgroundImage: "url(" + c.image_url + ")" } : undefined}
                 >
                   {c.badge ? <span className="gbadge hot">{c.badge}</span> : null}
+                  {(c.reward_points ?? 0) > 0 && (
+                    <span className="gbadge" style={{ left: "auto", right: 12, background: "rgba(20,15,10,.78)" }}>
+                      +{Number(c.reward_points).toLocaleString()}P
+                    </span>
+                  )}
                 </div>
                 <div className="ginfo">
                   <div className="gcat">{c.category}</div>
@@ -134,7 +141,7 @@ export default async function Home() {
                   <div className="goffer">{c.offer}</div>
                   <div className="gmeta">
                     {fmtDistance(c.distance_m)}
-                    {c.area ? " · " + c.area : ""} · 신청 {c.applied}/{c.quota}
+                    {c.area ? " · " + c.area : ""} · {c.applied}/{c.quota}팀 · 1팀 {c.party_size ?? 2}인
                     <span className="gpoint">{c.mission_type}</span>
                   </div>
                 </div>
