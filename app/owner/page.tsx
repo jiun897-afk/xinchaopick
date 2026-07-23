@@ -21,6 +21,8 @@ type App = {
   user_id: string;
   status: string;
   created_at: string;
+  review_url: string | null;
+  review_approved_at: string | null;
   nickname?: string;
 };
 
@@ -63,7 +65,7 @@ export default function OwnerPage() {
     if (!apps[cid] && supabase) {
       const { data } = await supabase
         .from("applications")
-        .select("id, user_id, status, created_at")
+        .select("id, user_id, status, created_at, review_url, review_approved_at")
         .eq("campaign_id", cid)
         .order("created_at", { ascending: true });
       let rows = (data as App[]) ?? [];
@@ -91,11 +93,28 @@ export default function OwnerPage() {
     setBusy(null);
   }
 
+  async function approveReview(cid: string, appId: string) {
+    if (!supabase) return;
+    setBusy(appId);
+    const { error } = await supabase.rpc("approve_review", { p_app_id: appId });
+    if (!error) {
+      setApps((a) => ({
+        ...a,
+        [cid]: (a[cid] ?? []).map((r) => (r.id === appId ? { ...r, status: "completed", review_approved_at: new Date().toISOString() } : r)),
+      }));
+    } else {
+      alert(error.message);
+    }
+    setBusy(null);
+  }
+
   const badge = (s: string) =>
     s === "selected"
       ? { t: "선정됨", bg: "#E8F7EF", c: "#1FA45B" }
       : s === "rejected"
       ? { t: "미선정", bg: "#F5F2ED", c: "#9B948B" }
+      : s === "completed"
+      ? { t: "완료", bg: "#E8F0FE", c: "#1A56DB" }
       : { t: "대기", bg: "#FFF4E0", c: "#8A6D1A" };
 
   return (
@@ -203,7 +222,21 @@ export default function OwnerPage() {
                         <div style={{ fontSize: 10.5, color: "var(--ink3)" }}>{new Date(a.created_at).toLocaleDateString("ko-KR")} 신청</div>
                       </div>
                       <span style={{ background: b.bg, color: b.c, fontSize: 10.5, fontWeight: 800, borderRadius: 7, padding: "4px 9px" }}>{b.t}</span>
-                      {a.status !== "selected" ? (
+                      {a.review_url && (
+                        <a href={a.review_url} target="_blank" rel="noreferrer" style={{ fontSize: 11.5, fontWeight: 800, textDecoration: "underline", color: "var(--brand-dark)", flexShrink: 0 }}>
+                          리뷰
+                        </a>
+                      )}
+                      {a.review_url && !a.review_approved_at ? (
+                        <button
+                          className="btn pri"
+                          style={{ padding: "8px 13px", fontSize: 12 }}
+                          disabled={busy === a.id}
+                          onClick={() => approveReview(c.id, a.id)}
+                        >
+                          리뷰 승인
+                        </button>
+                      ) : a.review_approved_at ? null : a.status !== "selected" ? (
                         <button
                           className="btn pri"
                           style={{ padding: "8px 13px", fontSize: 12 }}

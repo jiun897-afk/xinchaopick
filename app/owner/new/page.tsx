@@ -39,6 +39,8 @@ export default function NewCampaignPage() {
   const [quota, setQuota] = useState(5);
   const [area, setArea] = useState(AREAS[0]);
   const [today, setToday] = useState(false);
+  const [rewardType, setRewardType] = useState<"free" | "point">("free");
+  const [rewardPoints, setRewardPoints] = useState(30000);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -64,6 +66,7 @@ export default function NewCampaignPage() {
       quota,
       area,
       today_available: today,
+      reward_points: rewardType === "point" ? rewardPoints : 0,
       badge: "NEW",
       status: "active",
       image_url: DEFAULT_IMG[category] ?? DEFAULT_IMG["로컬맛집"],
@@ -128,6 +131,46 @@ export default function NewCampaignPage() {
           </select>
         </div>
       </div>
+
+      <label style={labelStyle}>보상 방식</label>
+      <div style={{ display: "flex", gap: 8 }}>
+        {[
+          { v: "free" as const, t: "무료 체험 제공", d: "체험 제공이 보상 (기본)" },
+          { v: "point" as const, t: "체험 + 포인트 지급", d: "리뷰 승인 시 포인트 지급" },
+        ].map((o) => (
+          <div
+            key={o.v}
+            onClick={() => setRewardType(o.v)}
+            style={{
+              flex: 1,
+              border: rewardType === o.v ? "2px solid var(--brand)" : "1.5px solid var(--line)",
+              background: rewardType === o.v ? "var(--brand-bg)" : "#fff",
+              borderRadius: 12,
+              padding: "12px 13px",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ fontSize: 13.5, fontWeight: 800 }}>{o.t}</div>
+            <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 3 }}>{o.d}</div>
+          </div>
+        ))}
+      </div>
+      {rewardType === "point" && (
+        <>
+          <label style={labelStyle}>리뷰어 1명당 지급 포인트 (1P = 1원)</label>
+          <select style={inputStyle} value={rewardPoints} onChange={(e) => setRewardPoints(Number(e.target.value))}>
+            {[10000, 20000, 30000, 50000, 70000, 100000, 150000, 200000].map((p) => (
+              <option key={p} value={p}>
+                {p.toLocaleString()}P
+              </option>
+            ))}
+          </select>
+          <div style={{ background: "var(--brand-bg)", borderRadius: 10, padding: "10px 13px", fontSize: 11.5, color: "var(--brand-dark)", lineHeight: 1.6, marginTop: 8, fontWeight: 700 }}>
+            리뷰어가 리뷰를 올리고 사장님이 "리뷰 승인"을 누르면 자동 지급돼요. 포인트 캠페인은 지급할 크레딧이
+            필요해요 — 충전은 고객센터(카카오톡 @베자뷰)로 문의해주세요.
+          </div>
+        </>
+      )}
 
       <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
         <input type="checkbox" checked={today} onChange={(e) => setToday(e.target.checked)} style={{ width: 18, height: 18 }} />
