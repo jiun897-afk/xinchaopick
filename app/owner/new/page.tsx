@@ -54,7 +54,8 @@ const VI: Record<string, string> = {
   "체험 제공이 보상 (기본)": "Phần thưởng là trải nghiệm (mặc định)",
   "체험 + 포인트 지급": "Trải nghiệm + điểm thưởng",
   "리뷰 승인 시 포인트 지급": "Trả điểm khi duyệt review",
-  "리뷰어 1명당 지급 포인트 (1P = 1원)": "Điểm thưởng mỗi reviewer (1P = 1 KRW)",
+  "1팀당 지급 포인트 (1P = 1원)": "Điểm thưởng mỗi nhóm (1P = 1 KRW)",
+  "보유 크레딧에 맞춰 자동 조정됐어요 — 1팀당 최대 ": "Đã tự điều chỉnh theo credit hiện có — tối đa mỗi nhóm ",
   "필요 크레딧: ": "Credit cần: ",
   "내 보유 크레딧: ": "Credit hiện có: ",
   "— 부족해요! ": "— chưa đủ! ",
@@ -110,6 +111,7 @@ export default function NewCampaignPage() {
   const [today, setToday] = useState(false);
   const [rewardType, setRewardType] = useState<"free" | "point">("free");
   const [rewardInput, setRewardInput] = useState("");
+  const [clamped, setClamped] = useState(false);
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -302,14 +304,30 @@ export default function NewCampaignPage() {
 
       {rewardType === "point" && (
         <>
-          <label style={labelStyle}>{t("리뷰어 1명당 지급 포인트 (1P = 1원)")}</label>
+          <label style={labelStyle}>{t("1팀당 지급 포인트 (1P = 1원)")}</label>
           <input
             style={inputStyle}
             inputMode="numeric"
-            value={rewardInput}
-            onChange={(e) => setRewardInput(e.target.value)}
+            value={rewardPoints ? rewardPoints.toLocaleString() : ""}
+            onChange={(e) => {
+              let v = Number(e.target.value.replace(/[^0-9]/g, "")) || 0;
+              const maxPer = Math.max(0, Math.floor(credit / quota));
+              if (v > maxPer) {
+                v = maxPer;
+                setClamped(true);
+              } else {
+                setClamped(false);
+              }
+              setRewardInput(String(v));
+            }}
             placeholder={t("예: 30000")}
           />
+          {clamped && (
+            <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: "#8A6D1A" }}>
+              {t("보유 크레딧에 맞춰 자동 조정됐어요 — 1팀당 최대 ")}
+              {Math.max(0, Math.floor(credit / quota)).toLocaleString()}P
+            </div>
+          )}
           <div
             style={{
               background: lack ? "#FDECEA" : "var(--brand-bg)",
@@ -322,7 +340,7 @@ export default function NewCampaignPage() {
               color: lack ? "#C0392B" : "var(--brand-dark)",
             }}
           >
-            {t("필요 크레딧: ")}{needed.toLocaleString()}P ({rewardPoints.toLocaleString()}P × {quota})
+            {t("필요 크레딧: ")}{needed.toLocaleString()}P ({rewardPoints.toLocaleString()}P × {quota}{lang === "vi" ? " nhóm" : "팀"})
             <br />
             {t("내 보유 크레딧: ")}{credit.toLocaleString()}P
             {lack && (

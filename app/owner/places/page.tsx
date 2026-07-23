@@ -28,9 +28,14 @@ const VI: Record<string, string> = {
   "구글맵 링크 (지도에서 보기 버튼에 사용)": "Link Google Maps (cho nút xem bản đồ)",
   "구글맵에서 가게 검색 → 공유 → 링크 복사해서 붙여넣으면 돼요": "Tìm trên Google Maps → Chia sẻ → Sao chép link rồi dán vào",
   "소개 (선택)": "Giới thiệu (tùy chọn)",
-  "지도에서 위치 지정": "Chọn vị trí trên bản đồ",
-  "지도를 탭하면 핀이 꽂혀요 — 이 위치가 지도 탭에 노출돼요": "Chạm vào bản đồ để ghim — vị trí này sẽ hiển thị trên tab bản đồ",
-  "위치 지정 완료!": "Đã chọn vị trí!",
+  "위치 찾기": "Tìm vị trí",
+  "찾는 중…": "Đang tìm…",
+  "주소를 먼저 입력해주세요.": "Vui lòng nhập địa chỉ trước.",
+  "주소를 입력하고 위치 찾기를 누르면 지도에 핀이 자동으로 찍혀요": "Nhập địa chỉ rồi bấm Tìm vị trí — ghim sẽ tự động hiển thị trên bản đồ",
+  "위치를 찾았어요! 아래 지도에서 확인해주세요.": "Đã tìm thấy! Kiểm tra trên bản đồ bên dưới.",
+  "주소를 찾지 못했어요. 베트남어/영문 도로명 주소로 다시 시도해보세요.": "Không tìm thấy địa chỉ. Thử lại với địa chỉ tiếng Việt/tiếng Anh.",
+  "위치 검색에 실패했어요. 잠시 후 다시 시도해주세요.": "Tìm vị trí thất bại. Vui lòng thử lại sau.",
+  "위치 확인 (확대해서 볼 수 있어요)": "Xác nhận vị trí (có thể phóng to)",
   "가게 소개, 대표 메뉴, 한국어 가능 여부 등": "Giới thiệu, món/dịch vụ tiêu biểu, có nói tiếng Hàn không…",
   "업체 이름을 입력해주세요.": "Vui lòng nhập tên cửa hàng.",
   "로그인이 필요해요.": "Cần đăng nhập.",
@@ -121,6 +126,33 @@ export default function OwnerPlacesPage() {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
+  const [geoBusy, setGeoBusy] = useState(false);
+  const [geoMsg, setGeoMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function geocode() {
+    setGeoMsg(null);
+    if (!form.address.trim()) return setGeoMsg({ ok: false, text: t("주소를 먼저 입력해주세요.") });
+    setGeoBusy(true);
+    const cityMap: Record<string, string> = { "다낭": "Da Nang", "호이안": "Hoi An", "나트랑": "Nha Trang", "푸꾸옥": "Phu Quoc", "호치민": "Ho Chi Minh City", "하노이": "Ha Noi" };
+    const q = form.address.trim() + ", " + (cityMap[form.area] ?? "") + ", Vietnam";
+    try {
+      const r = await fetch("https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(q), {
+        headers: { "Accept-Language": "en" },
+      });
+      const d = await r.json();
+      if (Array.isArray(d) && d[0]) {
+        const la = parseFloat(d[0].lat);
+        const ln = parseFloat(d[0].lon);
+        setForm((f) => ({ ...f, lat: la, lng: ln }));
+        setGeoMsg({ ok: true, text: t("위치를 찾았어요! 아래 지도에서 확인해주세요.") });
+      } else {
+        setGeoMsg({ ok: false, text: t("주소를 찾지 못했어요. 베트남어/영문 도로명 주소로 다시 시도해보세요.") });
+      }
+    } catch {
+      setGeoMsg({ ok: false, text: t("위치 검색에 실패했어요. 잠시 후 다시 시도해주세요.") });
+    }
+    setGeoBusy(false);
+  }
 
   async function load() {
     if (!supabase) return;
@@ -267,7 +299,14 @@ export default function OwnerPlacesPage() {
           </div>
 
           <label style={lbl}>{t("주소")}</label>
-          <input style={inp} value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="예: 123 Võ Nguyên Giáp, Mỹ Khê" />
+          <div style={{ display: "flex", gap: 8 }}>
+            <input style={{ ...inp, flex: 1, minWidth: 0 }} value={form.address} onChange={(e) => set("address", e.target.value)} placeholder="예: 123 Võ Nguyên Giáp, Mỹ Khê" />
+            <button className="btn pri" style={{ padding: "0 14px", fontSize: 12.5, flexShrink: 0 }} onClick={geocode} disabled={geoBusy}>
+              {geoBusy ? t("찾는 중…") : t("위치 찾기")}
+            </button>
+          </div>
+          <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 4 }}>{t("주소를 입력하고 위치 찾기를 누르면 지도에 핀이 자동으로 찍혀요")}</div>
+          {geoMsg && <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: geoMsg.ok ? "#1FA45B" : "#C0392B" }}>{geoMsg.text}</div>}
 
           <label style={lbl}>{t("구글맵 링크 (지도에서 보기 버튼에 사용)")}</label>
           <input style={inp} value={form.maps_url} onChange={(e) => set("maps_url", e.target.value)} placeholder="https://maps.app.goo.gl/..." />
@@ -275,11 +314,11 @@ export default function OwnerPlacesPage() {
             {t("구글맵에서 가게 검색 → 공유 → 링크 복사해서 붙여넣으면 돼요")}
           </div>
 
-          <label style={lbl}>{t("지도에서 위치 지정")}</label>
-          <div style={{ fontSize: 11, color: "var(--ink3)", marginBottom: 6 }}>{t("지도를 탭하면 핀이 꽂혀요 — 이 위치가 지도 탭에 노출돼요")}</div>
-          {open && <MapPicker lat={form.lat} lng={form.lng} onPick={(la, ln) => setForm((f) => ({ ...f, lat: la, lng: ln }))} />}
           {form.lat != null && (
-            <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)", marginTop: 5 }}>{t("위치 지정 완료!")}</div>
+            <>
+              <label style={lbl}>{t("위치 확인 (확대해서 볼 수 있어요)")}</label>
+              <MapPicker lat={form.lat} lng={form.lng} />
+            </>
           )}
 
           <label style={lbl}>{t("소개 (선택)")}</label>
