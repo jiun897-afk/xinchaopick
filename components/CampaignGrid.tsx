@@ -89,7 +89,7 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
               <div className="goffer">
                 {c.offer.split("·").map((part, i) => {
                   const p = part.trim();
-                  const hot = /무료|한도|만동|원/.test(p);
+                  const hot = /무료|한도|만동|원|₫|상당/.test(p);
                   return (
                     <span key={i} style={hot ? { color: "var(--brand-dark)", fontWeight: 800 } : undefined}>
                       {i > 0 ? " · " : ""}

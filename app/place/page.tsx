@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import { Coupon, couponTitle, couponCond, couponValid } from "../../lib/coupon";
+import PhotoUploader from "../../components/PhotoUploader";
 
 type Place = {
   id: string;
@@ -19,7 +20,7 @@ type Place = {
   photos: string[] | null;
 };
 type Camp = { id: string; offer: string; mission_type: string; quota: number; applied: number; status: string };
-type Review = { id: string; user_id: string; rating: number; content: string; verified: boolean; created_at: string; nickname?: string };
+type Review = { id: string; user_id: string; rating: number; content: string; verified: boolean; created_at: string; photos: string[] | null; nickname?: string };
 
 function Stars({ n, size = 14, onPick }: { n: number; size?: number; onPick?: (v: number) => void }) {
   return (
@@ -52,6 +53,8 @@ export default function PlaceDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [rvSort, setRvSort] = useState<"latest" | "high" | "low">("latest");
   const [verOnly, setVerOnly] = useState(false);
+  const [photoOnly, setPhotoOnly] = useState(false);
+  const [rvPhotos, setRvPhotos] = useState<string[]>([]);
 
   useEffect(() => {
     const pid = new URLSearchParams(window.location.search).get("id");
@@ -62,7 +65,7 @@ export default function PlaceDetailPage() {
     if (!supabase) return;
     const { data: r } = await supabase
       .from("place_reviews")
-      .select("id, user_id, rating, content, verified, created_at")
+      .select("id, user_id, rating, content, verified, created_at, photos")
       .eq("place_id", pid)
       .order("created_at", { ascending: false });
     let rows = (r as Review[]) ?? [];
@@ -121,11 +124,12 @@ export default function PlaceDetailPage() {
     if (!me) return setMsg("후기를 남기려면 로그인해주세요.");
     if (rating === 0) return setMsg("별점을 선택해주세요.");
     setBusy(true);
-    const { error } = await supabase.rpc("add_place_review", { p_place_id: id, p_rating: rating, p_content: content.trim() });
+    const { error } = await supabase.rpc("add_place_review", { p_place_id: id, p_rating: rating, p_content: content.trim(), p_photos: rvPhotos });
     setBusy(false);
     if (error) return setMsg(error.message);
     setRating(0);
     setContent("");
+    setRvPhotos([]);
     setMsg("후기가 등록됐어요!");
     loadReviews(id);
   }
@@ -277,6 +281,12 @@ export default function PlaceDetailPage() {
         >
           체험단 인증만
         </span>
+        <span
+          onClick={() => setPhotoOnly((v) => !v)}
+          style={{ fontSize: 11.5, fontWeight: 800, padding: "6px 12px", borderRadius: 999, cursor: "pointer", background: photoOnly ? "var(--brand)" : "var(--chip)", color: photoOnly ? "#fff" : "var(--ink2)" }}
+        >
+          📷 사진 후기만
+        </span>
       </div>
 
       {verOnly && reviews.filter((r) => r.verified).length === 0 && (
@@ -294,6 +304,9 @@ export default function PlaceDetailPage() {
           value={content}
           onChange={(e) => setContent(e.target.value)}
         />
+        <div style={{ marginTop: 10 }}>
+          <PhotoUploader photos={rvPhotos} onChange={setRvPhotos} addLabel="사진" mainLabel="대표" />
+        </div>
         {msg && <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 700, color: msg.includes("등록됐") ? "#1FA45B" : "#C0392B" }}>{msg}</div>}
         <button className="btn pri" style={{ marginTop: 10, padding: "10px 18px", fontSize: 13 }} onClick={submitReview} disabled={busy}>
           {busy ? "등록 중…" : "후기 등록"}
@@ -301,6 +314,7 @@ export default function PlaceDetailPage() {
       </div>
 
       {(verOnly ? reviews.filter((r) => r.verified) : [...reviews])
+        .filter((r) => !photoOnly || (r.photos ?? []).length > 0)
         .sort((a, b) => (rvSort === "high" ? b.rating - a.rating : rvSort === "low" ? a.rating - b.rating : 0))
         .map((r) => (
         <div key={r.id} style={{ borderBottom: "1px solid var(--line)", padding: "14px 2px" }}>
@@ -323,6 +337,13 @@ export default function PlaceDetailPage() {
           <div style={{ marginTop: 4 }}>
             <Stars n={r.rating} />
           </div>
+          {(r.photos ?? []).length > 0 && (
+            <div style={{ display: "flex", gap: 6, marginTop: 8, overflowX: "auto" }} className="regionrow">
+              {(r.photos ?? []).map((u) => (
+                <div key={u} style={{ width: 92, height: 92, borderRadius: 10, flexShrink: 0, backgroundImage: "url(" + u + ")", backgroundSize: "cover", backgroundPosition: "center" }} />
+              ))}
+            </div>
+          )}
           {r.content && <p style={{ fontSize: 13.5, color: "var(--ink2)", marginTop: 6, lineHeight: 1.65 }}>{r.content}</p>}
         </div>
       ))}
