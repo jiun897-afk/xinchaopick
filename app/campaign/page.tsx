@@ -118,7 +118,7 @@ export default async function CampaignPage({
             position: "relative",
           }}
         >
-          {c.badge ? (
+          {(c.quota > 0 && c.applied / c.quota >= 0.8) || (c.created_at && Date.now() - new Date(c.created_at).getTime() < 7 * 86400000) ? (
             <span
               style={{
                 position: "absolute",
@@ -132,7 +132,7 @@ export default async function CampaignPage({
                 padding: "5px 12px",
               }}
             >
-              {c.badge}
+              {c.quota > 0 && c.applied / c.quota >= 0.8 ? "마감임박" : "NEW"}
             </span>
           ) : null}
         </div>

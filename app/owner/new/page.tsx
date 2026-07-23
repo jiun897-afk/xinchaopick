@@ -176,7 +176,6 @@ export default function NewCampaignPage() {
       area,
       today_available: today,
       reward_points: rewardType === "point" ? rewardPoints : 0,
-      badge: "NEW",
       status: "active",
       image_url: DEFAULT_IMG[category] ?? DEFAULT_IMG["로컬맛집"],
     });

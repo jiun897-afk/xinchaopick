@@ -21,6 +21,8 @@ type Campaign = {
   badge: string | null;
   reward_points?: number | null;
   party_size?: number | null;
+  created_at?: string | null;
+  today_available?: boolean | null;
 };
 
 const FALLBACK: Campaign[] = [
@@ -68,6 +70,12 @@ async function getCampaigns(): Promise<{ list: Campaign[]; live: boolean }> {
   } catch {
     return { list: FALLBACK, live: false };
   }
+}
+
+function cardBadge(c: Campaign): string | null {
+  if (c.quota > 0 && c.applied / c.quota >= 0.8) return "마감임박";
+  if (c.created_at && Date.now() - new Date(c.created_at).getTime() < 7 * 86400000) return "NEW";
+  return null;
 }
 
 function fmtDistance(m: number | null) {
@@ -128,7 +136,7 @@ export default async function Home() {
                   className="gthumb"
                   style={c.image_url ? { backgroundImage: "url(" + c.image_url + ")" } : undefined}
                 >
-                  {c.badge ? <span className="gbadge hot">{c.badge}</span> : null}
+                  {cardBadge(c) ? <span className="gbadge hot">{cardBadge(c)}</span> : null}
                   {(c.reward_points ?? 0) > 0 && (
                     <span className="gbadge" style={{ left: "auto", right: 12, background: "rgba(20,15,10,.78)" }}>
                       +{Number(c.reward_points).toLocaleString()}P
@@ -143,6 +151,9 @@ export default async function Home() {
                     {fmtDistance(c.distance_m)}
                     {c.area ? " · " + c.area : ""} · {c.applied}/{c.quota}팀 · 1팀 {c.party_size ?? 2}인
                     <span className="gpoint">{c.mission_type}</span>
+                    {c.today_available && (
+                      <span className="gpoint" style={{ marginLeft: 0, background: "#E8F7EF", color: "#1FA45B" }}>오늘 가능</span>
+                    )}
                   </div>
                 </div>
               </Link>
