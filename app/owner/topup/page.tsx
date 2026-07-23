@@ -6,8 +6,8 @@ import { getSupabase } from "../../../lib/supabase";
 
 /* 입금 계좌 — 실제 계좌로 교체 필요 */
 const ACCOUNTS = {
-  KR: { label: "한국 계좌", info: "입금 계좌는 카카오톡 채널 @베자뷰로 안내해드려요" },
-  VN: { label: "베트남 계좌", info: "Tài khoản sẽ được hướng dẫn qua Zalo/KakaoTalk" },
+  KR: { label: "한국 계좌", info: "IBK기업은행 201-073049-01-013 · 예금주: 주식회사 더제이엠그룹" },
+  VN: { label: "베트남 계좌", info: "베트남 계좌는 준비 중이에요 — 카카오톡 채널 @베자뷰로 문의해주세요" },
 };
 
 type Topup = { id: string; amount: number; depositor: string; bank_type: string; status: string; created_at: string };
