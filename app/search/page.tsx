@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 
-type Camp = { id: string; store_name: string; category: string; offer: string; image_url: string | null; applied: number; quota: number };
+type Camp = { id: string; store_name: string; category: string; offer: string; image_url: string | null; applied: number; quota: number; mission_type: string; camp_type: string | null; reward_points: number | null };
 type Place = { id: string; name: string; category: string; subcategory: string; area: string; image_url: string | null };
 
 export default function SearchPage() {
@@ -35,9 +35,9 @@ export default function SearchPage() {
       const [{ data: c }, { data: p }] = await Promise.all([
         supabase
           .from("campaigns")
-          .select("id, store_name, category, offer, image_url, applied, quota")
+          .select("id, store_name, category, offer, image_url, applied, quota, mission_type, camp_type, reward_points")
           .eq("status", "active")
-          .or(`store_name.ilike.${like},offer.ilike.${like},category.ilike.${like},area.ilike.${like}`)
+          .or(`store_name.ilike.${like},offer.ilike.${like},category.ilike.${like},area.ilike.${like},mission_type.ilike.${like},camp_type.ilike.${like}`)
           .limit(20),
         supabase
           .from("places")
@@ -122,7 +122,13 @@ export default function SearchPage() {
             <Link key={c.id} href={"/campaign?id=" + c.id} style={{ display: "flex", gap: 13, alignItems: "center", border: "1px solid var(--line)", borderRadius: 14, padding: "12px 14px", marginTop: 10 }}>
               <div style={{ width: 54, height: 54, borderRadius: 12, backgroundColor: "var(--chip)", backgroundImage: c.image_url ? "url(" + c.image_url + ")" : undefined, backgroundSize: "cover", backgroundPosition: "center", flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)" }}>{c.category}</div>
+                <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)" }}>
+                  {c.camp_type === "기자단" && (
+                    <span style={{ background: "#EEEAFF", color: "#6D28D9", borderRadius: 5, padding: "1px 6px", marginRight: 5, fontSize: 10 }}>기자단</span>
+                  )}
+                  {c.category} · {c.mission_type}
+                  {(c.reward_points ?? 0) > 0 && <span style={{ marginLeft: 5, color: "var(--brand-dark)" }}>+{Number(c.reward_points).toLocaleString()}P</span>}
+                </div>
                 <div style={{ fontSize: 14.5, fontWeight: 800 }}>{c.store_name}</div>
                 <div style={{ fontSize: 12, color: "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.offer}</div>
               </div>

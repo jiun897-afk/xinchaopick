@@ -23,6 +23,7 @@ type Campaign = {
   reward_points: number | null;
   party_size: number | null;
   place_id: string | null;
+  camp_type: string | null;
 };
 
 type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string; photos: string[] | null; lat: number | null; lng: number | null } | null;
@@ -176,7 +177,12 @@ export default async function CampaignPage({
         })()}
 
         <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--brand-dark)" }}>{c.category}</div>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--brand-dark)" }}>
+            {c.camp_type === "기자단" && (
+              <span style={{ background: "#EEEAFF", color: "#6D28D9", borderRadius: 6, padding: "2px 8px", marginRight: 6, fontSize: 11 }}>기자단</span>
+            )}
+            {c.category} · {c.mission_type}
+          </div>
           <h1 style={{ fontSize: 27, fontWeight: 900, marginTop: 4 }}>{c.store_name}</h1>
           <div style={{ fontSize: 13.5, color: "var(--ink3)", marginTop: 6 }}>
             {c.area ?? "다낭"}

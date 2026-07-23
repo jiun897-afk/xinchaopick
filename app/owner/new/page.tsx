@@ -7,7 +7,7 @@ import { getSupabase } from "../../../lib/supabase";
 import { useLang, LangToggle, mkT } from "../../../lib/i18n";
 
 const CATEGORIES = ["로컬맛집", "한식", "마사지·스파", "카페·디저트", "네일·뷰티", "투어·액티비티", "사진·스냅", "숙소·풀빌라", "기타"];
-const MISSIONS = ["네이버 블로그", "유튜브 쇼츠", "네이버 클립", "인스타그램", "영상"];
+const MISSIONS = ["네이버 블로그", "유튜브 쇼츠", "네이버 클립", "인스타그램", "인스타 릴스", "영상"];
 const AREAS = ["미케비치", "안탕", "시내", "한시장", "호이안", "기타"];
 
 const DEFAULT_IMG: Record<string, string> = {
@@ -44,7 +44,12 @@ const VI: Record<string, string> = {
   "업체 선택 시 자동 입력 (지점명 등 수정 가능)": "Tự điền khi chọn cửa hàng (có thể sửa)",
   "카테고리": "Danh mục",
   "제공 내역 (무엇을, 얼마 한도로)": "Nội dung cung cấp (gì, hạn mức bao nhiêu)",
-  "예: 아로마 90분 2인 · 70만동 한도 · 팁 포함": "VD: Aroma 90 phút 2 người · tối đa 700.000đ · gồm tip",
+  "예: 아로마 90분 2인 · 700,000₫ 상당 · 팁 포함": "VD: Aroma 90 phút 2 người · trị giá 700.000₫ · gồm tip",
+  "캠페인 유형": "Loại chiến dịch",
+  "체험단": "Trải nghiệm",
+  "기자단": "Đưa tin (không ghé thăm)",
+  "리뷰어가 직접 방문해 체험": "Reviewer trực tiếp ghé thăm trải nghiệm",
+  "방문 없이 자료·가이드로 포스팅": "Đăng bài bằng tư liệu, không cần ghé thăm",
   "미션 (리뷰어가 발행할 콘텐츠)": "Nhiệm vụ (nội dung reviewer sẽ đăng)",
   "모집 팀 수": "Số nhóm tuyển",
   "1팀당 인원 (동반 포함)": "Số người mỗi nhóm",
@@ -110,6 +115,7 @@ export default function NewCampaignPage() {
   const [area, setArea] = useState(AREAS[0]);
   const [today, setToday] = useState(false);
   const [rewardType, setRewardType] = useState<"free" | "point">("free");
+  const [campType, setCampType] = useState<"체험단" | "기자단">("체험단");
   const [rewardInput, setRewardInput] = useState("");
   const [clamped, setClamped] = useState(false);
   const [err, setErr] = useState("");
@@ -176,6 +182,7 @@ export default function NewCampaignPage() {
       area,
       today_available: today,
       reward_points: rewardType === "point" ? rewardPoints : 0,
+      camp_type: campType,
       status: "active",
       image_url: DEFAULT_IMG[category] ?? DEFAULT_IMG["로컬맛집"],
     });
@@ -225,6 +232,30 @@ export default function NewCampaignPage() {
       <label style={labelStyle}>{t("캠페인 표시 이름")}</label>
       <input style={inputStyle} value={store} onChange={(e) => setStore(e.target.value)} placeholder={t("업체 선택 시 자동 입력 (지점명 등 수정 가능)")} />
 
+      <label style={labelStyle}>{t("캠페인 유형")}</label>
+      <div style={{ display: "flex", gap: 8 }}>
+        {([
+          { v: "체험단" as const, d: t("리뷰어가 직접 방문해 체험") },
+          { v: "기자단" as const, d: t("방문 없이 자료·가이드로 포스팅") },
+        ]).map((o) => (
+          <div
+            key={o.v}
+            onClick={() => setCampType(o.v)}
+            style={{
+              flex: 1,
+              border: campType === o.v ? "2px solid var(--brand)" : "1.5px solid var(--line)",
+              background: campType === o.v ? "var(--brand-bg)" : "#fff",
+              borderRadius: 12,
+              padding: "12px 13px",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ fontSize: 13.5, fontWeight: 800 }}>{t(o.v)}</div>
+            <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 3 }}>{o.d}</div>
+          </div>
+        ))}
+      </div>
+
       <label style={labelStyle}>{t("카테고리")}</label>
       <select style={inputStyle} value={category} onChange={(e) => setCategory(e.target.value)}>
         {CATEGORIES.map((c) => (
@@ -237,7 +268,7 @@ export default function NewCampaignPage() {
         style={inputStyle}
         value={offer}
         onChange={(e) => setOffer(e.target.value)}
-        placeholder={t("예: 아로마 90분 2인 · 70만동 한도 · 팁 포함")}
+        placeholder={t("예: 아로마 90분 2인 · 700,000₫ 상당 · 팁 포함")}
       />
 
       <label style={labelStyle}>{t("미션 (리뷰어가 발행할 콘텐츠)")}</label>

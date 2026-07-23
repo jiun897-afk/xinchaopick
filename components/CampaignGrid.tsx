@@ -17,6 +17,7 @@ type Campaign = {
   party_size?: number | null;
   created_at?: string | null;
   today_available?: boolean | null;
+  camp_type?: string | null;
 };
 
 const MISSION_SHORT: Record<string, string> = {
@@ -25,9 +26,10 @@ const MISSION_SHORT: Record<string, string> = {
   "네이버 클립": "클립",
   "인스타그램": "인스타",
   "영상": "영상",
+  "인스타 릴스": "릴스",
 };
 
-const CHIPS = ["전체", "오늘 가능", "포인트", "로컬맛집", "한식", "마사지·스파", "카페·디저트", "투어·액티비티", "네일·뷰티", "기타"];
+const CHIPS = ["전체", "오늘 가능", "포인트", "기자단", "로컬맛집", "한식", "마사지·스파", "카페·디저트", "투어·액티비티", "네일·뷰티", "기타"];
 
 function cardBadge(c: Campaign): string | null {
   if (c.quota > 0 && c.applied / c.quota >= 0.8) return "마감임박";
@@ -42,6 +44,7 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
     if (sel === "전체") return list;
     if (sel === "오늘 가능") return list.filter((c) => c.today_available);
     if (sel === "포인트") return list.filter((c) => (c.reward_points ?? 0) > 0);
+    if (sel === "기자단") return list.filter((c) => c.camp_type === "기자단");
     return list.filter((c) => c.category === sel);
   }, [list, sel]);
 
@@ -76,7 +79,12 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
               </span>
             </div>
             <div className="ginfo">
-              <div className="gcat">{c.category}</div>
+              <div className="gcat">
+                {c.camp_type === "기자단" && (
+                  <span style={{ background: "#EEEAFF", color: "#6D28D9", borderRadius: 5, padding: "1px 6px", marginRight: 5, fontSize: 10 }}>기자단</span>
+                )}
+                {c.category}
+              </div>
               <div className="gname">{c.store_name}</div>
               <div className="goffer">
                 {c.offer.split("·").map((part, i) => {
