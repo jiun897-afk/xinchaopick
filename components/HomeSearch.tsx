@@ -27,7 +27,7 @@ export default function HomeSearch() {
   }
 
   return (
-    <div style={{ maxWidth: 560, marginTop: 20 }}>
+    <div className="hsearch" style={{ maxWidth: 560, marginTop: 20 }}>
       <div
         style={{
           display: "flex",
@@ -91,7 +91,7 @@ export default function HomeSearch() {
           </svg>
         </button>
       </div>
-      <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
+      <div className="hotrow" style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
         <span style={{ fontSize: 11.5, fontWeight: 800, color: "var(--ink3)" }}>인기 검색어</span>
         {HOT.map((h) => (
           <span
