@@ -2258,12 +2258,14 @@ function bindTabs(screen, targets){
 }
 function fitStage(){
   if(window.innerWidth>520) return;
+  const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
   const scale = window.innerWidth/402;
   const stage = document.querySelector('.stage');
   stage.style.transform = 'scale('+scale+')';
-  document.querySelectorAll('.phone').forEach(p=>{ p.style.width='402px'; p.style.height=(window.innerHeight/scale)+'px'; });
+  document.querySelectorAll('.phone').forEach(p=>{ p.style.width='402px'; p.style.height=(vh/scale)+'px'; });
 }
 window.addEventListener('resize', fitStage);
+if(window.visualViewport){ window.visualViewport.addEventListener('resize', fitStage); }
 window.addEventListener('DOMContentLoaded', ()=>{
   fitStage();
   go('s17');
