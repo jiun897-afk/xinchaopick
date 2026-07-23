@@ -1,9 +1,8 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head><meta charset="utf-8">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" rel="stylesheet"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>씬짜오PICK — 인터랙티브 프로토타입</title>
 <style>
   :root {
@@ -12,7 +11,7 @@
     --line: #EFEBE7; --bg: #FFFFFF; --chip: #F6F3F0;
     --green: #1FA96E; --naver: #03C75A; --kakao: #FEE500;
   }
-  * { margin:0; padding:0; box-sizing:border-box; font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif; }
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Pretendard Variable',Pretendard,'Apple SD Gothic Neo',sans-serif; }
   body { background:#E9E4DF; display:flex; gap:40px; padding:40px; width:max-content; }
   .phone { width:390px; height:844px; background:var(--bg); overflow:hidden; position:relative; display:flex; flex-direction:column; flex-shrink:0; }
   svg.ic { width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; flex-shrink:0; }
@@ -186,7 +185,7 @@
   .stage { position:relative; }
   .phone { display:none; border-radius:44px; box-shadow:0 30px 80px rgba(0,0,0,.55); border:6px solid #2A251F; width:402px !important; height:856px !important; }
   .phone.active { display:flex; }
-  .hintlbl { pointer-events:none; position:fixed; bottom:16px; left:0; right:0; text-align:center; font-size:12px; color:#8B857E; font-family:'Noto Sans KR','Apple SD Gothic Neo',sans-serif; }
+  .hintlbl { pointer-events:none; position:fixed; bottom:16px; left:0; right:0; text-align:center; font-size:12px; color:#8B857E; font-family:'Pretendard Variable',Pretendard,'Apple SD Gothic Neo',sans-serif; }
   @media (max-height:940px) and (min-width:521px){ .stage{ transform:scale(calc((100vh - 40px)/856)); transform-origin:center; } }
   @media (max-width:520px){
     .hintlbl { display:none; }
