@@ -9,7 +9,10 @@ type Row = {
   created_at: string;
   status: string;
   review_url: string | null;
+  review_submitted_at: string | null;
   review_approved_at: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
   campaigns: {
     id: string;
     store_name: string;
@@ -50,7 +53,7 @@ export default function MyPage() {
     const [{ data }, { data: w }] = await Promise.all([
       supabase
         .from("applications")
-        .select("id, created_at, status, review_url, review_approved_at, campaigns(id, store_name, category, offer, mission_type, image_url, reward_points)")
+        .select("id, created_at, status, review_url, review_submitted_at, review_approved_at, dispute_status, dispute_reason, campaigns(id, store_name, category, offer, mission_type, image_url, reward_points)")
         .order("created_at", { ascending: false }),
       supabase.from("wallets").select("balance").maybeSingle(),
     ]);
@@ -191,9 +194,29 @@ export default function MyPage() {
                 </div>
               )}
 
-              {r.review_url && !r.review_approved_at && (
+              {r.review_url && !r.review_approved_at && r.dispute_status === "issue" && (
+                <div style={{ borderTop: "1px solid var(--line)", padding: "12px 16px", background: "#FDF3F2", fontSize: 12.5, lineHeight: 1.7 }}>
+                  <b style={{ color: "#C0392B" }}>사장님이 문제를 제기했어요</b>
+                  <div style={{ color: "var(--ink2)", marginTop: 3 }}>사유: {r.dispute_reason}</div>
+                  <div style={{ color: "var(--ink3)", fontSize: 11.5, marginTop: 4 }}>
+                    자동 확정이 잠시 멈췄어요. 리뷰를 보완하거나 카카오톡 채널 @베자뷰로 협의해주세요. 협의가 어려우면
+                    운영팀 중재를 신청할 수 있어요.
+                  </div>
+                </div>
+              )}
+              {r.review_url && !r.review_approved_at && r.dispute_status === "dispute" && (
+                <div style={{ borderTop: "1px solid var(--line)", padding: "11px 16px", background: "#FBFAF8", fontSize: 12.5, fontWeight: 700, color: "var(--ink2)" }}>
+                  운영팀이 중재 중이에요 — 결과가 나오면 알려드릴게요
+                </div>
+              )}
+              {r.review_url && !r.review_approved_at && !r.dispute_status && (
                 <div style={{ borderTop: "1px solid var(--line)", padding: "11px 16px", background: "#FBFAF8", fontSize: 12.5, fontWeight: 700, color: "#8A6D1A" }}>
-                  리뷰 제출됨 — 사장님 확인 중이에요{" "}
+                  리뷰 제출됨 — 사장님 확인 중
+                  {r.review_submitted_at &&
+                    (() => {
+                      const left = Math.max(0, Math.ceil((new Date(r.review_submitted_at).getTime() + 3 * 86400000 - Date.now()) / 86400000));
+                      return ` (${left}일 후 자동 확정)`;
+                    })()}
                   <a href={r.review_url} target="_blank" rel="noreferrer" style={{ textDecoration: "underline", marginLeft: 6 }}>
                     내 리뷰 보기
                   </a>

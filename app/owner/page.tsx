@@ -23,6 +23,8 @@ type App = {
   created_at: string;
   review_url: string | null;
   review_approved_at: string | null;
+  dispute_status: string | null;
+  dispute_reason: string | null;
   nickname?: string;
 };
 
@@ -65,7 +67,7 @@ export default function OwnerPage() {
     if (!apps[cid] && supabase) {
       const { data } = await supabase
         .from("applications")
-        .select("id, user_id, status, created_at, review_url, review_approved_at")
+        .select("id, user_id, status, created_at, review_url, review_approved_at, dispute_status, dispute_reason")
         .eq("campaign_id", cid)
         .order("created_at", { ascending: true });
       let rows = (data as App[]) ?? [];
@@ -90,6 +92,29 @@ export default function OwnerPage() {
         [cid]: (a[cid] ?? []).map((r) => (r.id === appId ? { ...r, status } : r)),
       }));
     }
+    setBusy(null);
+  }
+
+  async function raiseIssue(cid: string, appId: string) {
+    if (!supabase) return;
+    const reason = prompt("어떤 문제가 있나요? (예: 사진과 다른 내용, 방문 확인 안 됨 등)\n문제제기하면 3일 자동확정이 멈추고 리뷰어와 협의하게 돼요.");
+    if (!reason || !reason.trim()) return;
+    setBusy(appId);
+    const { error } = await supabase.rpc("raise_issue", { p_app_id: appId, p_reason: reason.trim() });
+    if (!error) {
+      setApps((a) => ({ ...a, [cid]: (a[cid] ?? []).map((r) => (r.id === appId ? { ...r, dispute_status: "issue", dispute_reason: reason.trim() } : r)) }));
+    } else alert(error.message);
+    setBusy(null);
+  }
+
+  async function escalate(cid: string, appId: string) {
+    if (!supabase) return;
+    if (!confirm("운영팀 중재(분쟁)를 신청할까요? 운영팀이 리뷰와 사유를 검토해 결정해요.")) return;
+    setBusy(appId);
+    const { error } = await supabase.rpc("escalate_dispute", { p_app_id: appId });
+    if (!error) {
+      setApps((a) => ({ ...a, [cid]: (a[cid] ?? []).map((r) => (r.id === appId ? { ...r, dispute_status: "dispute" } : r)) }));
+    } else alert(error.message);
     setBusy(null);
   }
 
@@ -236,15 +261,31 @@ export default function OwnerPage() {
                           리뷰
                         </a>
                       )}
-                      {a.review_url && !a.review_approved_at ? (
-                        <button
-                          className="btn pri"
-                          style={{ padding: "8px 13px", fontSize: 12 }}
-                          disabled={busy === a.id}
-                          onClick={() => approveReview(c.id, a.id)}
-                        >
-                          리뷰 승인
-                        </button>
+                      {a.review_url && !a.review_approved_at && a.dispute_status === "dispute" ? (
+                        <span style={{ fontSize: 11, fontWeight: 800, color: "#C0392B", flexShrink: 0 }}>운영팀 중재 중</span>
+                      ) : a.review_url && !a.review_approved_at && a.dispute_status === "issue" ? (
+                        <>
+                          <button className="btn pri" style={{ padding: "8px 11px", fontSize: 11.5 }} disabled={busy === a.id} onClick={() => approveReview(c.id, a.id)}>
+                            해결됨·승인
+                          </button>
+                          <button className="btn ghost" style={{ padding: "8px 11px", fontSize: 11.5, color: "#C0392B" }} disabled={busy === a.id} onClick={() => escalate(c.id, a.id)}>
+                            분쟁 신청
+                          </button>
+                        </>
+                      ) : a.review_url && !a.review_approved_at ? (
+                        <>
+                          <button
+                            className="btn pri"
+                            style={{ padding: "8px 13px", fontSize: 12 }}
+                            disabled={busy === a.id}
+                            onClick={() => approveReview(c.id, a.id)}
+                          >
+                            리뷰 승인
+                          </button>
+                          <button className="btn ghost" style={{ padding: "8px 10px", fontSize: 11.5 }} disabled={busy === a.id} onClick={() => raiseIssue(c.id, a.id)}>
+                            문제제기
+                          </button>
+                        </>
                       ) : a.review_approved_at ? null : a.status !== "selected" ? (
                         <button
                           className="btn pri"
