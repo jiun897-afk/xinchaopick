@@ -53,7 +53,7 @@ export default function LoginPage() {
         ← 홈으로
       </Link>
       <h1 style={{ marginTop: 18 }}>
-        씬짜오<span style={{ color: "var(--brand-dark)" }}>PICK</span> 로그인
+        <span style={{ color: "var(--brand-dark)" }}>베자뷰</span> 로그인
       </h1>
 
       {!supabase ? (

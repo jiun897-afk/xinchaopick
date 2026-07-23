@@ -121,11 +121,11 @@ export default async function Home() {
       <footer className="site">
         <div className="wrap">
           <div className="fbiz">
-            <b style={{ color: "var(--ink2)" }}>씬짜오PICK</b> · 주식회사 더제이엠그룹 · 대표이사 이정목
+            <b style={{ color: "var(--ink2)" }}>베자뷰</b> · 주식회사 더제이엠그룹 · 대표이사 이정목
             <br />
             서울특별시 서초구 방배동 451-24 현성빌딩 3층 · 사업자등록번호 352-87-00902
             <br />
-            고객센터 1666-0464 · 카카오톡 채널 @씬짜오픽 · help@xinchaopick.com
+            고객센터 1666-0464 · 카카오톡 채널 @베자뷰 · help@bejaview.com
             <br />
             <a href="/doitac.html" style={{ textDecoration: "underline" }}>Dành cho chủ cửa hàng (Tiếng Việt)</a> · <a href="/app.html" style={{ textDecoration: "underline" }}>앱 디자인 시안</a> · <a href="/admin.html" style={{ textDecoration: "underline" }}>운영 콘솔</a>
           </div>

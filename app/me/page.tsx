@@ -116,7 +116,7 @@ export default function MePage() {
         <div style={{ display: "flex", alignItems: "center", padding: "16px 4px", borderBottom: "1px solid var(--line)", fontSize: 14.5, fontWeight: 700 }}>
           고객센터
           <span style={{ marginLeft: "auto", fontSize: 12.5, color: "var(--ink3)", fontWeight: 600 }}>
-            1666-0464 · 카카오톡 @씬짜오픽
+            1666-0464 · 카카오톡 @베자뷰
           </span>
         </div>
       </div>
