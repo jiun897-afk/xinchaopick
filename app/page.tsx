@@ -72,6 +72,14 @@ async function getCampaigns(): Promise<{ list: Campaign[]; live: boolean }> {
   }
 }
 
+const MISSION_SHORT: Record<string, string> = {
+  "네이버 블로그": "블로그",
+  "유튜브 쇼츠": "쇼츠",
+  "네이버 클립": "클립",
+  "인스타그램": "인스타",
+  "영상": "영상",
+};
+
 function cardBadge(c: Campaign): string | null {
   if (c.quota > 0 && c.applied / c.quota >= 0.8) return "마감임박";
   if (c.created_at && Date.now() - new Date(c.created_at).getTime() < 7 * 86400000) return "NEW";
@@ -154,9 +162,9 @@ export default async function Home() {
                     <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                       {c.area ?? "다낭"} · 1팀 {c.party_size ?? 2}인
                     </span>
-                    <span className="gpoint">{c.mission_type}</span>
+                    <span className="gpoint">{MISSION_SHORT[c.mission_type] ?? c.mission_type}</span>
                     {c.today_available && (
-                      <span className="gpoint" style={{ marginLeft: 0, background: "#E8F7EF", color: "#1FA45B" }}>오늘 가능</span>
+                      <span className="gpoint" style={{ marginLeft: 0, background: "#E8F7EF", color: "#1FA45B" }}>오늘</span>
                     )}
                   </div>
                 </div>

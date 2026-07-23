@@ -88,10 +88,10 @@ section.list { padding: 44px 0 70px; }
 }
 .gbadge.hot { background: var(--brand); }
 .ginfo { padding: 15px 17px 17px; }
-.gcat { font-size: 11.5px; font-weight: 800; color: var(--brand-dark); }
-.gname { font-size: 16.5px; font-weight: 800; margin-top: 3px; }
-.goffer { font-size: 12.5px; color: var(--ink2); margin-top: 5px; line-height: 1.5; }
-.gmeta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink3); margin-top: 10px; }
+.gcat { font-size: 11.5px; font-weight: 800; color: var(--brand-dark); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gname { font-size: 16.5px; font-weight: 800; margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.goffer { font-size: 12.5px; color: var(--ink2); margin-top: 5px; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gmeta { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--ink3); margin-top: 10px; min-width: 0; }
 .gpoint { margin-left: auto; background: var(--chip); color: var(--ink2); font-size: 10.5px; font-weight: 800; border-radius: 7px; padding: 3px 9px; white-space: nowrap; flex-shrink: 0; }
 
 /* LOGIN */
