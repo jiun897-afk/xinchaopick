@@ -32,6 +32,9 @@ export default function AuthButton() {
     const short = userEmail.length > 22 ? userEmail.slice(0, 20) + "…" : userEmail;
     return (
       <div className="hcta">
+        <Link className="btn ghost" href="/my">
+          내 신청
+        </Link>
         <Link
           href="/login"
           style={{
