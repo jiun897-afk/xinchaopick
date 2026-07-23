@@ -1,0 +1,173 @@
+import Link from "next/link";
+import ApplyButton from "../../components/ApplyButton";
+import AuthButton from "../../components/AuthButton";
+
+export const dynamic = "force-dynamic";
+
+type Campaign = {
+  id: string;
+  store_name: string;
+  category: string;
+  offer: string;
+  mission_type: string;
+  quota: number;
+  applied: number;
+  distance_m: number | null;
+  area: string | null;
+  image_url: string | null;
+  badge: string | null;
+  today_available: boolean;
+  deadline: string | null;
+  created_at: string;
+};
+
+async function getCampaign(id: string): Promise<Campaign | null> {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  try {
+    const res = await fetch(url + "/rest/v1/campaigns?id=eq." + encodeURIComponent(id) + "&limit=1", {
+      headers: { apikey: key, Authorization: "Bearer " + key },
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as Campaign[];
+    return data[0] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function Header() {
+  return (
+    <header className="site">
+      <div className="wrap hbar">
+        <Link className="hlogo" href="/">
+          <span className="mark">
+            <svg width="21" height="22" viewBox="0 0 120 124">
+              <path d="M60 118 C60 118 30 86 30 61 A30 30 0 1 1 90 61 C90 86 60 118 60 118 Z" fill="#ffffff" />
+              <circle cx="60" cy="59" r="12.5" fill="#F55B24" />
+              <path d="M60 6 C64 6 88 26 94 34 L26 34 C32 26 56 6 60 6 Z" fill="#FFDDBB" />
+              <path d="M18 34 Q60 46 102 34 Q98 40 60 42 Q22 40 18 34 Z" fill="#F3A469" />
+            </svg>
+          </span>
+          씬짜오<span className="pick">PICK</span>
+        </Link>
+        <AuthButton />
+      </div>
+    </header>
+  );
+}
+
+export default async function CampaignPage({
+  searchParams,
+}: {
+  searchParams: { id?: string };
+}) {
+  const id = searchParams?.id ?? "";
+  const c = id ? await getCampaign(id) : null;
+
+  if (!c) {
+    return (
+      <>
+        <Header />
+        <div className="wrap" style={{ maxWidth: 680, padding: "80px 24px", textAlign: "center" }}>
+          <div style={{ fontSize: 40 }}>🙈</div>
+          <h1 style={{ fontSize: 22, fontWeight: 900, marginTop: 14 }}>캠페인을 찾을 수 없어요</h1>
+          <p style={{ fontSize: 14, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
+            마감되어 내려갔거나, 미리보기용 데이터일 수 있어요.
+          </p>
+          <Link className="btn pri" style={{ marginTop: 22, padding: "13px 26px" }} href="/">
+            홈으로 돌아가기
+          </Link>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Header />
+      <div className="wrap" style={{ maxWidth: 720, paddingTop: 26, paddingBottom: 70 }}>
+        <Link href="/" style={{ fontSize: 13, fontWeight: 800, color: "var(--ink3)" }}>
+          ← 체험단 목록
+        </Link>
+        <div
+          style={{
+            marginTop: 14,
+            height: 280,
+            borderRadius: 20,
+            backgroundColor: "var(--chip)",
+            backgroundImage: c.image_url ? "url(" + c.image_url + ")" : undefined,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            position: "relative",
+          }}
+        >
+          {c.badge ? (
+            <span
+              style={{
+                position: "absolute",
+                left: 16,
+                top: 16,
+                background: "var(--brand)",
+                color: "#fff",
+                fontSize: 12,
+                fontWeight: 800,
+                borderRadius: 9,
+                padding: "5px 12px",
+              }}
+            >
+              {c.badge}
+            </span>
+          ) : null}
+        </div>
+
+        <div style={{ marginTop: 20 }}>
+          <div style={{ fontSize: 13, fontWeight: 800, color: "var(--brand-dark)" }}>{c.category}</div>
+          <h1 style={{ fontSize: 27, fontWeight: 900, marginTop: 4 }}>{c.store_name}</h1>
+          <div style={{ fontSize: 13.5, color: "var(--ink3)", marginTop: 6 }}>
+            {c.area ?? "다낭"}
+            {c.distance_m != null
+              ? " · " + (c.distance_m >= 1000 ? (c.distance_m / 1000).toFixed(1) + "km" : c.distance_m + "m")
+              : ""}
+            {c.today_available ? " · 오늘 가능" : ""}
+          </div>
+        </div>
+
+        <div
+          style={{
+            marginTop: 20,
+            border: "1.5px solid var(--brand)",
+            background: "var(--brand-bg)",
+            borderRadius: 16,
+            padding: "18px 20px",
+          }}
+        >
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--brand-dark)" }}>제공 내역</div>
+          <div style={{ fontSize: 16.5, fontWeight: 800, marginTop: 5, lineHeight: 1.5 }}>{c.offer}</div>
+          <div style={{ fontSize: 12, color: "var(--ink2)", marginTop: 8 }}>
+            체험 비용은 전액 무료예요. 명시된 한도를 넘는 부분만 직접 결제합니다.
+          </div>
+        </div>
+
+        <div style={{ marginTop: 14, border: "1px solid var(--line)", borderRadius: 16, padding: "18px 20px" }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink3)" }}>미션</div>
+          <div style={{ fontSize: 15.5, fontWeight: 800, marginTop: 5 }}>{c.mission_type} 리뷰 1건 발행</div>
+          <ul style={{ fontSize: 13, color: "var(--ink2)", marginTop: 10, paddingLeft: 18, lineHeight: 1.9 }}>
+            <li>방문 후 7일 이내 발행 · 발행물 URL 제출</li>
+            <li>협찬(경제적 대가) 표기를 제목 또는 본문 첫 부분에 포함</li>
+            <li>선정 후 24시간 내 방문 일정 확정 (노쇼 시 이용 제한)</li>
+          </ul>
+        </div>
+
+        <ApplyButton campaignId={c.id} quota={c.quota} applied={c.applied} />
+
+        <div style={{ marginTop: 18, fontSize: 11.5, color: "var(--ink3)", lineHeight: 1.7 }}>
+          신청은 무료이며 선정된 경우에만 방문이 확정됩니다. 이 캠페인의 리뷰는 경제적 대가를 받는
+          협찬 콘텐츠로, 발행물에 협찬 표기가 포함됩니다.
+        </div>
+      </div>
+    </>
+  );
+}
