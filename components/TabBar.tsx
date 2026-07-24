@@ -78,6 +78,7 @@ function Icon({ name }: { name: string }) {
 export default function TabBar() {
   const pathname = usePathname();
   const [unread, setUnread] = useState<number | null>(null);
+  const [chatUnread, setChatUnread] = useState<number>(0);
   const supabase = getSupabase();
   useEffect(() => {
     initChime(); // 첫 터치 때 오디오 잠금 해제 (모바일 자동재생 정책)
@@ -102,6 +103,8 @@ export default function TabBar() {
         if (!silent && prev !== null && next > prev) playChime();
         return next;
       });
+      const { data: cu } = await supabase!.rpc("unread_msg_count");
+      setChatUnread(typeof cu === "number" ? cu : 0);
     }
     (async () => {
       const {
@@ -121,6 +124,11 @@ export default function TabBar() {
               playChime();
             }
           )
+          .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, async () => {
+            // RLS로 내 방 메시지만 이벤트가 옴 — 안읽음 수 즉시 갱신
+            const { data: cu } = await supabase!.rpc("unread_msg_count");
+            setChatUnread(typeof cu === "number" ? cu : 0);
+          })
           .subscribe();
       }
     })();
@@ -150,6 +158,29 @@ export default function TabBar() {
           {t.label}
           {t.href === "/me" && (unread ?? 0) > 0 && (
             <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", width: 8, height: 8, borderRadius: "50%", background: "var(--brand)" }} />
+          )}
+          {t.href === "/chat" && chatUnread > 0 && (
+            <span
+              style={{
+                position: "absolute",
+                top: 3,
+                right: "calc(50% - 22px)",
+                minWidth: 17,
+                height: 17,
+                borderRadius: 999,
+                background: "#E0483E",
+                color: "#fff",
+                fontSize: 10,
+                fontWeight: 900,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: "0 4px",
+                boxShadow: "0 1px 4px rgba(200,40,30,.4)",
+              }}
+            >
+              {chatUnread > 99 ? "99+" : chatUnread}
+            </span>
           )}
         </Link>
       ))}
