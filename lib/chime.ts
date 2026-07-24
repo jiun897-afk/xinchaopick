@@ -41,6 +41,8 @@ export function initChime() {
 
 export function playChime(force = false) {
   try {
+    // 화면에 안 보이는 상태(백그라운드)면 시스템 푸시가 울리므로 앱 내 소리는 생략 (이중 재생 방지)
+    if (typeof document !== "undefined" && document.hidden) return;
     const w = window as any;
     const now = Date.now();
     if (!force && w.__bvChimeAt && now - w.__bvChimeAt < 1200) return;
