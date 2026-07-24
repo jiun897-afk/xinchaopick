@@ -36,6 +36,10 @@ jobs:
           cp google-services.json android/app/google-services.json
           mkdir -p android/app/src/main/res/raw
           cp ../public/notify.mp3 android/app/src/main/res/raw/vejaview.mp3
+          # 알림(안드로이드 13+)·위치 권한 선언 (카톡처럼 첫 실행 때 물어보게)
+          MANIFEST=android/app/src/main/AndroidManifest.xml
+          sed -i 's#</manifest>#    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />\n    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />\n</manifest>#' $MANIFEST
+          grep -c "POST_NOTIFICATIONS" $MANIFEST
           npx cap sync android
 
       - name: Build debug APK
