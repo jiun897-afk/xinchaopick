@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import AvatarCrop from "../../components/AvatarCrop";
 
 export default function MePage() {
   const supabase = getSupabase();
@@ -11,6 +12,7 @@ export default function MePage() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [upBusy, setUpBusy] = useState(false);
   const [picker, setPicker] = useState(false);
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const camRef = useRef<HTMLInputElement>(null);
 
@@ -26,50 +28,44 @@ export default function MePage() {
     })();
   }, [supabase, email]);
 
-  async function toJpeg(f: File): Promise<Blob> {
-    let src: Blob = f;
-    let bmp = await createImageBitmap(src).catch(() => null);
-    if (!bmp) {
-      // HEIC 등 브라우저가 못 읽는 형식 → 변환기 통과
-      try {
-        // @ts-ignore
-        const heic2any = (await import("heic2any")).default;
-        const out = await heic2any({ blob: f, toType: "image/jpeg", quality: 0.9 });
-        src = Array.isArray(out) ? out[0] : out;
-        bmp = await createImageBitmap(src).catch(() => null);
-      } catch {}
-    }
-    if (!bmp) throw new Error("이 사진은 읽을 수 없었어요. 다른 사진을 선택하거나 '사진 찍기'를 이용해주세요.");
-    const max = 512;
-    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round(bmp.width * scale));
-    canvas.height = Math.max(1, Math.round(bmp.height * scale));
-    canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    return await new Promise((res, rej) =>
-      canvas.toBlob((b) => (b ? res(b) : rej(new Error("사진 변환에 실패했어요."))), "image/jpeg", 0.85)
-    );
-  }
-
-  async function uploadAvatar(f: File) {
-    if (!supabase) return;
-    if (f.size > 15 * 1024 * 1024) {
-      alert("사진은 15MB 이하로 올려주세요.");
+  /* 파일 선택 → (HEIC 변환) → 크롭 화면 열기 */
+  async function pickAvatar(f: File) {
+    if (f.size > 20 * 1024 * 1024) {
+      alert("사진은 20MB 이하로 올려주세요.");
       return;
     }
+    setUpBusy(true);
+    try {
+      let src: Blob = f;
+      let ok = await createImageBitmap(src).then(() => true).catch(() => false);
+      if (!ok) {
+        try {
+          // @ts-ignore
+          const heic2any = (await import("heic2any")).default;
+          const out = await heic2any({ blob: f, toType: "image/jpeg", quality: 0.9 });
+          src = Array.isArray(out) ? out[0] : out;
+          ok = await createImageBitmap(src).then(() => true).catch(() => false);
+        } catch {}
+      }
+      if (!ok) {
+        alert("이 사진은 읽을 수 없었어요. 다른 사진을 선택해주세요.");
+        return;
+      }
+      setCropSrc(URL.createObjectURL(src));
+    } finally {
+      setUpBusy(false);
+    }
+  }
+
+  /* 크롭 완료된 사진 업로드 */
+  async function uploadAvatar(blob: Blob) {
+    if (!supabase) return;
     setUpBusy(true);
     try {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) return;
-      let blob: Blob;
-      try {
-        blob = await toJpeg(f);
-      } catch (e: any) {
-        alert(e.message);
-        return;
-      }
       const path = session.user.id + "/avatar_" + Date.now() + ".jpg";
       const { error } = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
       if (error) {
@@ -236,7 +232,7 @@ export default function MePage() {
             type="file"
             accept="image/*"
             style={{ display: "none" }}
-            onChange={(e) => e.target.files?.[0] && uploadAvatar(e.target.files[0])}
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) pickAvatar(f); }}
           />
           <input
             ref={camRef}
@@ -244,9 +240,16 @@ export default function MePage() {
             accept="image/*"
             capture="user"
             style={{ display: "none" }}
-            onChange={(e) => e.target.files?.[0] && uploadAvatar(e.target.files[0])}
+            onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) pickAvatar(f); }}
           />
         </div>
+        {cropSrc && (
+          <AvatarCrop
+            src={cropSrc}
+            onCancel={() => { URL.revokeObjectURL(cropSrc); setCropSrc(null); }}
+            onDone={(b) => { URL.revokeObjectURL(cropSrc); setCropSrc(null); uploadAvatar(b); }}
+          />
+        )}
         {picker && (
           <div
             onClick={() => setPicker(false)}
