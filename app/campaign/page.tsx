@@ -182,9 +182,18 @@ export default async function CampaignPage({
 
         <div style={{ marginTop: 20 }}>
           <div style={{ fontSize: 13, fontWeight: 800, color: "var(--brand-dark)" }}>
-            {c.camp_type === "기자단" && (
-              <span style={{ background: "#EEEAFF", color: "#6D28D9", borderRadius: 6, padding: "2px 8px", marginRight: 6, fontSize: 11 }}>기자단</span>
-            )}
+            <span
+              style={{
+                background: c.camp_type === "기자단" ? "#EEEAFF" : "var(--brand-bg)",
+                color: c.camp_type === "기자단" ? "#6D28D9" : "var(--brand-dark)",
+                borderRadius: 6,
+                padding: "2px 8px",
+                marginRight: 6,
+                fontSize: 11,
+              }}
+            >
+              {c.camp_type === "기자단" ? "기자단" : "체험단"}
+            </span>
             {c.category} · {c.mission_type}
           </div>
           <h1 style={{ fontSize: 27, fontWeight: 900, marginTop: 4 }}>{c.store_name}</h1>

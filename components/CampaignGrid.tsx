@@ -80,9 +80,18 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
             </div>
             <div className="ginfo">
               <div className="gcat">
-                {c.camp_type === "기자단" && (
-                  <span style={{ background: "#EEEAFF", color: "#6D28D9", borderRadius: 5, padding: "1px 6px", marginRight: 5, fontSize: 10 }}>기자단</span>
-                )}
+                <span
+                  style={{
+                    background: c.camp_type === "기자단" ? "#EEEAFF" : "var(--brand-bg)",
+                    color: c.camp_type === "기자단" ? "#6D28D9" : "var(--brand-dark)",
+                    borderRadius: 5,
+                    padding: "1px 6px",
+                    marginRight: 5,
+                    fontSize: 10,
+                  }}
+                >
+                  {c.camp_type === "기자단" ? "기자단" : "체험단"}
+                </span>
                 {c.category}
               </div>
               <div className="gname">{c.store_name}</div>

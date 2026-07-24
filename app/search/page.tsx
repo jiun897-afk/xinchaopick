@@ -123,9 +123,18 @@ export default function SearchPage() {
               <div style={{ width: 54, height: 54, borderRadius: 12, backgroundColor: "var(--chip)", backgroundImage: c.image_url ? "url(" + c.image_url + ")" : undefined, backgroundSize: "cover", backgroundPosition: "center", flexShrink: 0 }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)" }}>
-                  {c.camp_type === "기자단" && (
-                    <span style={{ background: "#EEEAFF", color: "#6D28D9", borderRadius: 5, padding: "1px 6px", marginRight: 5, fontSize: 10 }}>기자단</span>
-                  )}
+                  <span
+                    style={{
+                      background: c.camp_type === "기자단" ? "#EEEAFF" : "var(--brand-bg)",
+                      color: c.camp_type === "기자단" ? "#6D28D9" : "var(--brand-dark)",
+                      borderRadius: 5,
+                      padding: "1px 6px",
+                      marginRight: 5,
+                      fontSize: 10,
+                    }}
+                  >
+                    {c.camp_type === "기자단" ? "기자단" : "체험단"}
+                  </span>
                   {c.category} · {c.mission_type}
                   {(c.reward_points ?? 0) > 0 && <span style={{ marginLeft: 5, color: "var(--brand-dark)" }}>+{Number(c.reward_points).toLocaleString()}P</span>}
                 </div>
