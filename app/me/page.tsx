@@ -44,7 +44,11 @@ export default function MePage() {
         return;
       }
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
-      await supabase.from("profiles").upsert({ id: session.user.id, avatar_url: pub.publicUrl });
+      const { error: e2 } = await supabase.rpc("set_my_avatar", { p_url: pub.publicUrl });
+      if (e2) {
+        alert("프로필 저장 실패: " + e2.message);
+        return;
+      }
       setAvatar(pub.publicUrl);
     } finally {
       setUpBusy(false);
