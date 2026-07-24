@@ -92,7 +92,7 @@ export default function DmPage() {
   }
 
   return (
-    <div className="wrap" style={{ maxWidth: 640, paddingTop: 16, paddingBottom: 14, display: "flex", flexDirection: "column", minHeight: "calc(100dvh - 16px)" }}>
+    <div className="wrap" style={{ maxWidth: 640, paddingTop: 12, paddingBottom: 10, display: "flex", flexDirection: "column", height: "100dvh", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 12, borderBottom: "1px solid var(--line)" }}>
         <Link href="/chat" style={{ fontSize: 20, fontWeight: 800, color: "var(--ink3)" }}>
           ←
