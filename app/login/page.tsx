@@ -127,6 +127,11 @@ export default function LoginPage() {
             비밀번호로 로그인
           </button>
           {status === "error" && <div className="notice err">오류: {errMsg}</div>}
+          <div style={{ marginTop: 18, fontSize: 11, color: "var(--ink3)", lineHeight: 1.7, textAlign: "center" }}>
+            로그인(가입) 시{" "}
+            <a href="/terms" style={{ textDecoration: "underline" }}>이용약관</a> 및{" "}
+            <a href="/privacy" style={{ textDecoration: "underline" }}>개인정보처리방침</a>에 동의한 것으로 간주됩니다.
+          </div>
         </>
       )}
     </div>

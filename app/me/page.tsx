@@ -26,6 +26,26 @@ export default function MePage() {
     if (supabase) await supabase.auth.signOut();
   }
 
+  async function deleteAccount() {
+    if (!supabase || !email) return;
+    if (
+      !confirm(
+        "정말 탈퇴할까요?\n\n포인트·크레딧·신청 내역·업체 정보가 모두 삭제되며 복구할 수 없어요.\n잔여 포인트가 있다면 먼저 출금을 완료해주세요."
+      )
+    )
+      return;
+    const typed = prompt("탈퇴하려면 '탈퇴'라고 입력해주세요.");
+    if (typed !== "탈퇴") return;
+    const { error } = await supabase.rpc("delete_my_account");
+    if (error) {
+      alert("탈퇴 처리 중 문제가 생겼어요: " + error.message);
+      return;
+    }
+    await supabase.auth.signOut();
+    alert("탈퇴가 완료됐어요. 그동안 이용해주셔서 감사합니다.");
+    window.location.href = "/";
+  }
+
   const nick = email ? email.split("@")[0] : null;
 
   return (
@@ -141,7 +161,16 @@ export default function MePage() {
         <br />
         사업자등록번호 352-87-00902 · 고객센터 1666-0464
         <br />
-        이용약관 · 개인정보처리방침 · 운영정책
+        <Link href="/terms" style={{ textDecoration: "underline" }}>이용약관</Link> ·{" "}
+        <Link href="/privacy" style={{ textDecoration: "underline" }}>개인정보처리방침</Link>
+        {email && (
+          <>
+            {" · "}
+            <span onClick={deleteAccount} style={{ textDecoration: "underline", cursor: "pointer" }}>
+              회원 탈퇴
+            </span>
+          </>
+        )}
       </div>
     </div>
   );
