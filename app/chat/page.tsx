@@ -129,7 +129,7 @@ export default function ChatListPage() {
           {(
             [
               { k: "dm", label: "채팅" },
-              { k: "camp", label: "업체 채팅" },
+              { k: "camp", label: "캠페인" },
               { k: "friends", label: "친구" + (friends.length ? " " + friends.length : "") },
             ] as const
           ).map((t) => (
@@ -219,7 +219,7 @@ export default function ChatListPage() {
           {chatRooms !== null && chatRooms.filter((r) => r.kind === tab).length === 0 && (
             <div style={{ marginTop: 30, textAlign: "center", padding: "30px 0" }}>
               <div style={{ fontSize: 15.5, fontWeight: 800 }}>
-                {tab === "camp" ? "아직 업체 채팅이 없어요" : "아직 1:1 채팅이 없어요"}
+                {tab === "camp" ? "아직 캠페인 채팅이 없어요" : "아직 1:1 채팅이 없어요"}
               </div>
               <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
                 {tab === "camp" ? (
