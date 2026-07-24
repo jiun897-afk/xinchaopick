@@ -8,7 +8,7 @@ import { useLang, LangToggle, mkT } from "../../../lib/i18n";
 import AvailCalendar from "../../../components/AvailCalendar";
 
 const CATEGORIES = ["로컬맛집", "한식", "마사지·스파", "카페·디저트", "네일·뷰티", "투어·액티비티", "사진·스냅", "숙소·풀빌라", "기타"];
-const MISSIONS = ["네이버 블로그", "유튜브 쇼츠", "네이버 클립", "인스타그램", "인스타 릴스", "영상"];
+const MISSIONS = ["네이버 블로그", "네이버 클립", "유튜브 롱폼", "유튜브 쇼츠", "인스타그램", "인스타 릴스", "페이스북", "스레드", "X(엑스)"];
 const AREAS = ["미케비치", "안탕", "시내", "한시장", "호이안", "기타"];
 
 const DEFAULT_IMG: Record<string, string> = {
@@ -52,6 +52,7 @@ const VI: Record<string, string> = {
   "리뷰어가 직접 방문해 체험": "Reviewer trực tiếp ghé thăm trải nghiệm",
   "방문 없이 자료·가이드로 포스팅": "Đăng bài bằng tư liệu, không cần ghé thăm",
   "미션 (리뷰어가 발행할 콘텐츠)": "Nhiệm vụ (nội dung reviewer sẽ đăng)",
+  "어떤 채널에 올리는 미션인가요?": "Đăng nội dung lên kênh nào?",
   "모집 팀 수": "Số nhóm tuyển",
   "1팀당 인원 (동반 포함)": "Số người mỗi nhóm",
   "지역": "Khu vực",
@@ -283,12 +284,28 @@ export default function NewCampaignPage() {
         placeholder={t("예: 아로마 90분 2인 · 700,000₫ 상당")}
       />
 
-      <label style={labelStyle}>{t("미션 (리뷰어가 발행할 콘텐츠)")}</label>
-      <select style={inputStyle} value={mission} onChange={(e) => setMission(e.target.value)}>
+      <label style={labelStyle}>{t("어떤 채널에 올리는 미션인가요?")}</label>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
         {MISSIONS.map((m) => (
-          <option key={m}>{m}</option>
+          <div
+            key={m}
+            onClick={() => setMission(m)}
+            style={{
+              border: mission === m ? "2px solid var(--brand)" : "1.5px solid var(--line)",
+              background: mission === m ? "var(--brand-bg)" : "#fff",
+              borderRadius: 12,
+              padding: "11px 6px",
+              cursor: "pointer",
+              textAlign: "center",
+              fontSize: 12.5,
+              fontWeight: 800,
+              color: mission === m ? "var(--brand-dark)" : "var(--ink2)",
+            }}
+          >
+            {m}
+          </div>
         ))}
-      </select>
+      </div>
 
       <div style={{ display: "flex", gap: 12 }}>
         <div style={{ flex: 1 }}>

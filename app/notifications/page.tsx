@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "../../lib/supabase";
+import PushSetup from "../../components/PushSetup";
 
 type Notif = { id: string; type: string; title: string; body: string; link: string; read: boolean; created_at: string };
 
@@ -87,6 +88,8 @@ export default function NotificationsPage() {
           </button>
         )}
       </div>
+
+      {!guest && <PushSetup />}
 
       {guest && (
         <div style={{ marginTop: 20 }}>

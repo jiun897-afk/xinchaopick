@@ -1,0 +1,13 @@
+{
+  "name": "베자뷰 — 베트남 체험단",
+  "short_name": "베자뷰",
+  "description": "다낭 맛집·마사지·액티비티를 무료로 체험하고 리뷰로 돌려받으세요",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF7F2",
+  "theme_color": "#F55B24",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

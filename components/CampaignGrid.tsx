@@ -22,11 +22,15 @@ type Campaign = {
 
 const MISSION_SHORT: Record<string, string> = {
   "네이버 블로그": "블로그",
-  "유튜브 쇼츠": "쇼츠",
   "네이버 클립": "클립",
+  "유튜브 롱폼": "유튜브",
+  "유튜브 쇼츠": "쇼츠",
   "인스타그램": "인스타",
-  "영상": "영상",
   "인스타 릴스": "릴스",
+  "페이스북": "페북",
+  "스레드": "스레드",
+  "X(엑스)": "X",
+  "영상": "영상",
 };
 
 const CHIPS = ["전체", "오늘 가능", "포인트", "기자단", "로컬맛집", "한식", "마사지·스파", "카페·디저트", "투어·액티비티", "네일·뷰티", "기타"];
@@ -82,7 +86,7 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
       </div>
 
       <div className="chips" style={{ margin: "0 0 8px" }}>
-        {["전체", "블로그", "쇼츠", "클립", "인스타", "릴스", "영상"].map((c2) => (
+        {["전체", "블로그", "유튜브", "쇼츠", "클립", "인스타", "릴스", "페북", "스레드", "X"].map((c2) => (
           <span key={c2} className={"chip" + (ch === c2 ? " on" : "")} style={{ cursor: "pointer", fontSize: 12, padding: "6px 12px" }} onClick={() => setCh(c2)}>
             {c2 === "전체" ? "채널 전체" : c2}
           </span>

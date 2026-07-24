@@ -16,6 +16,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#F55B24" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
         <link rel="preconnect" href="https://cdn.jsdelivr.net" crossOrigin="" />
         <link
           href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
