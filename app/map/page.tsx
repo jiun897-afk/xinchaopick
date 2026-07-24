@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import { loadLeaflet, DANANG } from "../../lib/leaflet";
-import { distM, fmtDist } from "../../lib/geo";
+import { distM, fmtDist, bearing, dir8 } from "../../lib/geo";
 import RangeCalendar from "../../components/RangeCalendar";
 
 type P = {
@@ -66,6 +66,8 @@ export default function MapPage() {
   const meRef = useRef<any>(null);
   const posRef = useRef<{ lat: number; lng: number } | null>(null);
   const markersRef = useRef<Record<string, any>>({});
+  const coneRef = useRef<any>(null);
+  const lineRef = useRef<any>(null);
   const aggRef = useRef<Record<string, Agg>>({});
   const dateRef = useRef("");
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
@@ -97,6 +99,20 @@ export default function MapPage() {
       meRef.current = L.circleMarker([la, ln], { radius: 8, color: "#fff", fillColor: "#1A73E8", fillOpacity: 1, weight: 3 })
         .addTo(map)
         .bindPopup("내 위치");
+    }
+    // 바라보는 방향 부채꼴 (나침반)
+    if (coneRef.current) coneRef.current.setLatLng([la, ln]);
+    else {
+      coneRef.current = L.marker([la, ln], {
+        icon: L.divIcon({
+          className: "",
+          html: '<div class="vjcone" style="width:64px;height:64px;border-radius:50%;background:conic-gradient(from -27deg, rgba(26,115,232,.28) 0deg 54deg, transparent 54deg 360deg);"></div>',
+          iconSize: [64, 64],
+          iconAnchor: [32, 32],
+        }),
+        interactive: false,
+        keyboard: false,
+      }).addTo(map);
     }
     if (fly || inVietnam(la, ln)) map.setView([la, ln], 14);
     setFarAway(!inVietnam(la, ln));
@@ -160,6 +176,26 @@ export default function MapPage() {
       } catch {}
       const map = L.map(ref.current, { zoomControl: false }).setView(init, initZoom);
       map.on("moveend zoomend", () => setMoveTick((t) => t + 1));
+      // 업체 선택 시 내 위치→업체 방향선
+      map.on("popupopen", (e: any) => {
+        const my = posRef.current;
+        const ll = e.popup.getLatLng();
+        if (!my || !ll) return;
+        if (lineRef.current) map.removeLayer(lineRef.current);
+        lineRef.current = L.polyline(
+          [
+            [my.lat, my.lng],
+            [ll.lat, ll.lng],
+          ],
+          { color: "#F04E1A", weight: 3, dashArray: "6 8", opacity: 0.85 }
+        ).addTo(map);
+      });
+      map.on("popupclose", () => {
+        if (lineRef.current) {
+          map.removeLayer(lineRef.current);
+          lineRef.current = null;
+        }
+      });
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
       mapRef.current = map;
@@ -204,7 +240,9 @@ export default function MapPage() {
               '<span style="font-size:11.5px;color:#777">' + p.category + (p.subcategory ? " · " + p.subcategory : "") + "</span><br/>" +
               '<span style="font-size:12px;color:#F59E0B;font-weight:800">★ ' + Number(s.avg_rating).toFixed(1) + "</span>" +
               '<span style="font-size:11px;color:#999"> (' + s.review_count + ")</span>" +
-              (d !== null ? '<span style="font-size:11.5px;color:#D9420F;font-weight:800"> · 내 위치에서 ' + fmtDist(d) + "</span>" : "") +
+              (d !== null && my
+                ? '<span style="font-size:11.5px;color:#D9420F;font-weight:800"> · 내 위치에서 ' + dir8(bearing(my.lat, my.lng, p.lat, p.lng)) + " " + fmtDist(d) + "</span>"
+                : "") +
               "<br/>" +
               (a
                 ? '<span style="font-size:11px;color:#1FA45B;font-weight:800">' +
@@ -223,6 +261,8 @@ export default function MapPage() {
         mapRef.current.remove();
         mapRef.current = null;
         meRef.current = null;
+        coneRef.current = null;
+        lineRef.current = null;
         markersRef.current = {};
       }
     };
@@ -259,6 +299,25 @@ export default function MapPage() {
       else if (!show && map.hasLayer(mk)) map.removeLayer(mk);
     });
   }, [agg, dfrom, dto, todayOnly]);
+
+  // 나침반: 폰이 바라보는 방향으로 부채꼴 회전
+  useEffect(() => {
+    const onOri = (e: any) => {
+      let h: number | null = e.webkitCompassHeading ?? null;
+      if (h == null && e.alpha != null && e.absolute !== false) h = 360 - e.alpha;
+      if (h == null) return;
+      const mk = coneRef.current;
+      const el = mk && mk.getElement && mk.getElement();
+      const inner = el && el.querySelector(".vjcone");
+      if (inner) inner.style.transform = "rotate(" + Math.round(h) + "deg)";
+    };
+    window.addEventListener("deviceorientationabsolute", onOri, true);
+    window.addEventListener("deviceorientation", onOri, true);
+    return () => {
+      window.removeEventListener("deviceorientationabsolute", onOri, true);
+      window.removeEventListener("deviceorientation", onOri, true);
+    };
+  }, []);
 
   // 지도 화면(뷰포트) 안에 실제로 보이는 업체 수
   const viewCount = useMemo(() => {
@@ -306,6 +365,14 @@ export default function MapPage() {
 
   const listed = useMemo(() => {
     let r = rows ?? [];
+    // 목록도 지도에 보이는 영역 기준으로 (지역 선택·이동과 일치)
+    const map = mapRef.current;
+    if (map) {
+      try {
+        const b = map.getBounds();
+        r = r.filter((p) => b.contains([p.lat, p.lng]));
+      } catch {}
+    }
     if (dfrom !== "") r = r.filter((p) => agg[p.id]);
     if (todayOnly) r = r.filter((p) => agg[p.id]?.today);
     if (cat !== "전체") r = r.filter((p) => p.category === cat);
@@ -321,7 +388,8 @@ export default function MapPage() {
     if (sort === "near" && pos) r = [...r].sort((a, b) => dist(a) - dist(b));
     else r = [...r].sort((a, b) => reco(b) - reco(a));
     return r;
-  }, [rows, agg, dfrom, todayOnly, cat, sns, sort, pos, stats]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, agg, dfrom, todayOnly, cat, sns, sort, pos, stats, moveTick]);
 
   const chip = (on: boolean, brand = false): React.CSSProperties => ({
     fontSize: 12,
@@ -542,8 +610,16 @@ export default function MapPage() {
 
           {rows === null && <div style={{ marginTop: 20, fontSize: 13.5, color: "var(--ink3)" }}>불러오는 중…</div>}
           {rows !== null && listed.length === 0 && (
-            <div style={{ marginTop: 30, textAlign: "center", fontSize: 13.5, color: "var(--ink3)" }}>
-              {dfrom ? "이 날짜에 가능한 업체가 아직 없어요." : "이 조건의 업체가 아직 없어요."}
+            <div style={{ marginTop: 30, textAlign: "center" }}>
+              <div style={{ fontSize: 13.5, color: "var(--ink3)" }}>
+                {dfrom ? "이 날짜에 가능한 업체가 이 지역에 없어요." : "지금 보는 지역엔 업체가 없어요."}
+              </div>
+              <span
+                onClick={() => setRegionOpen(true)}
+                style={{ display: "inline-block", marginTop: 12, background: "var(--brand)", color: "#fff", borderRadius: 999, padding: "10px 18px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}
+              >
+                지역별 업체 보기 ▾
+              </span>
             </div>
           )}
 
