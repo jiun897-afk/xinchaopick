@@ -83,12 +83,44 @@ export default function OwnerPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [credit, setCredit] = useState<number | null>(null);
   const [pendingReviews, setPendingReviews] = useState<number>(0);
+  const [visitReqs, setVisitReqs] = useState<any[]>([]);
+
+  async function loadVisitReqs(uid: string) {
+    if (!supabase) return;
+    const { data } = await supabase
+      .from("visit_requests")
+      .select("id, campaign_id, user_id, created_at, status, campaigns!inner(store_name, owner_id)")
+      .eq("campaigns.owner_id", uid)
+      .eq("status", "pending")
+      .order("created_at", { ascending: true });
+    let rows = (data as any[]) ?? [];
+    // 1시간 지난 것은 표시 제외
+    rows = rows.filter((r) => Date.now() - new Date(r.created_at).getTime() < 3600000);
+    if (rows.length) {
+      const ids = Array.from(new Set(rows.map((r) => r.user_id)));
+      const { data: profs } = await supabase.from("profiles").select("id, nickname").in("id", ids);
+      const nm: Record<string, string> = {};
+      (profs ?? []).forEach((p: any) => (nm[p.id] = p.nickname));
+      rows = rows.map((r) => ({ ...r, nickname: nm[r.user_id] ?? "리뷰어" }));
+    }
+    setVisitReqs(rows);
+  }
+
+  async function respondVisit(reqId: string, accept: boolean) {
+    if (!supabase) return;
+    setBusy(reqId);
+    const { error } = await supabase.rpc("respond_today_visit", { p_req_id: reqId, p_accept: accept });
+    if (error) alert(error.message);
+    setVisitReqs((v) => v.filter((r) => r.id !== reqId));
+    setBusy(null);
+  }
 
   useEffect(() => {
     if (!supabase) {
       setGuest(true);
       return;
     }
+    let iv: any = null;
     (async () => {
       const {
         data: { session },
@@ -114,7 +146,11 @@ export default function OwnerPage() {
       setList((data as Campaign[]) ?? []);
       setCredit((w as any)?.balance ?? 0);
       setPendingReviews(pr ?? 0);
+      loadVisitReqs(session.user.id);
+      iv = setInterval(() => loadVisitReqs(session.user.id), 30000);
     })();
+    return () => { if (iv) clearInterval(iv); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
 
   async function toggle(cid: string) {
@@ -262,6 +298,34 @@ export default function OwnerPage() {
           {t("쿠폰")}
         </Link>
       </div>
+
+      {!guest && visitReqs.length > 0 && (
+        <div style={{ marginTop: 14, border: "1.5px solid var(--brand)", background: "var(--brand-bg)", borderRadius: 16, padding: "14px 16px" }}>
+          <div style={{ fontSize: 13.5, fontWeight: 900, color: "var(--brand-dark)" }}>
+            ⚡ 오늘 방문 신청 {visitReqs.length}건 — 1시간 내 응답해주세요!
+          </div>
+          {visitReqs.map((r) => {
+            const mins = Math.max(0, 60 - Math.floor((Date.now() - new Date(r.created_at).getTime()) / 60000));
+            return (
+              <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, background: "#fff", borderRadius: 12, padding: "11px 13px", flexWrap: "wrap" }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 800 }}>
+                    {r.nickname}
+                    <span style={{ color: "var(--ink3)", fontWeight: 700 }}> → {r.campaigns?.store_name}</span>
+                  </div>
+                  <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 2 }}>지금 방문하고 싶어해요 · 남은 시간 약 {mins}분</div>
+                </div>
+                <button className="btn pri" style={{ padding: "9px 15px", fontSize: 12.5 }} disabled={busy === r.id} onClick={() => respondVisit(r.id, true)}>
+                  수락
+                </button>
+                <button className="btn ghost" style={{ padding: "9px 13px", fontSize: 12.5 }} disabled={busy === r.id} onClick={() => respondVisit(r.id, false)}>
+                  거절
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {guest && (
         <div style={{ marginTop: 24 }}>

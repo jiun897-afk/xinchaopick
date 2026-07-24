@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import { loadLeaflet, DANANG } from "../../lib/leaflet";
 import { distM, fmtDist } from "../../lib/geo";
+import RangeCalendar from "../../components/RangeCalendar";
 
 type P = {
   id: string;
@@ -15,6 +16,7 @@ type P = {
   lat: number;
   lng: number;
   image_url: string | null;
+  busy_date: string | null;
 };
 type Stat = { place_id: string; review_count: number; avg_rating: number };
 type Camp = {
@@ -46,10 +48,15 @@ function inVietnam(lat: number, lng: number) {
   return lat > 8 && lat < 24 && lng > 101.5 && lng < 110.5;
 }
 
-function availOn(c: Camp, iso: string): boolean {
-  if (!iso) return true;
-  if (c.avail_type === "dates") return (c.avail_dates ?? []).includes(iso);
-  return true; // 언제나 가능
+function availOn(c: Camp, from: string, to: string): boolean {
+  if (!from) return true;
+  if (c.avail_type !== "dates") return true; // 언제나 가능
+  const end = to || from;
+  return (c.avail_dates ?? []).some((d) => d >= from && d <= end);
+}
+
+function fmtD(s: string) {
+  return Number(s.slice(5, 7)) + "/" + Number(s.slice(8, 10));
 }
 
 export default function MapPage() {
@@ -70,21 +77,9 @@ export default function MapPage() {
   const [sort, setSort] = useState("near");
   const [cat, setCat] = useState("전체");
   const [sns, setSns] = useState("전체");
-  const [date, setDate] = useState(""); // '' = 전체 날짜
-
-  const DATES = useMemo(() => {
-    const out: { iso: string; label: string }[] = [];
-    const now = new Date();
-    for (let i = 0; i < 14; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-      const iso =
-        d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-      const label =
-        i === 0 ? "오늘" : i === 1 ? "내일" : d.getMonth() + 1 + "/" + d.getDate() + "(" + "일월화수목금토"[d.getDay()] + ")";
-      out.push({ iso, label });
-    }
-    return out;
-  }, []);
+  const [dfrom, setDfrom] = useState(""); // '' = 전체 날짜
+  const [dto, setDto] = useState("");
+  const [calOpen, setCalOpen] = useState(false);
 
   function locate(fly: boolean) {
     if (!navigator.geolocation) {
@@ -127,7 +122,7 @@ export default function MapPage() {
         return;
       }
       const [{ data: pl }, { data: st }, { data: cp }] = await Promise.all([
-        supabase.from("places").select("id, name, category, subcategory, area, lat, lng, image_url").not("lat", "is", null),
+        supabase.from("places").select("id, name, category, subcategory, area, lat, lng, image_url, busy_date").not("lat", "is", null),
         supabase.from("place_stats").select("*"),
         supabase
           .from("campaigns")
@@ -187,10 +182,13 @@ export default function MapPage() {
 
   const agg = useMemo(() => {
     const m: Record<string, Agg> = {};
+    const n0 = new Date();
+    const tIso = n0.getFullYear() + "-" + String(n0.getMonth() + 1).padStart(2, "0") + "-" + String(n0.getDate()).padStart(2, "0");
+    const busySet = new Set((rows ?? []).filter((p) => p.busy_date === tIso).map((p) => p.id));
     Object.entries(byPlace).forEach(([pid, cs]) => {
-      const av = cs.filter((c) => availOn(c, date));
+      const av = cs.filter((c) => availOn(c, dfrom, dto));
       if (!av.length) return;
-      const e: Agg = { n: av.length, today: av.some((c) => !!c.today_available), chs: [], jj: av.some((c) => c.camp_type === "기자단") };
+      const e: Agg = { n: av.length, today: av.some((c) => !!c.today_available) && !busySet.has(pid), chs: [], jj: av.some((c) => c.camp_type === "기자단") };
       av.forEach((c) => {
         const s = CH_SHORT[c.mission_type] ?? c.mission_type;
         if (!e.chs.includes(s)) e.chs.push(s);
@@ -198,20 +196,20 @@ export default function MapPage() {
       m[pid] = e;
     });
     return m;
-  }, [byPlace, date]);
+  }, [byPlace, rows, dfrom, dto]);
 
   useEffect(() => {
     aggRef.current = agg;
-    dateRef.current = date;
-    // 날짜 선택 시 해당 날짜 가능 업체만 지도에 표시
+    dateRef.current = dfrom;
+    // 날짜 선택 시 해당 기간 가능 업체만 지도에 표시
     const map = mapRef.current;
     if (!map) return;
     Object.entries(markersRef.current).forEach(([pid, mk]) => {
-      const show = date === "" || !!agg[pid];
+      const show = dfrom === "" || !!agg[pid];
       if (show && !map.hasLayer(mk)) mk.addTo(map);
       else if (!show && map.hasLayer(mk)) map.removeLayer(mk);
     });
-  }, [agg, date]);
+  }, [agg, dfrom, dto]);
 
   const cats = useMemo(() => {
     const s = new Set<string>();
@@ -221,7 +219,7 @@ export default function MapPage() {
 
   const listed = useMemo(() => {
     let r = rows ?? [];
-    if (date !== "") r = r.filter((p) => agg[p.id]);
+    if (dfrom !== "") r = r.filter((p) => agg[p.id]);
     if (cat !== "전체") r = r.filter((p) => p.category === cat);
     if (sns !== "전체") {
       r = r.filter((p) => {
@@ -243,7 +241,7 @@ export default function MapPage() {
       });
     else r = [...r].sort((a, b) => reco(b) - reco(a));
     return r;
-  }, [rows, agg, date, cat, sns, sort, pos, stats]);
+  }, [rows, agg, dfrom, cat, sns, sort, pos, stats]);
 
   const chip = (on: boolean, brand = false): React.CSSProperties => ({
     fontSize: 12,
@@ -269,16 +267,73 @@ export default function MapPage() {
     outline: "none",
   };
 
+  const todayIso = (() => {
+    const n = new Date();
+    return n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0");
+  })();
+  const tomorrowIso = (() => {
+    const n = new Date();
+    const t = new Date(n.getFullYear(), n.getMonth(), n.getDate() + 1);
+    return t.getFullYear() + "-" + String(t.getMonth() + 1).padStart(2, "0") + "-" + String(t.getDate()).padStart(2, "0");
+  })();
+
+  const dateLabel = dfrom ? (dto && dto !== dfrom ? fmtD(dfrom) + " ~ " + fmtD(dto) : dfrom === todayIso ? "오늘" : dfrom === tomorrowIso ? "내일" : fmtD(dfrom)) : "날짜 전체";
+
   const dateChips = (
-    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }} className="regionrow">
-      <span style={chip(date === "", true)} onClick={() => setDate("")}>
-        날짜 전체
-      </span>
-      {DATES.map((d) => (
-        <span key={d.iso} style={chip(date === d.iso, true)} onClick={() => setDate(date === d.iso ? "" : d.iso)}>
-          {d.label}
+    <div style={{ position: "relative" }}>
+      <div style={{ display: "flex", gap: 6 }}>
+        <span style={chip(!!dfrom, true)} onClick={() => setCalOpen((v) => !v)}>
+          📅 {dateLabel} ▾
         </span>
-      ))}
+        {dfrom && (
+          <span style={chip(false)} onClick={() => { setDfrom(""); setDto(""); setCalOpen(false); }}>
+            ✕ 해제
+          </span>
+        )}
+      </div>
+      {calOpen && (
+        <div
+          style={{
+            position: "absolute",
+            top: 40,
+            left: 0,
+            width: 300,
+            maxWidth: "calc(100vw - 24px)",
+            background: "#fff",
+            border: "1px solid var(--line)",
+            borderRadius: 18,
+            boxShadow: "0 14px 40px rgba(20,15,10,.18)",
+            padding: "14px 14px 12px",
+            zIndex: 700,
+          }}
+        >
+          <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--ink3)", marginBottom: 8 }}>
+            날짜 하나 또는 시작·끝 두 번 눌러 기간 선택
+          </div>
+          <RangeCalendar
+            from={dfrom}
+            to={dto}
+            onChange={(f, t) => {
+              setDfrom(f);
+              setDto(t);
+            }}
+          />
+          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+            <span style={chip(dfrom === todayIso && !dto, true)} onClick={() => { setDfrom(todayIso); setDto(""); }}>
+              오늘
+            </span>
+            <span style={chip(dfrom === tomorrowIso && !dto, true)} onClick={() => { setDfrom(tomorrowIso); setDto(""); }}>
+              내일
+            </span>
+            <span
+              style={{ ...chip(true, true), marginLeft: "auto", background: "var(--ink)", border: "1px solid var(--ink)" }}
+              onClick={() => setCalOpen(false)}
+            >
+              완료
+            </span>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -289,7 +344,7 @@ export default function MapPage() {
           주변 체험 지도
           {rows !== null && (
             <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink3)", marginLeft: 7 }}>
-              업체 {date === "" ? rows.length : listed.length}곳
+              업체 {dfrom === "" ? rows.length : listed.length}곳
             </span>
           )}
         </div>
@@ -397,7 +452,7 @@ export default function MapPage() {
           {rows === null && <div style={{ marginTop: 20, fontSize: 13.5, color: "var(--ink3)" }}>불러오는 중…</div>}
           {rows !== null && listed.length === 0 && (
             <div style={{ marginTop: 30, textAlign: "center", fontSize: 13.5, color: "var(--ink3)" }}>
-              {date ? "이 날짜에 가능한 업체가 아직 없어요." : "이 조건의 업체가 아직 없어요."}
+              {dfrom ? "이 날짜에 가능한 업체가 아직 없어요." : "이 조건의 업체가 아직 없어요."}
             </div>
           )}
 

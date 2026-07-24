@@ -186,6 +186,17 @@ footer.site { border-top: 1px solid var(--line); padding: 30px 0 46px; }
 .chip { flex-shrink: 0; border: 1px solid var(--line); background: #fff; border-radius: 18px; padding: 8px 14px; font-size: 13px; font-weight: 700; color: var(--ink2); }
 .chip.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 
+/* ── 마스코트 애니메이션 ── */
+.mascotbob { animation: mbob 2.8s ease-in-out infinite; }
+@keyframes mbob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+.mascotarm { transform-box: fill-box; transform-origin: 15% 85%; animation: marm 1.5s ease-in-out infinite; }
+@keyframes marm { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-13deg); } }
+.mascotpen { transform-box: fill-box; transform-origin: 20% 90%; animation: mpen 0.9s ease-in-out infinite; }
+@keyframes mpen { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 33% { transform: translate(2.2px, 0.8px) rotate(4deg); } 66% { transform: translate(-1.2px, 0.2px) rotate(-3deg); } }
+.mascotspark { animation: mspark 2.2s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+.mascotspark2 { animation: mspark 2.2s ease-in-out 1.1s infinite; transform-box: fill-box; transform-origin: center; }
+@keyframes mspark { 0%, 100% { opacity: 0.15; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.1); } }
+
 /* ── 모바일 앱 탭바 ── */
 .tabbar-app {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 80; display: none;

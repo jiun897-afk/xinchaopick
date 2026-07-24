@@ -7,6 +7,7 @@ import HomeSearch from "../components/HomeSearch";
 import NotificationBell from "../components/NotificationBell";
 import ChannelIcons from "../components/ChannelIcons";
 import CategoryIcons from "../components/CategoryIcons";
+import Mascot from "../components/Mascot";
 
 export const revalidate = 60;
 
@@ -137,7 +138,9 @@ export default async function Home() {
                 boxShadow: "0 6px 18px rgba(240,78,26,.28)",
               }}
             >
-              <span style={{ fontSize: 28 }}>🧡</span>
+              <span style={{ width: 74, height: 74, borderRadius: "50%", background: "rgba(255,255,255,.94)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "inset 0 -3px 8px rgba(217,66,15,.12)" }}>
+                <Mascot variant="eat" size={60} />
+              </span>
               <span style={{ fontSize: 17, fontWeight: 900 }}>체험단</span>
               <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>방문하고 무료 체험</span>
             </Link>
@@ -156,7 +159,9 @@ export default async function Home() {
                 boxShadow: "0 6px 18px rgba(109,40,217,.28)",
               }}
             >
-              <span style={{ fontSize: 28 }}>📰</span>
+              <span style={{ width: 74, height: 74, borderRadius: "50%", background: "rgba(255,255,255,.94)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "inset 0 -3px 8px rgba(76,29,149,.12)" }}>
+                <Mascot variant="write" size={60} />
+              </span>
               <span style={{ fontSize: 17, fontWeight: 900 }}>기자단</span>
               <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>방문 없이 원고 작성</span>
             </Link>

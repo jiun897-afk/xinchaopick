@@ -10,6 +10,8 @@ import PhotoUploader from "../../../components/PhotoUploader";
 
 
 const VI: Record<string, string> = {
+  "오늘은 바빠요 — 당일 방문 신청 안 받는 중 (자정에 자동 해제)": "Hôm nay bận — tạm ngưng nhận khách trong ngày (tự mở lại lúc 0h)",
+  "오늘은 바빠요 (당일 방문 잠시 끄기)": "Hôm nay bận (tạm tắt ghé thăm trong ngày)",
   "← 사장님 센터": "← Trung tâm đối tác",
   "내 업체 관리": "Quản lý cửa hàng",
   "업체를 등록하면 업체 목록에 노출되고, 캠페인도 열 수 있어요 (여러 개 등록 가능)": "Đăng ký cửa hàng để hiển thị trong danh mục và mở chiến dịch (được nhiều cửa hàng)",
@@ -106,6 +108,7 @@ type Place = {
   lat: number | null;
   lng: number | null;
   photos: string[] | null;
+  busy_date?: string | null;
 };
 
 const inp: React.CSSProperties = {
@@ -387,8 +390,13 @@ export default function OwnerPlacesPage() {
       )}
 
       {!guest &&
-        (list ?? []).map((p) => (
-          <div key={p.id} style={{ display: "flex", gap: 12, alignItems: "center", border: "1px solid var(--line)", borderRadius: 16, padding: "14px 16px", marginTop: 12 }}>
+        (list ?? []).map((p) => {
+          const n = new Date();
+          const todayIso = n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0");
+          const isBusy = p.busy_date === todayIso;
+          return (
+          <div key={p.id} style={{ border: "1px solid var(--line)", borderRadius: 16, padding: "14px 16px", marginTop: 12 }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <div
               style={{
                 width: 52,
@@ -422,8 +430,45 @@ export default function OwnerPlacesPage() {
             >
               {t("수정")}
             </button>
+            </div>
+            <div
+              onClick={async () => {
+                if (!supabase) return;
+                const nv = isBusy ? null : todayIso;
+                const { error } = await supabase.from("places").update({ busy_date: nv }).eq("id", p.id);
+                if (!error) setList((l) => (l ?? []).map((x) => (x.id === p.id ? { ...x, busy_date: nv } : x)));
+              }}
+              style={{
+                marginTop: 11,
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                background: isBusy ? "#FDECEC" : "var(--chip)",
+                borderRadius: 11,
+                padding: "9px 12px",
+                cursor: "pointer",
+              }}
+            >
+              <span
+                style={{
+                  width: 36,
+                  height: 20,
+                  borderRadius: 999,
+                  background: isBusy ? "#E05B4B" : "#D8D2C9",
+                  position: "relative",
+                  flexShrink: 0,
+                  transition: "background .15s",
+                }}
+              >
+                <span style={{ position: "absolute", top: 2, left: isBusy ? 18 : 2, width: 16, height: 16, borderRadius: "50%", background: "#fff", transition: "left .15s" }} />
+              </span>
+              <span style={{ fontSize: 12, fontWeight: 800, color: isBusy ? "#C0392B" : "var(--ink2)" }}>
+                {isBusy ? t("오늘은 바빠요 — 당일 방문 신청 안 받는 중 (자정에 자동 해제)") : t("오늘은 바빠요 (당일 방문 잠시 끄기)")}
+              </span>
+            </div>
           </div>
-        ))}
+          );
+        })}
     </div>
   );
 }

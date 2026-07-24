@@ -4,6 +4,7 @@ import AuthButton from "../../components/AuthButton";
 import Logo from "../../components/Logo";
 import NotificationBell from "../../components/NotificationBell";
 import AvailCalendar from "../../components/AvailCalendar";
+import TodayVisitButton from "../../components/TodayVisitButton";
 
 export const revalidate = 15;
 
@@ -30,7 +31,7 @@ type Campaign = {
   avail_dates: string[] | null;
 };
 
-type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string; photos: string[] | null; lat: number | null; lng: number | null } | null;
+type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string; photos: string[] | null; lat: number | null; lng: number | null; busy_date: string | null } | null;
 
 type PlaceReviewInfo = { avg: number; count: number; latest: { rating: number; content: string; verified: boolean }[] };
 
@@ -67,7 +68,7 @@ async function getPlace(id: string): Promise<PlaceInfo> {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (!url || !key) return null;
   try {
-    const res = await fetch(url + "/rest/v1/places?id=eq." + encodeURIComponent(id) + "&select=id,name,address,maps_url,phone,photos,lat,lng&limit=1", {
+    const res = await fetch(url + "/rest/v1/places?id=eq." + encodeURIComponent(id) + "&select=id,name,address,maps_url,phone,photos,lat,lng,busy_date&limit=1", {
       headers: { apikey: key, Authorization: "Bearer " + key },
       next: { revalidate: 60 },
     });
@@ -295,6 +296,10 @@ export default async function CampaignPage({
             </div>
           )}
         </div>
+
+        {c.today_available && c.camp_type !== "기자단" && (
+          <TodayVisitButton campaignId={c.id} busyDate={place?.busy_date ?? null} />
+        )}
 
         <ApplyButton campaignId={c.id} quota={c.quota} applied={c.applied} />
 

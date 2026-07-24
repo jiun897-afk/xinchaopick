@@ -67,7 +67,7 @@ const VI: Record<string, string> = {
   "내 보유 크레딧: ": "Credit hiện có: ",
   "— 부족해요! ": "— chưa đủ! ",
   "충전하러 가기 →": "Nạp credit →",
-  "오늘 방문 가능 (당일 예약 허용)": "Nhận khách hôm nay (cho phép đặt trong ngày)",
+  "당일 방문 받기 — 리뷰어가 '오늘 갈게요' 신청하면 내가 수락한 경우에만 확정돼요": "Nhận khách trong ngày — reviewer gửi yêu cầu, chỉ xác nhận khi tôi chấp nhận",
   "대표 사진은 카테고리 기본 이미지로 자동 설정돼요 (직접 업로드는 곧 지원). 포인트는 리뷰를 승인하는 순간 크레딧에서 차감되어 리뷰어에게 지급돼요.": "Ảnh đại diện được đặt tự động theo danh mục (sắp hỗ trợ tải ảnh). Điểm sẽ trừ từ credit khi bạn duyệt review.",
   "가게 이름을 입력해주세요.": "Vui lòng nhập tên cửa hàng.",
   "어느 업체의 캠페인인지 선택해주세요.": "Vui lòng chọn cửa hàng.",
@@ -452,7 +452,7 @@ export default function NewCampaignPage() {
 
       <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
         <input type="checkbox" checked={today} onChange={(e) => setToday(e.target.checked)} style={{ width: 18, height: 18 }} />
-        {t("오늘 방문 가능 (당일 예약 허용)")}
+        {t("당일 방문 받기 — 리뷰어가 '오늘 갈게요' 신청하면 내가 수락한 경우에만 확정돼요")}
       </label>
 
       <div style={{ background: "var(--chip)", borderRadius: 12, padding: "12px 14px", fontSize: 11.5, color: "var(--ink2)", lineHeight: 1.6, marginTop: 14 }}>
