@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import Avatar from "../../components/Avatar";
 
 /* QR/링크로 친구 추가: /add?h=아이디 */
 export default function AddFriendPage() {
   const supabase = getSupabase();
-  const [target, setTarget] = useState<{ id: string; nickname: string; handle: string } | null | "loading">("loading");
+  const [target, setTarget] = useState<{ id: string; nickname: string; handle: string; avatar_url?: string | null } | null | "loading">("loading");
   const [me, setMe] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -70,8 +71,8 @@ export default function AddFriendPage() {
         </>
       ) : (
         <>
-          <div style={{ width: 76, height: 76, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 30, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
-            {target.nickname[0]?.toUpperCase() ?? "?"}
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <Avatar url={target.avatar_url} name={target.nickname} size={76} />
           </div>
           <h1 style={{ fontSize: 21, fontWeight: 900, marginTop: 14 }}>{target.nickname}</h1>
           <div style={{ fontSize: 13, color: "var(--ink3)", marginTop: 3 }}>@{target.handle}</div>

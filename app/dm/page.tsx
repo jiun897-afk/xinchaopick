@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import Avatar from "../../components/Avatar";
 
 /* 유저 간 1:1 채팅 (DM) */
 type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null };
@@ -11,7 +12,8 @@ export default function DmPage() {
   const supabase = getSupabase();
   const [roomId, setRoomId] = useState<string | null>(null);
   const [me, setMe] = useState<string | null>(null);
-  const [partner, setPartner] = useState<{ id: string; nickname: string } | null>(null);
+  const [partner, setPartner] = useState<{ id: string; nickname: string; avatar_url?: string | null } | null>(null);
+  const [blocked, setBlocked] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -58,8 +60,13 @@ export default function DmPage() {
       const { data: r } = await supabase.from("dm_rooms").select("id, user_a, user_b").eq("id", roomId).maybeSingle();
       if (r) {
         const other = (r as any).user_a === session.user.id ? (r as any).user_b : (r as any).user_a;
-        const { data: p } = await supabase.from("profiles").select("id, nickname").eq("id", other).maybeSingle();
-        setPartner({ id: other, nickname: (p as any)?.nickname ?? "회원" });
+        const [{ data: pv }, { data: blk }] = await Promise.all([
+          supabase.rpc("profiles_view", { p_ids: [other] }),
+          supabase.from("blocks").select("blocked_id").eq("blocked_id", other).maybeSingle(),
+        ]);
+        const p = Array.isArray(pv) ? pv[0] : pv;
+        setPartner({ id: other, nickname: (p as any)?.nickname ?? "회원", avatar_url: (p as any)?.avatar_url ?? null });
+        setBlocked(!!blk);
       }
       loadMsgs(roomId);
       ch = supabase
@@ -97,17 +104,29 @@ export default function DmPage() {
         <Link href="/chat" style={{ fontSize: 20, fontWeight: 800, color: "var(--ink3)" }}>
           ←
         </Link>
-        <div style={{ width: 38, height: 38, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          {partner?.nickname?.[0]?.toUpperCase() ?? "?"}
-        </div>
+        <Avatar url={partner?.avatar_url} name={partner?.nickname} size={38} />
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 15, fontWeight: 900 }}>{partner?.nickname ?? "채팅"}</div>
-          <div style={{ fontSize: 11, color: "var(--ink3)" }}>회원 간 1:1 대화</div>
+          <div style={{ fontSize: 11, color: "var(--ink3)" }}>{blocked ? "차단한 상대" : "회원 간 1:1 대화"}</div>
         </div>
         {partner && (
-          <Link href={"/reviewer?id=" + partner.id} style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: "var(--brand-dark)", textDecoration: "underline", flexShrink: 0 }}>
-            프로필
-          </Link>
+          <span
+            onClick={async () => {
+              if (!supabase || !me) return;
+              if (blocked) {
+                if (!confirm("차단을 해제할까요?")) return;
+                await supabase.from("blocks").delete().eq("user_id", me).eq("blocked_id", partner.id);
+                setBlocked(false);
+              } else {
+                if (!confirm(partner.nickname + "님을 차단할까요?\n서로 메시지를 보낼 수 없고, 내 프로필 사진이 상대에게 보이지 않아요.")) return;
+                await supabase.from("blocks").insert({ user_id: me, blocked_id: partner.id });
+                setBlocked(true);
+              }
+            }}
+            style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: blocked ? "var(--ink3)" : "#C0392B", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
+          >
+            {blocked ? "차단 해제" : "차단"}
+          </span>
         )}
       </div>
 

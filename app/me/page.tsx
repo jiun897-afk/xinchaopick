@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 
@@ -8,6 +8,48 @@ export default function MePage() {
   const supabase = getSupabase();
   const [email, setEmail] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [avatar, setAvatar] = useState<string | null>(null);
+  const [upBusy, setUpBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!supabase || !email) return;
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return;
+      const { data: p } = await supabase.from("profiles").select("avatar_url").eq("id", session.user.id).maybeSingle();
+      setAvatar((p as any)?.avatar_url ?? null);
+    })();
+  }, [supabase, email]);
+
+  async function uploadAvatar(f: File) {
+    if (!supabase) return;
+    if (f.size > 5 * 1024 * 1024) {
+      alert("사진은 5MB 이하로 올려주세요.");
+      return;
+    }
+    setUpBusy(true);
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) return;
+      const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
+      const path = session.user.id + "/avatar_" + Date.now() + "." + ext;
+      const { error } = await supabase.storage.from("avatars").upload(path, f, { upsert: true });
+      if (error) {
+        alert(error.message);
+        return;
+      }
+      const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
+      await supabase.from("profiles").upsert({ id: session.user.id, avatar_url: pub.publicUrl });
+      setAvatar(pub.publicUrl);
+    } finally {
+      setUpBusy(false);
+    }
+  }
 
   useEffect(() => {
     if (!supabase) {
@@ -111,22 +153,53 @@ export default function MePage() {
           padding: "18px 18px",
         }}
       >
-        <div
-          style={{
-            width: 54,
-            height: 54,
-            borderRadius: "50%",
-            background: "var(--brand)",
-            color: "#fff",
-            fontWeight: 900,
-            fontSize: 22,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            flexShrink: 0,
-          }}
-        >
-          {nick ? nick[0].toUpperCase() : "?"}
+        <div style={{ position: "relative", flexShrink: 0, cursor: email ? "pointer" : "default" }} onClick={() => email && fileRef.current?.click()}>
+          <div
+            style={{
+              width: 58,
+              height: 58,
+              borderRadius: "50%",
+              background: avatar ? "var(--chip)" : "var(--brand)",
+              backgroundImage: avatar ? "url(" + avatar + ")" : undefined,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              color: "#fff",
+              fontWeight: 900,
+              fontSize: 22,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            {!avatar && (nick ? nick[0].toUpperCase() : "?")}
+          </div>
+          {email && (
+            <span
+              style={{
+                position: "absolute",
+                right: -3,
+                bottom: -3,
+                width: 22,
+                height: 22,
+                borderRadius: "50%",
+                background: "#fff",
+                border: "1px solid var(--line)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 11,
+              }}
+            >
+              {upBusy ? "…" : "📷"}
+            </span>
+          )}
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => e.target.files?.[0] && uploadAvatar(e.target.files[0])}
+          />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           {!ready ? (

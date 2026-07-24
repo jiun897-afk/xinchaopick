@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import Avatar from "../../components/Avatar";
 
 type Room = {
   id: string;
@@ -12,16 +13,16 @@ type Room = {
   role: "reviewer" | "owner";
 };
 
-type DmRoom = { id: string; partner: string };
+type DmRoom = { id: string; partner: string; avatar?: string | null };
 
 export default function ChatListPage() {
   const supabase = getSupabase();
   const [guest, setGuest] = useState(false);
   const [rooms, setRooms] = useState<Room[] | null>(null);
   const [dms, setDms] = useState<DmRoom[]>([]);
-  const [friends, setFriends] = useState<{ id: string; nickname: string; handle: string | null }[]>([]);
+  const [friends, setFriends] = useState<{ id: string; nickname: string; handle: string | null; avatar_url?: string | null }[]>([]);
   const [q, setQ] = useState("");
-  const [found, setFound] = useState<{ id: string; nickname: string; handle: string } | null | "none">(null);
+  const [found, setFound] = useState<{ id: string; nickname: string; handle: string; avatar_url?: string | null } | null | "none">(null);
   const [sBusy, setSBusy] = useState(false);
   const [tab, setTab] = useState<"chats" | "friends">("chats");
 
@@ -99,21 +100,45 @@ export default function ChatListPage() {
       const fids = ((fr as any[]) ?? []).map((x) => x.friend_id);
       const needIds = Array.from(new Set([...drs.map((r) => (r.user_a === me ? r.user_b : r.user_a)), ...fids]));
       if (needIds.length) {
-        const { data: profs } = await supabase.from("profiles").select("id, nickname, handle").in("id", needIds);
+        const { data: profs } = await supabase.rpc("profiles_view", { p_ids: needIds });
         const nm: Record<string, any> = {};
-        (profs ?? []).forEach((p: any) => (nm[p.id] = p));
+        ((profs as any[]) ?? []).forEach((p: any) => (nm[p.id] = p));
         setDms(drs.map((r) => {
           const oid = r.user_a === me ? r.user_b : r.user_a;
-          return { id: r.id, partner: nm[oid]?.nickname ?? "회원" };
+          return { id: r.id, partner: nm[oid]?.nickname ?? "회원", avatar: nm[oid]?.avatar_url ?? null };
         }));
-        setFriends(fids.map((id) => ({ id, nickname: nm[id]?.nickname ?? "회원", handle: nm[id]?.handle ?? null })));
+        setFriends(fids.map((id) => ({ id, nickname: nm[id]?.nickname ?? "회원", handle: nm[id]?.handle ?? null, avatar_url: nm[id]?.avatar_url ?? null })));
       }
     })();
   }, [supabase]);
 
   return (
     <div className="wrap" style={{ maxWidth: 640, paddingTop: 24, paddingBottom: 90 }}>
-      <h1 style={{ fontSize: 22, fontWeight: 900 }}>채팅</h1>
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900 }}>채팅</h1>
+        <Link
+          href="/my-id"
+          aria-label="내 아이디 · QR"
+          style={{
+            marginLeft: "auto",
+            width: 40,
+            height: 40,
+            borderRadius: 12,
+            border: "1px solid var(--line)",
+            background: "#fff",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <path d="M14 14h3v3h-3zM19 19h2M14 20h2M21 14v2" strokeLinecap="round" />
+          </svg>
+        </Link>
+      </div>
       <div style={{ fontSize: 12.5, color: "var(--ink3)", marginTop: 3 }}>
         선정된 캠페인의 사장님·리뷰어와 방문 일정을 조율하세요
       </div>
@@ -172,14 +197,12 @@ export default function ChatListPage() {
             </button>
           </div>
           <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 6 }}>
-            내 아이디·QR 만들기는 <Link href="/my-id" style={{ color: "var(--brand-dark)", textDecoration: "underline", fontWeight: 800 }}>여기서</Link> — 아이디를 아는 사람끼리만 1:1 채팅이 돼요
+            아이디를 아는 사람끼리만 1:1 채팅이 돼요 · 내 QR은 우측 상단 버튼
           </div>
           {found === "none" && <div className="notice info" style={{ marginTop: 10 }}>그 아이디의 회원이 없어요.</div>}
           {found && found !== "none" && (
             <div style={{ display: "flex", alignItems: "center", gap: 10, border: "1.5px solid var(--brand)", background: "var(--brand-bg)", borderRadius: 14, padding: "12px 14px", marginTop: 10 }}>
-              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {found.nickname[0]?.toUpperCase()}
-              </div>
+              <Avatar url={found.avatar_url} name={found.nickname} size={40} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 800 }}>{found.nickname}</div>
                 <div style={{ fontSize: 11, color: "var(--ink3)" }}>@{found.handle}</div>
@@ -207,9 +230,7 @@ export default function ChatListPage() {
               key={f.id}
               style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "13px 2px" }}
             >
-              <div style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {f.nickname[0]?.toUpperCase()}
-              </div>
+              <Avatar url={f.avatar_url} name={f.nickname} size={46} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 800 }}>{f.nickname}</div>
                 {f.handle && <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 2 }}>@{f.handle}</div>}
@@ -234,9 +255,7 @@ export default function ChatListPage() {
                   href={"/dm?id=" + d.id}
                   style={{ display: "flex", gap: 13, alignItems: "center", border: "1px solid var(--line)", borderRadius: 16, padding: "13px 16px", marginTop: 10 }}
                 >
-                  <div style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    {d.partner[0]?.toUpperCase() ?? "?"}
-                  </div>
+                  <Avatar url={d.avatar} name={d.partner} size={46} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 800 }}>{d.partner}</div>
                     <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 3 }}>1:1 대화</div>
