@@ -169,6 +169,7 @@ export default function MePage() {
           { href: "/owner/topup", label: "크레딧 충전 (사장님)" },
           { href: "/owner/coupons", label: "쿠폰 관리 (사장님)" },
           { href: "/saved", label: "찜한 캠페인" },
+          { href: "/community", label: "커뮤니티 (오픈 준비중)" },
           { href: "/partner", label: "사장님 입점 안내" },
           ...(email === "admin@jmgroup.kr"
             ? [

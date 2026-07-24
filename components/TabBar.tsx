@@ -10,7 +10,7 @@ const TABS = [
   { href: "/", label: "홈", icon: "home" },
   { href: "/map", label: "지도", icon: "map" },
   { href: "/search", label: "검색", icon: "search" },
-  { href: "/community", label: "커뮤니티", icon: "chat" },
+  { href: "/chat", label: "채팅", icon: "chat" },
   { href: "/me", label: "마이", icon: "user" },
 ];
 
