@@ -1,0 +1,13 @@
+{
+  "appId": "com.vejaview.app",
+  "appName": "베자뷰",
+  "webDir": "www",
+  "server": {
+    "url": "https://vejaview.com",
+    "cleartext": false
+  },
+  "android": {
+    "allowMixedContent": false,
+    "backgroundColor": "#F55B24"
+  }
+}
