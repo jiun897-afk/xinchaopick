@@ -3,6 +3,7 @@ import ApplyButton from "../../components/ApplyButton";
 import AuthButton from "../../components/AuthButton";
 import Logo from "../../components/Logo";
 import NotificationBell from "../../components/NotificationBell";
+import AvailCalendar from "../../components/AvailCalendar";
 
 export const revalidate = 15;
 
@@ -25,6 +26,8 @@ type Campaign = {
   party_size: number | null;
   place_id: string | null;
   camp_type: string | null;
+  avail_type: string | null;
+  avail_dates: string[] | null;
 };
 
 type PlaceInfo = { id: string; name: string; address: string; maps_url: string; phone: string; photos: string[] | null; lat: number | null; lng: number | null } | null;
@@ -277,6 +280,20 @@ export default async function CampaignPage({
             <li>협찬(경제적 대가) 표기를 제목 또는 본문 첫 부분에 포함</li>
             <li>선정 후 24시간 내 방문 일정 확정 (노쇼 시 이용 제한)</li>
           </ul>
+        </div>
+
+        <div style={{ marginTop: 14, border: "1px solid var(--line)", borderRadius: 16, padding: "18px 20px" }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink3)" }}>방문 가능 날짜</div>
+          {c.avail_type === "dates" && (c.avail_dates ?? []).length > 0 ? (
+            <div style={{ marginTop: 10 }}>
+              <AvailCalendar selected={c.avail_dates ?? []} />
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 14.5, fontWeight: 800 }}>
+              📅 언제나 방문 가능
+              <span style={{ fontSize: 12, color: "var(--ink3)", fontWeight: 600 }}>— 선정 후 채팅으로 일정을 정해요</span>
+            </div>
+          )}
         </div>
 
         <ApplyButton campaignId={c.id} quota={c.quota} applied={c.applied} />

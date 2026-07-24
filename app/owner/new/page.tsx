@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSupabase } from "../../../lib/supabase";
 import { useLang, LangToggle, mkT } from "../../../lib/i18n";
+import AvailCalendar from "../../../components/AvailCalendar";
 
 const CATEGORIES = ["로컬맛집", "한식", "마사지·스파", "카페·디저트", "네일·뷰티", "투어·액티비티", "사진·스냅", "숙소·풀빌라", "기타"];
 const MISSIONS = ["네이버 블로그", "유튜브 쇼츠", "네이버 클립", "인스타그램", "인스타 릴스", "영상"];
@@ -81,6 +82,12 @@ const VI: Record<string, string> = {
   "예: 30000": "VD: 30000",
   "팀": " nhóm",
   "1명 (혼자 방문)": "1 người (đi một mình)",
+  "방문 가능 날짜": "Ngày có thể ghé thăm",
+  "언제나 가능": "Luôn sẵn sàng",
+  "기간 제한 없이 채팅으로 조율": "Không giới hạn, trao đổi qua chat",
+  "날짜 지정": "Chọn ngày",
+  "가능한 날을 달력에서 선택": "Chọn ngày trên lịch",
+  "방문 가능한 날짜를 1개 이상 선택해주세요.": "Vui lòng chọn ít nhất 1 ngày.",
   "명까지": " người tối đa",
 };
 
@@ -116,6 +123,8 @@ export default function NewCampaignPage() {
   const [today, setToday] = useState(false);
   const [rewardType, setRewardType] = useState<"free" | "point">("free");
   const [campType, setCampType] = useState<"체험단" | "기자단">("체험단");
+  const [availType, setAvailType] = useState<"always" | "dates">("always");
+  const [availDates, setAvailDates] = useState<string[]>([]);
   const [rewardInput, setRewardInput] = useState("");
   const [clamped, setClamped] = useState(false);
   const [err, setErr] = useState("");
@@ -159,6 +168,7 @@ export default function NewCampaignPage() {
     if (!placeId) return setErr(t("어느 업체의 캠페인인지 선택해주세요."));
     if (!store.trim()) return setErr(t("가게 이름을 입력해주세요."));
     if (!offer.trim()) return setErr(t("제공 내역을 입력해주세요. (예: 2인 식사 40만동 한도 · 음료 포함)"));
+    if (availType === "dates" && availDates.length === 0) return setErr(t("방문 가능한 날짜를 1개 이상 선택해주세요."));
     if (rewardType === "point" && rewardPoints < 1000) return setErr(t("지급 포인트는 1,000P 이상으로 입력해주세요."));
     if (rewardType === "point" && lack) return setErr(t("크레딧이 부족해요. 충전 후 등록할 수 있어요."));
     if (!supabase) return setErr(t("서버 연결이 아직 준비되지 않았어요."));
@@ -183,6 +193,8 @@ export default function NewCampaignPage() {
       today_available: today,
       reward_points: rewardType === "point" ? rewardPoints : 0,
       camp_type: campType,
+      avail_type: availType,
+      avail_dates: availType === "dates" ? availDates : [],
       status: "active",
       image_url: DEFAULT_IMG[category] ?? DEFAULT_IMG["로컬맛집"],
     });
@@ -384,6 +396,41 @@ export default function NewCampaignPage() {
             )}
           </div>
         </>
+      )}
+
+      <label style={labelStyle}>{t("방문 가능 날짜")}</label>
+      <div style={{ display: "flex", gap: 8 }}>
+        {([
+          { v: "always" as const, l: t("언제나 가능"), d: t("기간 제한 없이 채팅으로 조율") },
+          { v: "dates" as const, l: t("날짜 지정"), d: t("가능한 날을 달력에서 선택") },
+        ]).map((o) => (
+          <div
+            key={o.v}
+            onClick={() => setAvailType(o.v)}
+            style={{
+              flex: 1,
+              border: availType === o.v ? "2px solid var(--brand)" : "1.5px solid var(--line)",
+              background: availType === o.v ? "var(--brand-bg)" : "#fff",
+              borderRadius: 12,
+              padding: "12px 13px",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ fontSize: 13.5, fontWeight: 800 }}>{o.l}</div>
+            <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 3 }}>{o.d}</div>
+          </div>
+        ))}
+      </div>
+      {availType === "dates" && (
+        <div style={{ marginTop: 10 }}>
+          <AvailCalendar
+            selected={availDates}
+            onToggle={(d) => setAvailDates((arr) => (arr.includes(d) ? arr.filter((x) => x !== d) : [...arr, d]))}
+          />
+          <div style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)", marginTop: 6 }}>
+            {availDates.length}{lang === "vi" ? " ngày đã chọn" : "일 선택됨"}
+          </div>
+        </div>
       )}
 
       <label style={{ ...labelStyle, display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>

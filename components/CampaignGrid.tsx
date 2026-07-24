@@ -51,14 +51,19 @@ const SORTS = [
 export default function CampaignGrid({ list }: { list: Campaign[] }) {
   const [sel, setSel] = useState("전체");
   const [sort, setSort] = useState("default");
+  const [ch, setCh] = useState("전체");
+  const [minP, setMinP] = useState(0);
 
   const filtered = useMemo(() => {
-    if (sel === "전체") return list;
-    if (sel === "오늘 가능") return list.filter((c) => c.today_available);
-    if (sel === "포인트") return list.filter((c) => (c.reward_points ?? 0) > 0);
-    if (sel === "기자단") return list.filter((c) => c.camp_type === "기자단");
-    return list.filter((c) => c.category === sel);
-  }, [list, sel]);
+    let r = list;
+    if (sel === "오늘 가능") r = r.filter((c) => c.today_available);
+    else if (sel === "포인트") r = r.filter((c) => (c.reward_points ?? 0) > 0);
+    else if (sel === "기자단") r = r.filter((c) => c.camp_type === "기자단");
+    else if (sel !== "전체") r = r.filter((c) => c.category === sel);
+    if (ch !== "전체") r = r.filter((c) => (MISSION_SHORT[c.mission_type] ?? c.mission_type) === ch);
+    if (minP > 0) r = r.filter((c) => (c.reward_points ?? 0) >= minP);
+    return r;
+  }, [list, sel, ch, minP]);
 
   const sorted = useMemo(() => {
     if (sort === "value") return [...filtered].sort((a, b) => offerValue(b) - offerValue(a));
@@ -76,7 +81,30 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
         ))}
       </div>
 
-      <div style={{ display: "flex", gap: 6, margin: "2px 0 14px" }}>
+      <div className="chips" style={{ margin: "0 0 8px" }}>
+        {["전체", "블로그", "쇼츠", "클립", "인스타", "릴스", "영상"].map((c2) => (
+          <span key={c2} className={"chip" + (ch === c2 ? " on" : "")} style={{ cursor: "pointer", fontSize: 12, padding: "6px 12px" }} onClick={() => setCh(c2)}>
+            {c2 === "전체" ? "채널 전체" : c2}
+          </span>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 6, margin: "2px 0 14px", flexWrap: "wrap" }}>
+        {[
+          { v: 0, l: "P 전체" },
+          { v: 10000, l: "1만P↑" },
+          { v: 30000, l: "3만P↑" },
+          { v: 50000, l: "5만P↑" },
+        ].map((o) => (
+          <span
+            key={o.v}
+            onClick={() => setMinP(o.v)}
+            style={{ fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 20, cursor: "pointer", background: minP === o.v ? "var(--brand)" : "var(--chip)", color: minP === o.v ? "#fff" : "var(--ink2)" }}
+          >
+            {o.l}
+          </span>
+        ))}
+        <span style={{ width: 1, background: "var(--line)", margin: "2px 2px" }} />
         {SORTS.map((s) => (
           <span
             key={s.v}
