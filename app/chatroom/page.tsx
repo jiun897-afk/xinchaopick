@@ -6,8 +6,9 @@ import { getSupabase } from "../../lib/supabase";
 import { compressImage } from "../../lib/imageTool";
 import ReportModal from "../../components/ReportModal";
 import { useChatTr } from "../../lib/useChatTr";
+import { useMsgActions } from "../../lib/useMsgActions";
 
-type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null };
+type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null; deleted_at?: string | null };
 type Room = {
   id: string;
   user_id: string;
@@ -39,7 +40,8 @@ export default function ChatRoomPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [selMode, setSelMode] = useState(false);
   const [selIds, setSelIds] = useState<Set<string>>(new Set());
-  const { trMap, translate } = useChatTr("camp"); // 한↔베 자동 번역
+  const { trMap, translate, trOn, toggleTr, showOrig, toggleOrig } = useChatTr("camp"); // 한↔베 자동 번역
+  const { hidden, loadHidden, pressHandlers, sheet: msgSheet } = useMsgActions("camp", () => appId && loadMsgs(appId)); // 꾹 눌러 삭제
 
   function toggleSel(id: string) {
     setSelIds((prev) => {
@@ -61,7 +63,7 @@ export default function ChatRoomPage() {
     if (!supabase) return;
     const { data } = await supabase
       .from("messages")
-      .select("id, sender_id, content, created_at, read_at, image_url")
+      .select("id, sender_id, content, created_at, read_at, image_url, deleted_at")
       .eq("application_id", id)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -93,6 +95,7 @@ export default function ChatRoomPage() {
         .eq("id", appId)
         .maybeSingle();
       setRoom((r as unknown as Room) ?? null);
+      loadHidden();
       loadMsgs(appId);
       // 실시간 수신 (즉시) + 15초 폴링은 안전망
       ch = supabase
@@ -203,7 +206,16 @@ export default function ChatRoomPage() {
           <div style={{ fontSize: 15, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
           <div style={{ fontSize: 11, color: "var(--ink3)" }}>{partner}와의 대화 · 방문 일정을 정해보세요</div>
         </div>
-        <span onClick={reportPartner} style={{ marginLeft: "auto", color: "var(--ink2)", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}>
+        <span
+          onClick={() => {
+            if (toggleTr()) translate(msgs);
+          }}
+          title="자동 번역 켜기/끄기"
+          style={{ marginLeft: "auto", color: trOn ? "var(--brand-dark)" : "var(--ink3)", opacity: trOn ? 1 : 0.55, fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 11px", border: trOn ? "1px solid var(--brand)" : "1px solid var(--line)", borderRadius: 999, background: "#fff" }}
+        >
+          🌐{trOn ? "" : " OFF"}
+        </span>
+        <span onClick={reportPartner} style={{ color: "var(--ink2)", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}>
           신고
         </span>
       </div>
@@ -223,11 +235,11 @@ export default function ChatRoomPage() {
             아래 <b>자주 쓰는 문구</b>를 누르면 베트남어가 함께 전송돼요.
           </div>
         )}
-        {msgs.map((m, i) => {
+        {msgs.filter((m) => !hidden.has(m.id)).map((m, i, arr) => {
           const mine = m.sender_id === me;
-          const lastMine = mine && msgs.slice(i + 1).every((x) => x.sender_id !== me);
+          const lastMine = mine && arr.slice(i + 1).every((x) => x.sender_id !== me);
           return (
-            <div key={m.id} onClick={() => selMode && toggleSel(m.id)} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginTop: 8, borderRadius: 12, background: selIds.has(m.id) ? "rgba(240,78,26,.12)" : undefined, outline: selIds.has(m.id) ? "1.5px solid var(--brand)" : undefined, padding: selMode ? 4 : undefined, cursor: selMode ? "pointer" : undefined }}>
+            <div key={m.id} onClick={() => selMode && toggleSel(m.id)} {...pressHandlers(m, mine, !!m.deleted_at, selMode)} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginTop: 8, borderRadius: 12, background: selIds.has(m.id) ? "rgba(240,78,26,.12)" : undefined, outline: selIds.has(m.id) ? "1.5px solid var(--brand)" : undefined, padding: selMode ? 4 : undefined, cursor: selMode ? "pointer" : undefined }}>
               <div
                 style={{
                   maxWidth: "78%",
@@ -242,6 +254,10 @@ export default function ChatRoomPage() {
                   wordBreak: "break-word",
                 }}
               >
+                {m.deleted_at ? (
+                  <span style={{ opacity: 0.6, fontStyle: "italic", fontSize: 13 }}>삭제된 메시지입니다</span>
+                ) : (
+                  <>
                 {m.image_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -251,19 +267,20 @@ export default function ChatRoomPage() {
                     style={{ width: 200, maxWidth: "58vw", height: "auto", borderRadius: 12, display: "block", cursor: "pointer", marginBottom: m.content && m.content !== "📷 사진" ? 6 : 0 }}
                   />
                 )}
-                {(!m.image_url || m.content !== "📷 사진") && m.content}
-                {trMap[m.id] && (
+                {(!m.image_url || m.content !== "📷 사진") &&
+                  (trOn && trMap[m.id] && !showOrig.has(m.id) ? trMap[m.id] : m.content)}
+                {trOn && trMap[m.id] && (
                   <div
-                    style={{
-                      marginTop: 6,
-                      paddingTop: 6,
-                      borderTop: mine ? "1px dashed rgba(255,255,255,.4)" : "1px dashed var(--line)",
-                      fontSize: 13.5,
-                      opacity: 0.95,
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleOrig(m.id);
                     }}
+                    style={{ fontSize: 10, fontWeight: 800, opacity: 0.6, marginTop: 4, cursor: "pointer" }}
                   >
-                    {trMap[m.id]}
+                    {showOrig.has(m.id) ? "🌐 번역 보기" : "🌐 번역됨 · 원문 보기"}
                   </div>
+                )}
+                  </>
                 )}
                 <div style={{ fontSize: 9.5, opacity: 0.65, marginTop: 4, textAlign: "right" }}>
                   {new Date(m.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
@@ -353,6 +370,7 @@ export default function ChatRoomPage() {
         </div>
       )}
       {reportOpen && <ReportModal onCancel={() => setReportOpen(false)} onSubmit={submitReport} />}
+      {msgSheet}
     </div>
   );
 }

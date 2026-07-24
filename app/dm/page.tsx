@@ -7,9 +7,10 @@ import Avatar from "../../components/Avatar";
 import { compressImage } from "../../lib/imageTool";
 import ReportModal from "../../components/ReportModal";
 import { useChatTr } from "../../lib/useChatTr";
+import { useMsgActions } from "../../lib/useMsgActions";
 
 /* 유저 간 1:1 채팅 (DM) */
-type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null };
+type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null; deleted_at?: string | null };
 
 export default function DmPage() {
   const supabase = getSupabase();
@@ -27,7 +28,8 @@ export default function DmPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [selMode, setSelMode] = useState(false);
   const [selIds, setSelIds] = useState<Set<string>>(new Set());
-  const { trMap, translate } = useChatTr("dm"); // 한↔베 자동 번역
+  const { trMap, translate, trOn, toggleTr, showOrig, toggleOrig } = useChatTr("dm"); // 한↔베 자동 번역
+  const { hidden, loadHidden, pressHandlers, sheet: msgSheet } = useMsgActions("dm", () => roomId && loadMsgs(roomId)); // 꾹 눌러 삭제
 
   function toggleSel(id: string) {
     setSelIds((prev) => {
@@ -50,7 +52,7 @@ export default function DmPage() {
     if (!supabase) return;
     let qy = supabase
       .from("dm_messages")
-      .select("id, sender_id, content, created_at, read_at, image_url")
+      .select("id, sender_id, content, created_at, read_at, image_url, deleted_at")
       .eq("room_id", id);
     if (leftAtRef.current) qy = qy.gt("created_at", leftAtRef.current);
     const { data } = await qy.order("created_at", { ascending: true }).limit(300);
@@ -93,6 +95,7 @@ export default function DmPage() {
         setBlocked(!!blk);
         setIsFriend(!!fr);
       }
+      loadHidden();
       loadMsgs(roomId);
       ch = supabase
         .channel("dm-" + roomId)
@@ -177,8 +180,17 @@ export default function DmPage() {
           <div style={{ fontSize: 15, fontWeight: 900 }}>{partner?.nickname ?? "채팅"}</div>
           <div style={{ fontSize: 11, color: "var(--ink3)" }}>{blocked ? "차단한 상대" : "회원 간 1:1 대화"}</div>
         </div>
+        <span
+          onClick={() => {
+            if (toggleTr()) translate(msgs);
+          }}
+          title="자동 번역 켜기/끄기"
+          style={{ marginLeft: "auto", color: trOn ? "var(--brand-dark)" : "var(--ink3)", opacity: trOn ? 1 : 0.55, fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 11px", border: trOn ? "1px solid var(--brand)" : "1px solid var(--line)", borderRadius: 999, background: "#fff" }}
+        >
+          🌐{trOn ? "" : " OFF"}
+        </span>
         {partner && (
-          <span onClick={reportPartner} style={{ marginLeft: "auto", color: "var(--ink2)", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}>
+          <span onClick={reportPartner} style={{ color: "var(--ink2)", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}>
             신고
           </span>
         )}
@@ -228,11 +240,11 @@ export default function DmPage() {
             첫 메시지를 보내보세요!
           </div>
         )}
-        {msgs.map((m, i) => {
+        {msgs.filter((m) => !hidden.has(m.id)).map((m, i, arr) => {
           const mine = m.sender_id === me;
-          const lastMine = mine && msgs.slice(i + 1).every((x) => x.sender_id !== me);
+          const lastMine = mine && arr.slice(i + 1).every((x) => x.sender_id !== me);
           return (
-            <div key={m.id} onClick={() => selMode && toggleSel(m.id)} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginTop: 8, borderRadius: 12, background: selIds.has(m.id) ? "rgba(240,78,26,.12)" : undefined, outline: selIds.has(m.id) ? "1.5px solid var(--brand)" : undefined, padding: selMode ? 4 : undefined, cursor: selMode ? "pointer" : undefined }}>
+            <div key={m.id} onClick={() => selMode && toggleSel(m.id)} {...pressHandlers(m, mine, !!m.deleted_at, selMode)} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginTop: 8, borderRadius: 12, background: selIds.has(m.id) ? "rgba(240,78,26,.12)" : undefined, outline: selIds.has(m.id) ? "1.5px solid var(--brand)" : undefined, padding: selMode ? 4 : undefined, cursor: selMode ? "pointer" : undefined }}>
               <div
                 style={{
                   maxWidth: "78%",
@@ -247,6 +259,10 @@ export default function DmPage() {
                   wordBreak: "break-word",
                 }}
               >
+                {m.deleted_at ? (
+                  <span style={{ opacity: 0.6, fontStyle: "italic", fontSize: 13 }}>삭제된 메시지입니다</span>
+                ) : (
+                  <>
                 {m.image_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -256,19 +272,20 @@ export default function DmPage() {
                     style={{ width: 200, maxWidth: "58vw", height: "auto", borderRadius: 12, display: "block", cursor: "pointer", marginBottom: m.content && m.content !== "📷 사진" ? 6 : 0 }}
                   />
                 )}
-                {(!m.image_url || m.content !== "📷 사진") && m.content}
-                {trMap[m.id] && (
+                {(!m.image_url || m.content !== "📷 사진") &&
+                  (trOn && trMap[m.id] && !showOrig.has(m.id) ? trMap[m.id] : m.content)}
+                {trOn && trMap[m.id] && (
                   <div
-                    style={{
-                      marginTop: 6,
-                      paddingTop: 6,
-                      borderTop: mine ? "1px dashed rgba(255,255,255,.4)" : "1px dashed var(--line)",
-                      fontSize: 13.5,
-                      opacity: 0.95,
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleOrig(m.id);
                     }}
+                    style={{ fontSize: 10, fontWeight: 800, opacity: 0.6, marginTop: 4, cursor: "pointer" }}
                   >
-                    {trMap[m.id]}
+                    {showOrig.has(m.id) ? "🌐 번역 보기" : "🌐 번역됨 · 원문 보기"}
                   </div>
+                )}
+                  </>
                 )}
                 <div style={{ fontSize: 9.5, opacity: 0.65, marginTop: 4, textAlign: "right" }}>
                   {new Date(m.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
@@ -332,6 +349,7 @@ export default function DmPage() {
         </div>
       )}
       {reportOpen && <ReportModal onCancel={() => setReportOpen(false)} onSubmit={submitReport} />}
+      {msgSheet}
     </div>
   );
 }

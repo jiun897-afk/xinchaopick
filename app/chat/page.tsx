@@ -13,6 +13,7 @@ type ChatRoom = {
   last_msg: string | null;
   last_at: string;
   unread: number;
+  muted?: boolean;
 };
 
 function fmtTime(s: string) {
@@ -38,6 +39,15 @@ export default function ChatListPage() {
   const pressPos = useRef<{ x: number; y: number } | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<ChatRoom | null>(null);
   const [leaveBusy, setLeaveBusy] = useState(false);
+
+  async function toggleMute() {
+    if (!leaveTarget || !supabase) return;
+    const { data } = await supabase.rpc("toggle_dm_mute", { p_room: leaveTarget.rid });
+    const nowMuted = !!data;
+    setChatRooms((prev) => (prev ?? []).map((x) => (x.kind === "dm" && x.rid === leaveTarget.rid ? { ...x, muted: nowMuted } : x)));
+    setLeaveTarget(null);
+    window.dispatchEvent(new Event("bv-mute")); // 탭바 소리 판단 갱신
+  }
 
   async function leaveRoom() {
     if (!leaveTarget || !supabase) return;
@@ -346,6 +356,7 @@ export default function ChatListPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.title}
+                  {r.muted && <span style={{ marginLeft: 5, fontSize: 12, opacity: 0.55 }}>🔕</span>}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.last_msg ?? "대화를 시작해보세요"}
@@ -397,11 +408,29 @@ export default function ChatListPage() {
               상대가 다시 메시지를 보내면 새 대화로 이어져요.
             </div>
             <button
+              onClick={toggleMute}
+              style={{
+                width: "100%",
+                marginTop: 14,
+                padding: "15px 0",
+                borderRadius: 14,
+                border: "1.5px solid var(--line)",
+                background: "#fff",
+                color: "var(--ink)",
+                fontSize: 15,
+                fontWeight: 900,
+                fontFamily: "inherit",
+                cursor: "pointer",
+              }}
+            >
+              {leaveTarget.muted ? "🔔 이 방 알림 다시 켜기" : "🔕 이 방 알림 끄기"}
+            </button>
+            <button
               onClick={leaveRoom}
               disabled={leaveBusy}
               style={{
                 width: "100%",
-                marginTop: 14,
+                marginTop: 8,
                 padding: "15px 0",
                 borderRadius: 14,
                 border: "none",

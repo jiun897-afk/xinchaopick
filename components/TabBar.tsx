@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getSupabase } from "../lib/supabase";
 import { playChime, initChime } from "../lib/chime";
 import { initNativePush } from "../lib/nativePush";
@@ -82,6 +82,7 @@ export default function TabBar() {
   const [chatUnread, setChatUnread] = useState<number>(0);
   const [suspended, setSuspended] = useState(false);
   const [lang] = useLang();
+  const mutedRef = useRef<Set<string>>(new Set()); // 알림 끈 방들 (소리 생략)
   const supabase = getSupabase();
   // 채팅방에서는 탭바 숨김 (입력창이 화면 맨 아래 붙게)
   const hideTab = pathname?.startsWith("/chatroom") || pathname?.startsWith("/dm");
@@ -97,6 +98,12 @@ export default function TabBar() {
     let deb: ReturnType<typeof setTimeout> | null = null;
     let dead = false;
     let curSession: any = null;
+    async function loadMuted() {
+      const { data } = await supabase!.rpc("my_muted_rooms");
+      mutedRef.current = new Set(((data as any[]) ?? []).map((x: any) => (typeof x === "string" ? x : x?.id ?? x?.my_muted_rooms)));
+    }
+    const onMute = () => loadMuted();
+    window.addEventListener("bv-mute", onMute);
     function refreshChatUnread() {
       if (deb) clearTimeout(deb);
       deb = setTimeout(async () => {
@@ -131,6 +138,7 @@ export default function TabBar() {
       } = await supabase!.auth.getSession();
       poll(true);
       if (session) {
+        loadMuted();
         initNativePush(supabase!); // APK 안에서만 동작 (FCM 토큰 등록)
         supabase!
           .from("profiles")
@@ -172,7 +180,7 @@ export default function TabBar() {
         .on("postgres_changes", { event: "*", schema: "public", table: "dm_messages" }, (payload: any) => {
           if (payload?.eventType === "INSERT" && payload?.new?.sender_id && payload.new.sender_id !== session.user.id) {
             setChatUnread((u) => u + 1);
-            playChime();
+            if (!mutedRef.current.has(payload.new.room_id)) playChime(); // 알림 끈 방은 무음 (뱃지만)
           }
           refreshChatUnread();
         });
@@ -198,6 +206,7 @@ export default function TabBar() {
     return () => {
       dead = true;
       clearInterval(timer);
+      window.removeEventListener("bv-mute", onMute);
       document.removeEventListener("visibilitychange", onVis);
       if (ch) supabase!.removeChannel(ch);
     };

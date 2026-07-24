@@ -14,7 +14,7 @@ const hasHangul = (s: string) => /[가-힣]/.test(s);
 
 function needsTr(content: string, target: string) {
   const c = (content ?? "").trim();
-  if (!c || c === "📷 사진") return false;
+  if (!c || c === "📷 사진" || c === "삭제된 메시지입니다") return false;
   if (c.length > 1500) return false;
   if (target === "ko") return !hasHangul(c); // 이미 한국어면 스킵
   return hasHangul(c); // 베트남어 타깃: 한국어일 때만 번역
