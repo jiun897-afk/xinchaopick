@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import MascotIcon from "./MascotIcon";
 
 type Campaign = {
   id: string;
@@ -100,17 +101,16 @@ function IconRow({
                   height: size,
                   margin: "0 auto",
                   borderRadius: sq ? 14 : "50%",
-                  background: on && sq ? "var(--brand)" : it.bg,
+                  background: it.bg,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  fontSize: sq ? 19 : 22,
-                  border: !sq && on ? "2.5px solid var(--brand)" : "2.5px solid transparent",
-                  boxShadow: sq && on ? "0 4px 12px rgba(240,78,26,.3)" : "none",
+                  border: on ? "2.5px solid var(--brand)" : "2.5px solid transparent",
+                  boxShadow: sq && on ? "0 4px 12px rgba(240,78,26,.25)" : "none",
                   transition: "all 0.15s",
                 }}
               >
-                {it.emoji}
+                <MascotIcon name={it.key} size={sq ? 38 : 44} />
               </div>
               <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 800, color: on ? "var(--brand-dark)" : "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {it.key}

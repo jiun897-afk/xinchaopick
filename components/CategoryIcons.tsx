@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import MascotIcon from "./MascotIcon";
 
 const CATS = [
   { key: "로컬맛집", emoji: "🍜", bg: "#FFE9DC" },
@@ -37,10 +38,9 @@ export default function CategoryIcons() {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 20,
               }}
             >
-              {c.emoji}
+              <MascotIcon name={c.key} size={40} />
             </div>
             <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 800, color: "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {c.key}

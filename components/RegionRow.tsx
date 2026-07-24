@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import MascotIcon from "./MascotIcon";
 
 type Region = { name: string; q: string; emoji: string; bg: string };
 
@@ -34,10 +35,9 @@ function Circle({ r, onGo }: { r: Region; onGo: (q: string) => void }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          fontSize: 24,
         }}
       >
-        {r.emoji}
+        <MascotIcon name={r.name} size={46} />
       </div>
       <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, color: "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {r.name}
