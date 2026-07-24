@@ -71,6 +71,7 @@ export default function MapPage() {
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
   const [noGeo, setNoGeo] = useState(false);
   const [farAway, setFarAway] = useState(false);
+  const [locating, setLocating] = useState(true);
   const [view, setView] = useState<"map" | "list">("map");
   const [rows, setRows] = useState<P[] | null>(null);
   const [stats, setStats] = useState<Record<string, Stat>>({});
@@ -100,13 +101,17 @@ export default function MapPage() {
     try {
       localStorage.setItem("vj_lastpos", JSON.stringify({ lat: la, lng: ln }));
     } catch {}
+    setLocating(false);
   }
 
   function locate(fly: boolean) {
     if (!navigator.geolocation) {
       setNoGeo(true);
+      setLocating(false);
       return;
     }
+    setLocating(true);
+    setTimeout(() => setLocating(false), 8000); // 안전장치: 8초 넘으면 로딩 해제
     let got = false;
     // 1단계: 기지국/와이파이 기반 — 캐시 허용, 즉시 표시
     navigator.geolocation.getCurrentPosition(
@@ -115,7 +120,10 @@ export default function MapPage() {
         applyPos(p.coords.latitude, p.coords.longitude, fly);
       },
       () => {
-        if (!got) setNoGeo(true);
+        if (!got) {
+          setNoGeo(true);
+          setLocating(false);
+        }
       },
       { enableHighAccuracy: false, timeout: 5000, maximumAge: 120000 }
     );
@@ -550,6 +558,49 @@ export default function MapPage() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {locating && view === "map" && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 550,
+            background: "rgba(255,255,255,.55)",
+            backdropFilter: "blur(2px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            pointerEvents: "none",
+          }}
+        >
+          <div
+            style={{
+              background: "#fff",
+              borderRadius: 999,
+              padding: "13px 22px",
+              fontSize: 13.5,
+              fontWeight: 800,
+              boxShadow: "0 6px 24px rgba(20,15,10,.18)",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <span
+              style={{
+                width: 18,
+                height: 18,
+                borderRadius: "50%",
+                border: "3px solid var(--brand-bg)",
+                borderTopColor: "var(--brand)",
+                animation: "vjspin 0.8s linear infinite",
+                flexShrink: 0,
+              }}
+            />
+            내 위치 찾는 중…
+          </div>
         </div>
       )}
 
