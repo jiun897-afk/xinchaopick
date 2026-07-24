@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 type Region = { name: string; q: string; emoji: string; bg: string };
 
 const MAIN: Region[] = [
-  { name: "다낭·호이안", q: "다낭", emoji: "🏖️", bg: "#FFE9DC" },
+  { name: "다낭", q: "다낭", emoji: "🏖️", bg: "#FFE9DC" },
   { name: "나트랑", q: "나트랑", emoji: "🌊", bg: "#DFF1FF" },
   { name: "푸꾸옥", q: "푸꾸옥", emoji: "🏝️", bg: "#E2F6E9" },
   { name: "호치민", q: "호치민", emoji: "🏙️", bg: "#EEEAFF" },

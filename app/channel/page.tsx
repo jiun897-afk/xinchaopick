@@ -13,6 +13,7 @@ const CH_META: Record<string, { emoji: string; title: string; missions: string[]
   "클립": { emoji: "🎞️", title: "네이버 클립", missions: ["네이버 클립"] },
   "인스타": { emoji: "📸", title: "인스타그램", missions: ["인스타그램"] },
   "릴스": { emoji: "🎥", title: "인스타 릴스", missions: ["인스타 릴스"] },
+  "틱톡": { emoji: "🎵", title: "틱톡", missions: ["틱톡"] },
   "페북": { emoji: "👥", title: "페이스북", missions: ["페이스북"] },
   "스레드": { emoji: "🧵", title: "스레드", missions: ["스레드"] },
   "X": { emoji: "✖️", title: "X(엑스)", missions: ["X(엑스)"] },

@@ -27,6 +27,7 @@ const MISSION_SHORT: Record<string, string> = {
   "유튜브 쇼츠": "쇼츠",
   "인스타그램": "인스타",
   "인스타 릴스": "릴스",
+  "틱톡": "틱톡",
   "페이스북": "페북",
   "스레드": "스레드",
   "X(엑스)": "X",
@@ -126,12 +127,17 @@ export default function CampaignGrid({
   list,
   hideChannelRow = false,
   showRegions = false,
+  initialCampType = "",
+  initialCat = "전체",
 }: {
   list: Campaign[];
   hideChannelRow?: boolean;
   showRegions?: boolean;
+  initialCampType?: "" | "체험단" | "기자단";
+  initialCat?: string;
 }) {
-  const [cat, setCat] = useState("전체");
+  const [campType, setCampType] = useState<"" | "체험단" | "기자단">(initialCampType);
+  const [cat, setCat] = useState(initialCat);
   const [region, setRegion] = useState("전체");
   const [sort, setSort] = useState("default");
   const [minP, setMinP] = useState(0);
@@ -139,6 +145,8 @@ export default function CampaignGrid({
 
   const filtered = useMemo(() => {
     let r = list;
+    if (campType === "기자단") r = r.filter((c) => c.camp_type === "기자단");
+    else if (campType === "체험단") r = r.filter((c) => c.camp_type !== "기자단");
     if (cat !== "전체") r = r.filter((c) => c.category === cat);
     if (todayOnly) r = r.filter((c) => c.today_available);
     if (minP > 0) r = r.filter((c) => (c.reward_points ?? 0) >= minP);
@@ -148,7 +156,7 @@ export default function CampaignGrid({
     if (sort === "value") r = [...r].sort((a, b) => offerValue(b) - offerValue(a));
     else if (sort === "point") r = [...r].sort((a, b) => (b.reward_points ?? 0) - (a.reward_points ?? 0));
     return r;
-  }, [list, cat, region, sort, minP, todayOnly, showRegions]);
+  }, [list, campType, cat, region, sort, minP, todayOnly, showRegions]);
 
   const selStyle: React.CSSProperties = {
     border: "1px solid var(--line)",
@@ -164,6 +172,45 @@ export default function CampaignGrid({
 
   return (
     <>
+      <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+        {(["체험단", "기자단"] as const).map((t) => {
+          const on = campType === t;
+          const press = t === "기자단";
+          return (
+            <div
+              key={t}
+              onClick={() => setCampType(on ? "" : t)}
+              style={{
+                flex: 1,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                background: on ? (press ? "#6D28D9" : "var(--brand)") : "#fff",
+                color: on ? "#fff" : "var(--ink)",
+                border: on ? "1px solid transparent" : "1px solid var(--line)",
+                borderRadius: 16,
+                padding: "15px 0",
+                fontSize: 15.5,
+                fontWeight: 900,
+                cursor: "pointer",
+                boxShadow: on
+                  ? press
+                    ? "0 4px 14px rgba(109,40,217,.3)"
+                    : "0 4px 14px rgba(240,78,26,.3)"
+                  : "0 2px 12px rgba(38,33,28,.04)",
+                transition: "all .15s",
+              }}
+            >
+              <span style={{ fontSize: 19 }}>{press ? "📰" : "🧡"}</span>
+              {t}
+              <span style={{ fontSize: 11, fontWeight: 700, opacity: on ? 0.85 : 0.45 }}>
+                {press ? "원고형 리뷰" : "방문 체험"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
       {showRegions && (
         <div className="selcard">
           <IconRow items={REGIONS} sel={region} onSel={setRegion} label="지역" />

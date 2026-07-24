@@ -8,7 +8,7 @@ import { useLang, LangToggle, mkT } from "../../../lib/i18n";
 import AvailCalendar from "../../../components/AvailCalendar";
 
 const CATEGORIES = ["로컬맛집", "한식", "마사지·스파", "카페·디저트", "네일·뷰티", "투어·액티비티", "사진·스냅", "숙소·풀빌라", "기타"];
-const MISSIONS = ["네이버 블로그", "네이버 클립", "유튜브 롱폼", "유튜브 쇼츠", "인스타그램", "인스타 릴스", "페이스북", "스레드", "X(엑스)"];
+const MISSIONS = ["네이버 블로그", "네이버 클립", "유튜브 롱폼", "유튜브 쇼츠", "인스타그램", "인스타 릴스", "틱톡", "페이스북", "스레드", "X(엑스)"];
 const AREAS = ["미케비치", "안탕", "시내", "한시장", "호이안", "기타"];
 
 const DEFAULT_IMG: Record<string, string> = {

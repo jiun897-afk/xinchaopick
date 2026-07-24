@@ -4,9 +4,9 @@ import Logo from "../components/Logo";
 import HomeBanner from "../components/HomeBanner";
 import RegionRow from "../components/RegionRow";
 import HomeSearch from "../components/HomeSearch";
-import CampaignGrid from "../components/CampaignGrid";
 import NotificationBell from "../components/NotificationBell";
 import ChannelIcons from "../components/ChannelIcons";
+import CategoryIcons from "../components/CategoryIcons";
 
 export const revalidate = 60;
 
@@ -116,13 +116,92 @@ export default async function Home() {
         <div className="wrap">
           <div className="shead">
             <div>
-              <div className="stitle">지금 모집 중인 체험단</div>
-              <div className="ssub">베트남 전역 · 총 {list.length}개 캠페인</div>
+              <div className="stitle">어떤 체험을 찾으세요?</div>
+              <div className="ssub">베트남 전역 · 지금 모집 중 {list.length}개 캠페인</div>
             </div>
           </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <Link
+              href="/browse?t=체험단"
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+                background: "linear-gradient(135deg, #ff7a45, #f04e1a)",
+                color: "#fff",
+                borderRadius: 18,
+                padding: "22px 0 20px",
+                boxShadow: "0 6px 18px rgba(240,78,26,.28)",
+              }}
+            >
+              <span style={{ fontSize: 28 }}>🧡</span>
+              <span style={{ fontSize: 17, fontWeight: 900 }}>체험단</span>
+              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>방문하고 무료 체험</span>
+            </Link>
+            <Link
+              href="/browse?t=기자단"
+              style={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 6,
+                background: "linear-gradient(135deg, #8B5CF6, #6D28D9)",
+                color: "#fff",
+                borderRadius: 18,
+                padding: "22px 0 20px",
+                boxShadow: "0 6px 18px rgba(109,40,217,.28)",
+              }}
+            >
+              <span style={{ fontSize: 28 }}>📰</span>
+              <span style={{ fontSize: 17, fontWeight: 900 }}>기자단</span>
+              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>방문 없이 원고 작성</span>
+            </Link>
+          </div>
+
           <RegionRow />
           <ChannelIcons />
-          <CampaignGrid list={list} />
+          <CategoryIcons />
+
+          <Link
+            href="/map"
+            className="selcard"
+            style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 16px" }}
+          >
+            <span
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 14,
+                background: "#DFF1FF",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 22,
+                flexShrink: 0,
+              }}
+            >
+              🗺️
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}>내 주변에서 찾기</span>
+              <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--ink3)", marginTop: 2 }}>
+                지도로 가까운 체험 업체 보기 · 거리순 목록
+              </span>
+            </span>
+            <span style={{ color: "var(--ink3)", fontWeight: 900 }}>›</span>
+          </Link>
+
+          <Link
+            href="/browse"
+            className="btn ghost"
+            style={{ width: "100%", marginTop: 14, padding: "14px 0", fontSize: 14.5, borderRadius: 16, background: "#fff" }}
+          >
+            전체 캠페인 {list.length}개 모두 보기 →
+          </Link>
         </div>
       </section>
 
