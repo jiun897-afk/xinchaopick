@@ -234,6 +234,7 @@ export default function MePage() {
         {[
           { href: "/notifications", label: "알림" },
           { href: "/my-id", label: "내 아이디 · QR (친구 추가)" },
+          { href: "/blocked", label: "차단 관리" },
           { href: "/my", label: "내 신청 내역" },
           { href: "/wallet", label: "포인트 · 출금" },
           { href: "/chat", label: "채팅 (선정된 캠페인)" },
