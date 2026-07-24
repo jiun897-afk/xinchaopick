@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 
-type Msg = { id: string; sender_id: string; content: string; created_at: string };
+type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null };
 type Room = {
   id: string;
   user_id: string;
@@ -42,12 +42,16 @@ export default function ChatRoomPage() {
     if (!supabase) return;
     const { data } = await supabase
       .from("messages")
-      .select("id, sender_id, content, created_at")
+      .select("id, sender_id, content, created_at, read_at")
       .eq("application_id", id)
       .order("created_at", { ascending: true })
       .limit(200);
     const rows = (data as Msg[]) ?? [];
     setMsgs(rows);
+    // 상대가 보낸 안읽은 메시지 → 읽음 처리
+    if (rows.some((m) => m.read_at === null)) {
+      supabase.rpc("mark_msgs_read", { p_app_id: id }).then(() => {});
+    }
     if (rows.length !== lastCount.current) {
       lastCount.current = rows.length;
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 80);
@@ -77,6 +81,11 @@ export default function ChatRoomPage() {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "messages", filter: "application_id=eq." + appId },
           () => loadMsgs(appId)
+        )
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "messages", filter: "application_id=eq." + appId },
+          () => loadMsgs(appId) // 상대가 읽으면 '읽음' 갱신
         )
         .subscribe();
       timer = setInterval(() => loadMsgs(appId), 15000);
@@ -140,10 +149,11 @@ export default function ChatRoomPage() {
             아래 <b>자주 쓰는 문구</b>를 누르면 베트남어가 함께 전송돼요.
           </div>
         )}
-        {msgs.map((m) => {
+        {msgs.map((m, i) => {
           const mine = m.sender_id === me;
+          const lastMine = mine && msgs.slice(i + 1).every((x) => x.sender_id !== me);
           return (
-            <div key={m.id} style={{ display: "flex", justifyContent: mine ? "flex-end" : "flex-start", marginTop: 8 }}>
+            <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginTop: 8 }}>
               <div
                 style={{
                   maxWidth: "78%",
@@ -163,6 +173,11 @@ export default function ChatRoomPage() {
                   {new Date(m.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                 </div>
               </div>
+              {lastMine && (
+                <div style={{ fontSize: 10, fontWeight: 800, color: m.read_at ? "var(--ink3)" : "#F0A860", marginTop: 3, paddingRight: 4 }}>
+                  {m.read_at ? "읽음" : "안읽음"}
+                </div>
+              )}
             </div>
           );
         })}
