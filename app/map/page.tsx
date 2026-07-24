@@ -75,6 +75,7 @@ export default function MapPage() {
   const [stats, setStats] = useState<Record<string, Stat>>({});
   const [byPlace, setByPlace] = useState<Record<string, Camp[]>>({});
   const [sort, setSort] = useState("near");
+  const [todayOnly, setTodayOnly] = useState(false);
   const [cat, setCat] = useState("전체");
   const [sns, setSns] = useState("전체");
   const [dfrom, setDfrom] = useState(""); // '' = 전체 날짜
@@ -224,11 +225,11 @@ export default function MapPage() {
     const map = mapRef.current;
     if (!map) return;
     Object.entries(markersRef.current).forEach(([pid, mk]) => {
-      const show = dfrom === "" || !!agg[pid];
+      const show = (dfrom === "" || !!agg[pid]) && (!todayOnly || !!agg[pid]?.today);
       if (show && !map.hasLayer(mk)) mk.addTo(map);
       else if (!show && map.hasLayer(mk)) map.removeLayer(mk);
     });
-  }, [agg, dfrom, dto]);
+  }, [agg, dfrom, dto, todayOnly]);
 
   const cats = useMemo(() => {
     const s = new Set<string>();
@@ -239,6 +240,7 @@ export default function MapPage() {
   const listed = useMemo(() => {
     let r = rows ?? [];
     if (dfrom !== "") r = r.filter((p) => agg[p.id]);
+    if (todayOnly) r = r.filter((p) => agg[p.id]?.today);
     if (cat !== "전체") r = r.filter((p) => p.category === cat);
     if (sns !== "전체") {
       r = r.filter((p) => {
@@ -250,16 +252,9 @@ export default function MapPage() {
     const dist = (p: P) => (pos ? distM(pos.lat, pos.lng, p.lat, p.lng) : Infinity);
     const reco = (p: P) => Number(st(p.id).avg_rating) + Math.log10(st(p.id).review_count + 1);
     if (sort === "near" && pos) r = [...r].sort((a, b) => dist(a) - dist(b));
-    else if (sort === "today")
-      r = [...r].sort((a, b) => {
-        const ta = agg[a.id]?.today ? 1 : 0;
-        const tb = agg[b.id]?.today ? 1 : 0;
-        if (tb !== ta) return tb - ta;
-        return pos ? dist(a) - dist(b) : reco(b) - reco(a);
-      });
     else r = [...r].sort((a, b) => reco(b) - reco(a));
     return r;
-  }, [rows, agg, dfrom, cat, sns, sort, pos, stats]);
+  }, [rows, agg, dfrom, todayOnly, cat, sns, sort, pos, stats]);
 
   const chip = (on: boolean, brand = false): React.CSSProperties => ({
     fontSize: 12,
@@ -308,6 +303,17 @@ export default function MapPage() {
             ✕ 해제
           </span>
         )}
+        <span
+          onClick={() => setTodayOnly((v) => !v)}
+          style={{
+            ...chip(false),
+            background: todayOnly ? "#1FA45B" : "#fff",
+            color: todayOnly ? "#fff" : "var(--ink2)",
+            border: todayOnly ? "1px solid transparent" : "1px solid var(--line)",
+          }}
+        >
+          ⚡ 오늘 가능{todayOnly ? " ✓" : ""}
+        </span>
       </div>
       {calOpen && (
         <div
@@ -438,9 +444,6 @@ export default function MapPage() {
           <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2, marginTop: 8 }} className="regionrow">
             <span style={chip(sort === "near")} onClick={() => { setSort("near"); if (!pos) locate(false); }}>
               📍 가까운순
-            </span>
-            <span style={chip(sort === "today")} onClick={() => setSort("today")}>
-              오늘 가능순
             </span>
             <span style={chip(sort === "reco")} onClick={() => setSort("reco")}>
               추천순
