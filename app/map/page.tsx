@@ -81,29 +81,47 @@ export default function MapPage() {
   const [dto, setDto] = useState("");
   const [calOpen, setCalOpen] = useState(false);
 
+  function applyPos(la: number, ln: number, fly: boolean) {
+    posRef.current = { lat: la, lng: ln };
+    setPos({ lat: la, lng: ln });
+    const L = (window as any).L;
+    const map = mapRef.current;
+    if (!L || !map) return;
+    if (meRef.current) meRef.current.setLatLng([la, ln]);
+    else {
+      meRef.current = L.circleMarker([la, ln], { radius: 8, color: "#fff", fillColor: "#1A73E8", fillOpacity: 1, weight: 3 })
+        .addTo(map)
+        .bindPopup("내 위치");
+    }
+    if (fly || inVietnam(la, ln)) map.setView([la, ln], 14);
+  }
+
   function locate(fly: boolean) {
     if (!navigator.geolocation) {
       setNoGeo(true);
       return;
     }
+    let got = false;
+    // 1단계: 기지국/와이파이 기반 — 캐시 허용, 즉시 표시
     navigator.geolocation.getCurrentPosition(
       (p) => {
-        const { latitude: la, longitude: ln } = p.coords;
-        posRef.current = { lat: la, lng: ln };
-        setPos({ lat: la, lng: ln });
-        const L = (window as any).L;
-        const map = mapRef.current;
-        if (!L || !map) return;
-        if (meRef.current) meRef.current.setLatLng([la, ln]);
-        else {
-          meRef.current = L.circleMarker([la, ln], { radius: 8, color: "#fff", fillColor: "#1A73E8", fillOpacity: 1, weight: 3 })
-            .addTo(map)
-            .bindPopup("내 위치");
-        }
-        if (fly || inVietnam(la, ln)) map.setView([la, ln], 14);
+        got = true;
+        applyPos(p.coords.latitude, p.coords.longitude, fly);
       },
-      () => setNoGeo(true),
-      { enableHighAccuracy: true, timeout: 8000 }
+      () => {
+        if (!got) setNoGeo(true);
+      },
+      { enableHighAccuracy: false, timeout: 5000, maximumAge: 120000 }
+    );
+    // 2단계: 정밀 GPS — 잡히는 대로 조용히 보정 (지도 이동은 안 함)
+    navigator.geolocation.getCurrentPosition(
+      (p) => {
+        const first = !got;
+        got = true;
+        applyPos(p.coords.latitude, p.coords.longitude, first && fly);
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   }
 
