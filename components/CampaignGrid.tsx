@@ -141,7 +141,7 @@ export default function CampaignGrid({
 }) {
   const [campType, setCampType] = useState<"" | "체험단" | "기자단">(initialCampType);
   const [cat, setCat] = useState(initialCat);
-  const [ch, setCh] = useState("전체");
+  const [chs, setChs] = useState<Set<string>>(new Set());
   const [region, setRegion] = useState("전체");
   const [sort, setSort] = useState("default");
   const [minP, setMinP] = useState(0);
@@ -152,7 +152,7 @@ export default function CampaignGrid({
     if (campType === "기자단") r = r.filter((c) => c.camp_type === "기자단");
     else if (campType === "체험단") r = r.filter((c) => c.camp_type !== "기자단");
     if (cat !== "전체") r = r.filter((c) => c.category === cat);
-    if (ch !== "전체") r = r.filter((c) => (MISSION_SHORT[c.mission_type] ?? c.mission_type) === ch);
+    if (chs.size > 0) r = r.filter((c) => chs.has(MISSION_SHORT[c.mission_type] ?? c.mission_type));
     if (todayOnly) r = r.filter((c) => c.today_available);
     if (minP > 0) r = r.filter((c) => (c.reward_points ?? 0) >= minP);
     if (showRegions && region !== "전체") {
@@ -161,15 +161,15 @@ export default function CampaignGrid({
     if (sort === "value") r = [...r].sort((a, b) => offerValue(b) - offerValue(a));
     else if (sort === "point") r = [...r].sort((a, b) => (b.reward_points ?? 0) - (a.reward_points ?? 0));
     return r;
-  }, [list, campType, cat, ch, region, sort, minP, todayOnly, showRegions]);
+  }, [list, campType, cat, chs, region, sort, minP, todayOnly, showRegions]);
 
   const filterActive =
-    campType !== initialCampType || cat !== initialCat || ch !== "전체" || region !== "전체" || todayOnly || minP > 0 || sort !== "default";
+    campType !== initialCampType || cat !== initialCat || chs.size > 0 || region !== "전체" || todayOnly || minP > 0 || sort !== "default";
 
   function resetAll() {
     setCampType(initialCampType);
     setCat(initialCat);
-    setCh("전체");
+    setChs(new Set());
     setRegion("전체");
     setTodayOnly(false);
     setMinP(0);
@@ -236,12 +236,22 @@ export default function CampaignGrid({
       )}
       {!hideChannelRow && (
         <div className="selcard">
-          <div className="sclabel">SNS 채널</div>
+          <div className="sclabel">SNS 채널 <span style={{ fontWeight: 700, opacity: 0.7 }}>· 여러 개 선택 가능</span></div>
           <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
             {CH_ROW.map((k) => {
-              const on = ch === k;
+              const on = k === "전체" ? chs.size === 0 : chs.has(k);
+              const toggle = () => {
+                if (k === "전체") setChs(new Set());
+                else
+                  setChs((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(k)) next.delete(k);
+                    else next.add(k);
+                    return next;
+                  });
+              };
               return (
-                <div key={k} onClick={() => setCh(on && k !== "전체" ? "전체" : k)} style={{ textAlign: "center", width: 52, flexShrink: 0, cursor: "pointer" }}>
+                <div key={k} onClick={toggle} style={{ textAlign: "center", width: 52, flexShrink: 0, cursor: "pointer" }}>
                   <div
                     style={{
                       width: 46,
@@ -322,7 +332,7 @@ export default function CampaignGrid({
       </div>
 
       <div style={{ marginTop: 14, fontSize: 12, fontWeight: 800, color: "var(--ink3)" }}>
-        {campType || "전체"} {ch !== "전체" ? "· " + ch : ""} {cat !== "전체" ? "· " + cat : ""} — <b style={{ color: "var(--brand-dark)" }}>{filtered.length}개</b> 캠페인
+        {campType || "전체"} {chs.size > 0 ? "· " + Array.from(chs).join("·") : ""} {cat !== "전체" ? "· " + cat : ""} — <b style={{ color: "var(--brand-dark)" }}>{filtered.length}개</b> 캠페인
       </div>
 
       {filtered.length === 0 && (
