@@ -215,9 +215,11 @@ export default async function Home() {
           <div className="fbiz">
             <b style={{ color: "var(--ink2)" }}>베자뷰</b> · 주식회사 더제이엠그룹 · 대표이사 이정목
             <br />
-            서울특별시 서초구 방배동 451-24 현성빌딩 3층 · 사업자등록번호 352-87-00902
+            서울특별시 서초구 방배동 451-24 현성빌딩 3층
             <br />
-            고객센터 1666-0464 · 카카오톡 채널 @베자뷰 · help@vejaview.com
+            <span style={{ whiteSpace: "nowrap" }}>사업자등록번호 352-87-00902</span> · <span style={{ whiteSpace: "nowrap" }}>고객센터 1666-0464</span>
+            <br />
+            카카오톡 채널 @베자뷰 · help@vejaview.com
             <br />
             <a href="/terms" style={{ textDecoration: "underline" }}>이용약관</a> · <a href="/privacy" style={{ textDecoration: "underline" }}>개인정보처리방침</a> · <a href="/partner" style={{ textDecoration: "underline" }}>사장님 입점 안내</a>
           </div>
