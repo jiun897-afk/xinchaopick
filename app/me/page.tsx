@@ -48,6 +48,54 @@ export default function MePage() {
 
   const nick = email ? email.split("@")[0] : null;
 
+  // 비로그인 상태: 로그인 유도 화면만 표시
+  if (ready && !email) {
+    return (
+      <div className="wrap" style={{ maxWidth: 720, paddingTop: 24, paddingBottom: 90 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900 }}>마이</h1>
+        <div style={{ textAlign: "center", padding: "70px 20px 40px" }}>
+          <div
+            style={{
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              background: "var(--brand-bg)",
+              margin: "0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 32,
+            }}
+          >
+            🔒
+          </div>
+          <div style={{ fontSize: 17, fontWeight: 900, marginTop: 18 }}>로그인이 필요해요</div>
+          <p style={{ fontSize: 13.5, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
+            신청 내역, 포인트, 알림, 사장님 센터는
+            <br />
+            로그인 후 이용할 수 있어요.
+          </p>
+          <Link className="btn pri" style={{ marginTop: 22, padding: "14px 40px", fontSize: 15 }} href="/login">
+            로그인 · 3초 가입
+          </Link>
+        </div>
+        <div style={{ marginTop: 26, fontSize: 10.5, color: "var(--ink3)", lineHeight: 1.8, textAlign: "center" }}>
+          <Link href="/terms" style={{ textDecoration: "underline" }}>이용약관</Link> ·{" "}
+          <Link href="/privacy" style={{ textDecoration: "underline" }}>개인정보처리방침</Link> · 고객센터 1666-0464
+        </div>
+      </div>
+    );
+  }
+
+  if (ready === false) {
+    return (
+      <div className="wrap" style={{ maxWidth: 720, paddingTop: 24 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 900 }}>마이</h1>
+        <div style={{ marginTop: 20, fontSize: 13.5, color: "var(--ink3)" }}>확인 중…</div>
+      </div>
+    );
+  }
+
   return (
     <div className="wrap" style={{ maxWidth: 720, paddingTop: 24, paddingBottom: 90 }}>
       <h1 style={{ fontSize: 22, fontWeight: 900 }}>마이</h1>
