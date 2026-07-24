@@ -31,7 +31,7 @@ export default function ChatListPage() {
   const [q, setQ] = useState("");
   const [found, setFound] = useState<{ id: string; nickname: string; handle: string; avatar_url?: string | null } | null | "none">(null);
   const [sBusy, setSBusy] = useState(false);
-  const [tab, setTab] = useState<"chats" | "friends">("chats");
+  const [tab, setTab] = useState<"dm" | "camp" | "friends">("dm");
 
   useEffect(() => {
     if (!supabase) {
@@ -128,7 +128,8 @@ export default function ChatListPage() {
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
           {(
             [
-              { k: "chats", label: "채팅" },
+              { k: "dm", label: "채팅" },
+              { k: "camp", label: "업체 채팅" },
               { k: "friends", label: "친구" + (friends.length ? " " + friends.length : "") },
             ] as const
           ).map((t) => (
@@ -211,24 +212,28 @@ export default function ChatListPage() {
         </>
       )}
 
-      {/* ── 채팅 탭: 최신 메시지순 ── */}
-      {!guest && tab === "chats" && (
+      {/* ── 채팅 목록: 최신 메시지순 (좌: 1:1 / 우: 업체) ── */}
+      {!guest && (tab === "dm" || tab === "camp") && (
         <>
           {chatRooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
-          {chatRooms !== null && chatRooms.length === 0 && (
+          {chatRooms !== null && chatRooms.filter((r) => r.kind === tab).length === 0 && (
             <div style={{ marginTop: 30, textAlign: "center", padding: "30px 0" }}>
-              <div style={{ fontSize: 15.5, fontWeight: 800 }}>아직 열린 채팅이 없어요</div>
+              <div style={{ fontSize: 15.5, fontWeight: 800 }}>
+                {tab === "camp" ? "아직 업체 채팅이 없어요" : "아직 1:1 채팅이 없어요"}
+              </div>
               <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
-                캠페인에 선정되면 사장님과의 채팅방이 열리고,
-                <br />
-                친구 탭에서 아이디로 1:1 채팅을 시작할 수 있어요.
+                {tab === "camp" ? (
+                  <>캠페인에 선정되면 사장님과의 채팅방이 자동으로 열려요.</>
+                ) : (
+                  <>친구 탭에서 아이디 검색이나 QR로 대화를 시작해보세요.</>
+                )}
               </p>
-              <Link className="btn pri" style={{ marginTop: 14, padding: "12px 22px" }} href="/">
-                체험단 둘러보기
+              <Link className="btn pri" style={{ marginTop: 14, padding: "12px 22px" }} href={tab === "camp" ? "/" : "#"} onClick={(e) => { if (tab !== "camp") { e.preventDefault(); setTab("friends"); } }}>
+                {tab === "camp" ? "체험단 둘러보기" : "친구 탭으로"}
               </Link>
             </div>
           )}
-          {(chatRooms ?? []).map((r) => (
+          {(chatRooms ?? []).filter((r) => r.kind === tab).map((r) => (
             <Link
               key={r.kind + r.rid}
               href={(r.kind === "camp" ? "/chatroom?id=" : "/dm?id=") + r.rid}
@@ -253,11 +258,6 @@ export default function ChatListPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.title}
-                  {r.kind === "camp" && (
-                    <span style={{ marginLeft: 6, fontSize: 9.5, fontWeight: 900, background: "var(--brand-bg)", color: "var(--brand-dark)", borderRadius: 5, padding: "2px 6px" }}>
-                      캠페인
-                    </span>
-                  )}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.last_msg ?? "대화를 시작해보세요"}
