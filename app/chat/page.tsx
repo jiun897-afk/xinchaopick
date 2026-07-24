@@ -19,6 +19,37 @@ export default function ChatListPage() {
   const [guest, setGuest] = useState(false);
   const [rooms, setRooms] = useState<Room[] | null>(null);
   const [dms, setDms] = useState<DmRoom[]>([]);
+  const [friends, setFriends] = useState<{ id: string; nickname: string; handle: string | null }[]>([]);
+  const [q, setQ] = useState("");
+  const [found, setFound] = useState<{ id: string; nickname: string; handle: string } | null | "none">(null);
+  const [sBusy, setSBusy] = useState(false);
+
+  async function searchHandle() {
+    if (!supabase || q.trim().length < 4) return;
+    setSBusy(true);
+    setFound(null);
+    const { data } = await supabase.rpc("find_by_handle", { p_handle: q });
+    const row = Array.isArray(data) ? data[0] : data;
+    setFound(row ?? "none");
+    setSBusy(false);
+  }
+
+  async function startChat(otherId: string) {
+    if (!supabase) return;
+    const { data, error } = await supabase.rpc("start_dm", { p_other: otherId });
+    if (error) alert(error.message);
+    else window.location.href = "/dm?id=" + data;
+  }
+
+  async function addFriend(otherId: string) {
+    if (!supabase) return;
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session) return;
+    await supabase.from("friends").insert({ user_id: session.user.id, friend_id: otherId });
+    setFriends((f) => (f.some((x) => x.id === otherId) ? f : [...f, { id: otherId, nickname: (found as any)?.nickname ?? "회원", handle: (found as any)?.handle ?? null }]));
+  }
 
   useEffect(() => {
     if (!supabase) {
@@ -64,6 +95,13 @@ export default function ChatListPage() {
         (profs ?? []).forEach((p: any) => (nm[p.id] = p.nickname));
         setDms(drs.map((r) => ({ id: r.id, partner: nm[r.user_a === me ? r.user_b : r.user_a] ?? "회원" })));
       }
+      // 친구 목록
+      const { data: fr } = await supabase.from("friends").select("friend_id").eq("user_id", me);
+      const fids = ((fr as any[]) ?? []).map((x) => x.friend_id);
+      if (fids.length) {
+        const { data: fp } = await supabase.from("profiles").select("id, nickname, handle").in("id", fids);
+        setFriends(((fp as any[]) ?? []).map((p) => ({ id: p.id, nickname: p.nickname ?? "회원", handle: p.handle })));
+      }
     })();
   }, [supabase]);
 
@@ -83,29 +121,88 @@ export default function ChatListPage() {
         </div>
       )}
 
-      {!guest && rooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
-
-      {!guest && dms.length > 0 && (
+      {!guest && (
         <>
-          <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 20 }}>1:1 채팅</div>
-          {dms.map((d) => (
-            <Link
-              key={d.id}
-              href={"/dm?id=" + d.id}
-              style={{ display: "flex", gap: 13, alignItems: "center", border: "1px solid var(--line)", borderRadius: 16, padding: "14px 16px", marginTop: 10 }}
-            >
-              <div style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                {d.partner[0]?.toUpperCase() ?? "?"}
+          {/* 아이디 검색 (아이디를 아는 사람만 채팅 시작 가능) */}
+          <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+            <input
+              style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 999, padding: "11px 16px", fontSize: 13.5, fontFamily: "inherit", outline: "none" }}
+              placeholder="상대 아이디로 검색 (예: veja_kim)"
+              value={q}
+              onChange={(e) => setQ(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+              onKeyDown={(e) => e.key === "Enter" && searchHandle()}
+            />
+            <button className="btn pri" style={{ padding: "0 18px", borderRadius: 999, fontSize: 13 }} disabled={sBusy} onClick={searchHandle}>
+              검색
+            </button>
+          </div>
+          <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 6 }}>
+            내 아이디·QR 만들기는 <Link href="/my-id" style={{ color: "var(--brand-dark)", textDecoration: "underline", fontWeight: 800 }}>여기서</Link> — 아이디를 아는 사람끼리만 1:1 채팅이 돼요
+          </div>
+          {found === "none" && <div className="notice info" style={{ marginTop: 10 }}>그 아이디의 회원이 없어요.</div>}
+          {found && found !== "none" && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, border: "1.5px solid var(--brand)", background: "var(--brand-bg)", borderRadius: 14, padding: "12px 14px", marginTop: 10 }}>
+              <div style={{ width: 40, height: 40, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {found.nickname[0]?.toUpperCase()}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 15, fontWeight: 800 }}>{d.partner}</div>
-                <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 3 }}>회원 간 대화</div>
+                <div style={{ fontSize: 14, fontWeight: 800 }}>{found.nickname}</div>
+                <div style={{ fontSize: 11, color: "var(--ink3)" }}>@{found.handle}</div>
               </div>
-              <span style={{ color: "var(--ink3)" }}>›</span>
-            </Link>
-          ))}
+              <button className="btn ghost" style={{ padding: "8px 12px", fontSize: 11.5 }} onClick={() => addFriend(found.id)}>
+                ＋ 친구
+              </button>
+              <button className="btn pri" style={{ padding: "8px 14px", fontSize: 12 }} onClick={() => startChat(found.id)}>
+                💬 채팅
+              </button>
+            </div>
+          )}
+
+          {/* 친구 목록 */}
+          {friends.length > 0 && (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 18 }}>친구 {friends.length}</div>
+              <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, marginTop: 8 }} className="regionrow">
+                {friends.map((f) => (
+                  <div key={f.id} onClick={() => startChat(f.id)} style={{ textAlign: "center", width: 60, flexShrink: 0, cursor: "pointer" }}>
+                    <div style={{ width: 50, height: 50, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 19, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
+                      {f.nickname[0]?.toUpperCase()}
+                    </div>
+                    <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--ink2)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {f.nickname}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          {/* 1:1 채팅방 목록 */}
+          {dms.length > 0 && (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 18 }}>1:1 채팅</div>
+              {dms.map((d) => (
+                <Link
+                  key={d.id}
+                  href={"/dm?id=" + d.id}
+                  style={{ display: "flex", gap: 13, alignItems: "center", border: "1px solid var(--line)", borderRadius: 16, padding: "13px 16px", marginTop: 10 }}
+                >
+                  <div style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    {d.partner[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 800 }}>{d.partner}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 3 }}>1:1 대화</div>
+                  </div>
+                  <span style={{ color: "var(--ink3)" }}>›</span>
+                </Link>
+              ))}
+            </>
+          )}
         </>
       )}
+
+      {!guest && rooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
 
       {!guest && rooms !== null && rooms.length === 0 && dms.length === 0 && (
         <div style={{ marginTop: 30, textAlign: "center", padding: "30px 0" }}>

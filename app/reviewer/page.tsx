@@ -69,25 +69,6 @@ export default function ReviewerPage() {
             {verifiedCount > 0 ? ` · 체험단 인증 후기 ${verifiedCount}개` : ""}
           </div>
         </div>
-        <button
-          className="btn pri"
-          style={{ marginLeft: "auto", padding: "10px 15px", fontSize: 12.5, flexShrink: 0 }}
-          onClick={async () => {
-            if (!supabase) return;
-            const {
-              data: { session },
-            } = await supabase.auth.getSession();
-            if (!session) {
-              window.location.href = "/login";
-              return;
-            }
-            const { data, error } = await supabase.rpc("start_dm", { p_other: prof.id });
-            if (error) alert(error.message);
-            else window.location.href = "/dm?id=" + data;
-          }}
-        >
-          💬 채팅
-        </button>
       </div>
 
       <h2 style={{ fontSize: 16.5, fontWeight: 900, marginTop: 24 }}>남긴 후기</h2>
