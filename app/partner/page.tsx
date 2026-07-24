@@ -121,7 +121,7 @@ export default function PartnerPage() {
             <div style={{ display: "flex", gap: 22, marginTop: 22, flexWrap: "wrap", fontSize: 14.5, fontWeight: 800 }}>
               <span>전화 1666-0464 (평일 10–18시)</span>
               <span>카카오톡 채널 @베자뷰</span>
-              <span>help@bejaview.com</span>
+              <span>help@vejaview.com</span>
             </div>
             <div style={{ marginTop: 20 }}>
               <Link className="btn pri" style={{ padding: "13px 24px", fontSize: 15, background: "#fff", color: "var(--ink)" }} href="/owner/new">

@@ -24,7 +24,7 @@ const VI: Record<string, string> = {
   "계좌 복사": "Sao chép STK",
   "복사됨!": "Đã sao chép!",
   "베트남 계좌": "TK Việt Nam",
-  "베트남 계좌는 준비 중이에요 — 카카오톡 채널 @베자뷰로 문의해주세요": "Tài khoản Việt Nam đang chuẩn bị — liên hệ KakaoTalk @Bejaview hoặc Zalo",
+  "베트남 계좌는 준비 중이에요 — 카카오톡 채널 @베자뷰로 문의해주세요": "Tài khoản Việt Nam đang chuẩn bị — liên hệ KakaoTalk @Vejaview hoặc Zalo",
   "입금자명": "Tên người chuyển khoản",
   "이체할 때 표시되는 이름 그대로": "Đúng tên hiển thị khi chuyển khoản",
   "입금 금액 (원)": "Số tiền (KRW)",

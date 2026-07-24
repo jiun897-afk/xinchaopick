@@ -2,6 +2,7 @@ import Link from "next/link";
 import ApplyButton from "../../components/ApplyButton";
 import AuthButton from "../../components/AuthButton";
 import Logo from "../../components/Logo";
+import NotificationBell from "../../components/NotificationBell";
 
 export const revalidate = 15;
 
@@ -97,7 +98,10 @@ function Header() {
     <header className="site">
       <div className="wrap hbar">
         <Logo />
-        <AuthButton />
+        <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <NotificationBell />
+          <AuthButton />
+        </span>
       </div>
     </header>
   );

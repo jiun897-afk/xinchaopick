@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getSupabase } from "../lib/supabase";
 
 const TABS = [
   { href: "/", label: "홈", icon: "home" },
@@ -73,12 +75,39 @@ function Icon({ name }: { name: string }) {
 
 export default function TabBar() {
   const pathname = usePathname();
+  const [unread, setUnread] = useState(0);
+  const supabase = getSupabase();
+  useEffect(() => {
+    if (!supabase) return;
+    let timer: ReturnType<typeof setInterval>;
+    async function poll() {
+      const {
+        data: { session },
+      } = await supabase!.auth.getSession();
+      if (!session) {
+        setUnread(0);
+        return;
+      }
+      const { count } = await supabase!
+        .from("notifications")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", session.user.id)
+        .eq("read", false);
+      setUnread(count ?? 0);
+    }
+    poll();
+    timer = setInterval(poll, 45000);
+    return () => clearInterval(timer);
+  }, [supabase, pathname]);
   return (
     <nav className="tabbar-app">
       {TABS.map((t) => (
-        <Link key={t.href} href={t.href} className={"ti" + (pathname === t.href ? " on" : "")}>
+        <Link key={t.href} href={t.href} className={"ti" + (pathname === t.href ? " on" : "")} style={{ position: "relative" }}>
           <Icon name={t.icon} />
           {t.label}
+          {t.href === "/me" && unread > 0 && (
+            <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", width: 8, height: 8, borderRadius: "50%", background: "var(--brand)" }} />
+          )}
         </Link>
       ))}
     </nav>

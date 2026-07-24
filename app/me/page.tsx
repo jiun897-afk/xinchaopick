@@ -91,6 +91,7 @@ export default function MePage() {
 
       <div style={{ marginTop: 18, borderTop: "1px solid var(--line)" }}>
         {[
+          { href: "/notifications", label: "알림" },
           { href: "/my", label: "내 신청 내역" },
           { href: "/wallet", label: "포인트 · 출금" },
           { href: "/chat", label: "채팅 (선정된 캠페인)" },

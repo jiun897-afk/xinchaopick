@@ -5,6 +5,7 @@ import HomeBanner from "../components/HomeBanner";
 import RegionRow from "../components/RegionRow";
 import HomeSearch from "../components/HomeSearch";
 import CampaignGrid from "../components/CampaignGrid";
+import NotificationBell from "../components/NotificationBell";
 
 export const revalidate = 60;
 
@@ -84,7 +85,10 @@ export default async function Home() {
             <a href="#campaigns">체험단 찾기</a>
             <a href="/partner">사장님 입점 문의</a>
           </nav>
-          <AuthButton />
+          <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+            <NotificationBell />
+            <AuthButton />
+          </span>
         </div>
       </header>
 
@@ -127,7 +131,7 @@ export default async function Home() {
             <br />
             서울특별시 서초구 방배동 451-24 현성빌딩 3층 · 사업자등록번호 352-87-00902
             <br />
-            고객센터 1666-0464 · 카카오톡 채널 @베자뷰 · help@bejaview.com
+            고객센터 1666-0464 · 카카오톡 채널 @베자뷰 · help@vejaview.com
             <br />
             <a href="/partner" style={{ textDecoration: "underline" }}>사장님 입점 안내</a> · <a href="/app.html" style={{ textDecoration: "underline" }}>앱 디자인 시안</a> · <a href="/admin.html" style={{ textDecoration: "underline" }}>운영 콘솔</a>
           </div>

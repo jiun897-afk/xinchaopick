@@ -9,7 +9,7 @@ import { Coupon, couponTitle, couponCond, couponValid } from "../../../lib/coupo
 const VI: Record<string, string> = {
   "← 사장님 센터": "← Trung tâm đối tác",
   "쿠폰 관리": "Quản lý coupon",
-  "체험단이 아니어도 손님이 쿠폰을 보고 찾아와요. \"베자뷰 보고 왔어요\"라고 하면 적용해주세요!": "Khách xem coupon và ghé cửa hàng. Áp dụng khi khách nói \"Tôi thấy trên Bejaview\"!",
+  "체험단이 아니어도 손님이 쿠폰을 보고 찾아와요. \"베자뷰 보고 왔어요\"라고 하면 적용해주세요!": "Khách xem coupon và ghé cửa hàng. Áp dụng khi khách nói \"Tôi thấy trên Vejaview\"!",
   "로그인 후 이용할 수 있어요.": "Vui lòng đăng nhập.",
   "로그인하기": "Đăng nhập",
   "업체 선택": "Chọn cửa hàng",
