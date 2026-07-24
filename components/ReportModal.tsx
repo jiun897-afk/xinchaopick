@@ -4,9 +4,20 @@ import { useState } from "react";
 
 const REASONS = ["욕설·비방", "부적절한 사진", "스팸·광고", "사기·외부 거래 유도", "노쇼·약속 불이행", "기타"];
 
-export default function ReportModal({ onCancel, onSubmit }: { onCancel: () => void; onSubmit: (reason: string) => void }) {
+export default function ReportModal({
+  onCancel,
+  onSubmit,
+  reasons,
+  heading,
+}: {
+  onCancel: () => void;
+  onSubmit: (reason: string) => void;
+  reasons?: string[];
+  heading?: string;
+}) {
   const [sel, setSel] = useState<string | null>(null);
   const [etc, setEtc] = useState("");
+  const LIST = reasons ?? REASONS;
 
   const reason = sel === "기타" ? etc.trim() : sel ?? "";
 
@@ -24,12 +35,12 @@ export default function ReportModal({ onCancel, onSubmit }: { onCancel: () => vo
               <line x1="12" y1="17" x2="12.01" y2="17" />
             </svg>
           </span>
-          신고하기
+          {heading ?? "신고하기"}
         </div>
         <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 3 }}>사유를 선택해주세요. 운영팀이 확인 후 조치해요.</div>
 
         <div style={{ marginTop: 14 }}>
-          {REASONS.map((r) => (
+          {LIST.map((r) => (
             <div
               key={r}
               onClick={() => setSel(r)}

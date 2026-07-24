@@ -10,6 +10,7 @@ import CategoryIcons from "../components/CategoryIcons";
 import Mascot from "../components/Mascot";
 import T from "../components/T";
 import LangToggle from "../components/LangToggle";
+import ModeSwitch from "../components/ModeSwitch";
 
 export const revalidate = 60;
 
@@ -189,14 +190,17 @@ export default async function Home() {
                 height: 46,
                 borderRadius: 14,
                 background: "#DFF1FF",
+                color: "#1D6FB8",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 22,
                 flexShrink: 0,
               }}
             >
-              🗺️
+              <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M20.8 9.6c0 5-8.8 12.4-8.8 12.4S3.2 14.6 3.2 9.6a8.8 8.8 0 1 1 17.6 0Z" />
+                <circle cx="12" cy="9.6" r="3.1" />
+              </svg>
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
               <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}><T ko="내 주변에서 찾기" vi="Tìm quanh tôi" /></span>
@@ -206,6 +210,39 @@ export default async function Home() {
             </span>
             <span style={{ color: "var(--ink3)", fontWeight: 900 }}>›</span>
           </Link>
+
+          <Link
+            href="/community"
+            className="selcard"
+            style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 16px" }}
+          >
+            <span
+              style={{
+                width: 46,
+                height: 46,
+                borderRadius: 14,
+                background: "#EFE9FD",
+                color: "#6D28D9",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <svg viewBox="0 0 24 24" width={22} height={22} fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+              </svg>
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}><T ko="커뮤니티" vi="Cộng đồng" /></span>
+              <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--ink3)", marginTop: 2 }}>
+                <T ko="베트남 생활 · 맛집 정보 · 리뷰어 수다" vi="Đời sống VN · Quán ngon · Trò chuyện" />
+              </span>
+            </span>
+            <span style={{ color: "var(--ink3)", fontWeight: 900 }}>›</span>
+          </Link>
+
+          <ModeSwitch />
 
           <Link
             href="/browse"

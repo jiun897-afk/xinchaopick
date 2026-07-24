@@ -60,6 +60,7 @@ const VI: Record<string, string> = {
   "리뷰": "Review",
   "채팅": "Chat",
   "쿠폰": "Coupon",
+  "쿠폰 인증": "Xác nhận coupon",
   "리뷰 승인": "Duyệt review",
   "문제제기": "Báo vấn đề",
   "해결됨·승인": "Đã ổn · Duyệt",
@@ -285,18 +286,36 @@ export default function OwnerPage() {
       )}
 
       <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
-        <Link href="/owner/places" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+        <Link href="/owner/places" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 8px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
           {t("내 업체 관리")}
         </Link>
-        <Link href="/owner/topup" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+        <Link href="/owner/topup" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 8px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
           {t("크레딧 충전")}
         </Link>
-        <Link href="/chat" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+        <Link href="/chat" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 8px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
           {t("채팅")}
         </Link>
-        <Link href="/owner/coupons" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+        <Link href="/owner/coupons" style={{ flex: 1, border: "1px solid var(--line)", borderRadius: 12, padding: "12px 8px", fontSize: 13, fontWeight: 800, textAlign: "center" }}>
           {t("쿠폰")}
         </Link>
+        <Link
+          href="/owner/redeem"
+          style={{ flex: 1, border: "1.5px solid var(--brand)", background: "var(--brand-bg)", color: "var(--brand-dark)", borderRadius: 12, padding: "12px 8px", fontSize: 13, fontWeight: 900, textAlign: "center" }}
+        >
+          {t("쿠폰 인증")}
+        </Link>
+      </div>
+
+      <div
+        onClick={() => {
+          try {
+            localStorage.setItem("bv_mode", "reviewer");
+          } catch {}
+          window.location.href = "/";
+        }}
+        style={{ marginTop: 10, textAlign: "center", fontSize: 12.5, fontWeight: 800, color: "var(--ink3)", cursor: "pointer", padding: "10px 0", border: "1px dashed var(--line)", borderRadius: 12 }}
+      >
+        {lang === "vi" ? "Chuyển sang chế độ trải nghiệm →" : "체험단(리뷰어) 모드로 전환 →"}
       </div>
 
       {!guest && visitReqs.length > 0 && (

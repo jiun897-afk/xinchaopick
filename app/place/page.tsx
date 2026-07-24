@@ -5,6 +5,9 @@ import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import { Coupon, couponTitle, couponCond, couponValid } from "../../lib/coupon";
 import PhotoUploader from "../../components/PhotoUploader";
+import ReportModal from "../../components/ReportModal";
+
+const REVIEW_REPORT_REASONS = ["허위·과장 후기", "욕설·비방", "광고·스팸", "관련 없는 사진·내용", "개인정보 노출", "기타"];
 
 type Place = {
   id: string;
@@ -44,6 +47,8 @@ export default function PlaceDetailPage() {
   const [place, setPlace] = useState<Place | null>(null);
   const [camps, setCamps] = useState<Camp[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [claimed, setClaimed] = useState<Record<string, string>>({});
+  const [reportRid, setReportRid] = useState<string | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [me, setMe] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
@@ -101,21 +106,39 @@ export default function PlaceDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, supabase]);
 
-  async function report(reviewId: string) {
-    if (!supabase) return;
+  function report(reviewId: string) {
     if (!me) return setMsg("신고하려면 로그인해주세요.");
-    const reason = prompt("이 후기를 신고하는 이유를 알려주세요. (예: 허위 후기, 욕설, 광고)");
-    if (!reason || !reason.trim()) return;
+    setReportRid(reviewId);
+  }
+
+  async function submitReviewReport(reason: string) {
+    if (!supabase || !reportRid) return;
     const {
       data: { session },
     } = await supabase.auth.getSession();
     if (!session) return;
-    const { error } = await supabase.from("review_reports").insert({ review_id: reviewId, reporter_id: session.user.id, reason: reason.trim() });
+    const { error } = await supabase.from("review_reports").insert({ review_id: reportRid, reporter_id: session.user.id, reason });
+    setReportRid(null);
     if (error) {
       alert(error.message.includes("duplicate") ? "이미 신고한 후기예요." : "신고 접수에 실패했어요.");
     } else {
       alert("신고가 접수됐어요. 운영팀이 확인 후 조치할게요.");
     }
+  }
+
+  async function claimCoupon(cid: string) {
+    if (!supabase) return;
+    if (!me) {
+      window.location.href = "/login";
+      return;
+    }
+    const { data, error } = await supabase.rpc("claim_coupon", { p_coupon: cid });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    const row = Array.isArray(data) ? data[0] : data;
+    setClaimed((prev) => ({ ...prev, [cid]: row?.uc_code ?? "OK" }));
   }
 
   async function submitReview() {
@@ -225,13 +248,26 @@ export default function PlaceDetailPage() {
 
       {coupons.length > 0 && (
         <>
-          <h2 style={{ fontSize: 17, fontWeight: 900, marginTop: 28 }}>🎟 사용 가능한 쿠폰</h2>
+          <h2 style={{ fontSize: 17, fontWeight: 900, marginTop: 28 }}>사용 가능한 쿠폰</h2>
           {coupons.map((c) => (
             <div key={c.id} style={{ border: "1.5px dashed var(--brand)", background: "var(--brand-bg)", borderRadius: 14, padding: "13px 16px", marginTop: 10 }}>
-              <div style={{ fontSize: 15, fontWeight: 900, color: "var(--brand-dark)" }}>{couponTitle(c)}</div>
-              <div style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 3 }}>{couponCond(c) || "조건 없음"}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: "var(--brand-dark)" }}>{couponTitle(c)}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 3 }}>{couponCond(c) || "조건 없음"}</div>
+                </div>
+                {claimed[c.id] ? (
+                  <Link href="/my-coupons" style={{ fontSize: 12, fontWeight: 900, color: "var(--brand-dark)", flexShrink: 0, textDecoration: "underline" }}>
+                    내 쿠폰함 보기 →
+                  </Link>
+                ) : (
+                  <button className="btn pri" style={{ padding: "10px 16px", fontSize: 13, flexShrink: 0 }} onClick={() => claimCoupon(c.id)}>
+                    쿠폰 받기
+                  </button>
+                )}
+              </div>
               <div style={{ fontSize: 11, color: "var(--ink3)", marginTop: 6 }}>
-                가게에서 이 화면을 보여주고 &ldquo;베자뷰 보고 왔어요&rdquo;라고 말씀하세요!
+                받은 쿠폰은 매장에서 QR을 보여주면 바로 적용돼요.
               </div>
             </div>
           ))}
@@ -349,6 +385,9 @@ export default function PlaceDetailPage() {
       ))}
       {reviews.length === 0 && (
         <div style={{ marginTop: 14, fontSize: 13, color: "var(--ink3)" }}>첫 후기를 남겨보세요!</div>
+      )}
+      {reportRid && (
+        <ReportModal heading="후기 신고" reasons={REVIEW_REPORT_REASONS} onCancel={() => setReportRid(null)} onSubmit={submitReviewReport} />
       )}
     </div>
   );
