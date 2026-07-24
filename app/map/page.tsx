@@ -72,6 +72,8 @@ export default function MapPage() {
   const [noGeo, setNoGeo] = useState(false);
   const [farAway, setFarAway] = useState(false);
   const [locating, setLocating] = useState(true);
+  const [regionOpen, setRegionOpen] = useState(false);
+  const [moveTick, setMoveTick] = useState(0);
   const [view, setView] = useState<"map" | "list">("map");
   const [rows, setRows] = useState<P[] | null>(null);
   const [stats, setStats] = useState<Record<string, Stat>>({});
@@ -157,6 +159,7 @@ export default function MapPage() {
         }
       } catch {}
       const map = L.map(ref.current, { zoomControl: false }).setView(init, initZoom);
+      map.on("moveend zoomend", () => setMoveTick((t) => t + 1));
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
       mapRef.current = map;
@@ -256,6 +259,44 @@ export default function MapPage() {
       else if (!show && map.hasLayer(mk)) map.removeLayer(mk);
     });
   }, [agg, dfrom, dto, todayOnly]);
+
+  // 지도 화면(뷰포트) 안에 실제로 보이는 업체 수
+  const viewCount = useMemo(() => {
+    const map = mapRef.current;
+    if (!map || !rows) return null;
+    try {
+      const b = map.getBounds();
+      return rows.filter(
+        (p) => b.contains([p.lat, p.lng]) && (dfrom === "" || !!agg[p.id]) && (!todayOnly || !!agg[p.id]?.today)
+      ).length;
+    } catch {
+      return null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rows, agg, dfrom, todayOnly, moveTick]);
+
+  // 지역별 업체 수 (다낭=호이안 포함)
+  const regionCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    (rows ?? []).forEach((p) => {
+      const key = p.area === "호이안" ? "다낭" : p.area || "기타";
+      m[key] = (m[key] ?? 0) + 1;
+    });
+    return Object.entries(m).sort((a, b) => b[1] - a[1]);
+  }, [rows]);
+
+  function goRegion(area: string) {
+    const map = mapRef.current;
+    const L = (window as any).L;
+    if (!map || !L || !rows) return;
+    const pts = rows.filter((p) => (area === "다낭" ? p.area === "다낭" || p.area === "호이안" : p.area === area));
+    if (!pts.length) return;
+    const b = L.latLngBounds(pts.map((p) => [p.lat, p.lng]));
+    map.fitBounds(b.pad(0.18));
+    setRegionOpen(false);
+    setFarAway(false);
+    setView("map");
+  }
 
   const cats = useMemo(() => {
     const s = new Set<string>();
@@ -393,8 +434,11 @@ export default function MapPage() {
         <div style={{ background: "#fff", borderRadius: 12, padding: "10px 14px", fontSize: 14, fontWeight: 900, boxShadow: "0 2px 12px rgba(0,0,0,.12)" }}>
           주변 체험 지도
           {rows !== null && (
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink3)", marginLeft: 7 }}>
-              업체 {dfrom === "" ? rows.length : listed.length}곳
+            <span
+              onClick={() => setRegionOpen((v) => !v)}
+              style={{ fontSize: 11.5, fontWeight: 800, color: "var(--brand-dark)", marginLeft: 7, cursor: "pointer" }}
+            >
+              {view === "map" ? `이 화면 ${viewCount ?? rows.length}곳` : `${listed.length}곳`} ▾
             </span>
           )}
         </div>
@@ -604,13 +648,9 @@ export default function MapPage() {
         </div>
       )}
 
-      {farAway && view === "map" && (
+      {farAway && view === "map" && !regionOpen && (
         <div
-          onClick={() => {
-            const map = mapRef.current;
-            if (map) map.setView(DANANG, 13);
-            setFarAway(false);
-          }}
+          onClick={() => setRegionOpen(true)}
           style={{
             position: "absolute",
             bottom: 24,
@@ -628,7 +668,50 @@ export default function MapPage() {
             whiteSpace: "nowrap",
           }}
         >
-          지금 베트남 밖이시네요 · 다낭 업체 보기 →
+          지금 베트남 밖이시네요 · 지역별 업체 보기 ▾
+        </div>
+      )}
+
+      {regionOpen && (
+        <div
+          style={{
+            position: "absolute",
+            left: 12,
+            right: 12,
+            bottom: 18,
+            zIndex: 600,
+            background: "#fff",
+            borderRadius: 20,
+            boxShadow: "0 14px 44px rgba(20,15,10,.25)",
+            padding: "16px 16px 12px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", marginBottom: 10 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 900 }}>어느 지역 업체를 볼까요?</div>
+            <span onClick={() => setRegionOpen(false)} style={{ marginLeft: "auto", fontSize: 16, fontWeight: 900, color: "var(--ink3)", cursor: "pointer", padding: "0 4px" }}>
+              ✕
+            </span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8 }}>
+            {regionCounts.map(([area, n]) => (
+              <div
+                key={area}
+                onClick={() => goRegion(area)}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  background: "var(--chip)",
+                  borderRadius: 12,
+                  padding: "12px 14px",
+                  cursor: "pointer",
+                }}
+              >
+                <span style={{ fontSize: 14, fontWeight: 900 }}>{area}</span>
+                <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: "var(--brand-dark)" }}>{n}곳 ›</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
