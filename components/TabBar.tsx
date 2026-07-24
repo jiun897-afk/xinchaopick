@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSupabase } from "../lib/supabase";
-import { playChime } from "../lib/chime";
+import { playChime, initChime } from "../lib/chime";
 
 const TABS = [
   { href: "/", label: "홈", icon: "home" },
@@ -79,9 +79,11 @@ export default function TabBar() {
   const [unread, setUnread] = useState<number | null>(null);
   const supabase = getSupabase();
   useEffect(() => {
+    initChime(); // 첫 터치 때 오디오 잠금 해제 (모바일 자동재생 정책)
     if (!supabase) return;
     let timer: ReturnType<typeof setInterval>;
-    async function poll() {
+    let ch: any = null;
+    async function poll(silent = false) {
       const {
         data: { session },
       } = await supabase!.auth.getSession();
@@ -96,14 +98,37 @@ export default function TabBar() {
         .eq("read", false);
       setUnread((prev) => {
         const next = count ?? 0;
-        if (prev !== null && next > prev) playChime();
+        if (!silent && prev !== null && next > prev) playChime();
         return next;
       });
     }
-    poll();
-    timer = setInterval(poll, 45000);
-    return () => clearInterval(timer);
-  }, [supabase, pathname]);
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase!.auth.getSession();
+      poll(true);
+      if (session) {
+        // 실시간: 새 알림 도착 즉시 뱃지+소리
+        ch = supabase!
+          .channel("notif-rt-" + session.user.id)
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + session.user.id },
+            () => {
+              setUnread((u) => (u ?? 0) + 1);
+              playChime();
+            }
+          )
+          .subscribe();
+      }
+    })();
+    timer = setInterval(() => poll(true), 60000); // 안전망 (소리는 실시간에서만)
+    return () => {
+      clearInterval(timer);
+      if (ch) supabase!.removeChannel(ch);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabase]);
   return (
     <nav className="tabbar-app">
       {TABS.map((t) => (

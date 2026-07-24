@@ -57,6 +57,7 @@ export default function ChatRoomPage() {
   useEffect(() => {
     if (!appId || !supabase) return;
     let timer: ReturnType<typeof setInterval>;
+    let ch: any = null;
     (async () => {
       const {
         data: { session },
@@ -69,9 +70,21 @@ export default function ChatRoomPage() {
         .maybeSingle();
       setRoom((r as unknown as Room) ?? null);
       loadMsgs(appId);
-      timer = setInterval(() => loadMsgs(appId), 4000);
+      // 실시간 수신 (즉시) + 15초 폴링은 안전망
+      ch = supabase
+        .channel("chat-" + appId)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "messages", filter: "application_id=eq." + appId },
+          () => loadMsgs(appId)
+        )
+        .subscribe();
+      timer = setInterval(() => loadMsgs(appId), 15000);
     })();
-    return () => clearInterval(timer);
+    return () => {
+      clearInterval(timer);
+      if (ch) supabase.removeChannel(ch);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appId, supabase]);
 
