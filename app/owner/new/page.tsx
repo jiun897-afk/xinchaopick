@@ -44,7 +44,7 @@ const VI: Record<string, string> = {
   "업체 선택 시 자동 입력 (지점명 등 수정 가능)": "Tự điền khi chọn cửa hàng (có thể sửa)",
   "카테고리": "Danh mục",
   "제공 내역 (무엇을, 얼마 한도로)": "Nội dung cung cấp (gì, hạn mức bao nhiêu)",
-  "예: 아로마 90분 2인 · 700,000₫ 상당 · 팁 포함": "VD: Aroma 90 phút 2 người · trị giá 700.000₫ · gồm tip",
+  "예: 아로마 90분 2인 · 700,000₫ 상당": "VD: Aroma 90 phút 2 người · trị giá 700.000₫",
   "캠페인 유형": "Loại chiến dịch",
   "체험단": "Trải nghiệm",
   "기자단": "Đưa tin (không ghé thăm)",
@@ -268,7 +268,7 @@ export default function NewCampaignPage() {
         style={inputStyle}
         value={offer}
         onChange={(e) => setOffer(e.target.value)}
-        placeholder={t("예: 아로마 90분 2인 · 700,000₫ 상당 · 팁 포함")}
+        placeholder={t("예: 아로마 90분 2인 · 700,000₫ 상당")}
       />
 
       <label style={labelStyle}>{t("미션 (리뷰어가 발행할 콘텐츠)")}</label>

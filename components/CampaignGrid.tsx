@@ -37,8 +37,20 @@ function cardBadge(c: Campaign): string | null {
   return null;
 }
 
+function offerValue(c: Campaign): number {
+  const nums = Array.from((c.offer ?? "").matchAll(/([\d,]+)\s*₫/g)).map((m) => Number(m[1].replace(/,/g, "")));
+  return nums.length ? Math.max(...nums) : 0;
+}
+
+const SORTS = [
+  { v: "default", l: "기본순" },
+  { v: "value", l: "금액 높은순" },
+  { v: "point", l: "포인트순" },
+];
+
 export default function CampaignGrid({ list }: { list: Campaign[] }) {
   const [sel, setSel] = useState("전체");
+  const [sort, setSort] = useState("default");
 
   const filtered = useMemo(() => {
     if (sel === "전체") return list;
@@ -47,6 +59,12 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
     if (sel === "기자단") return list.filter((c) => c.camp_type === "기자단");
     return list.filter((c) => c.category === sel);
   }, [list, sel]);
+
+  const sorted = useMemo(() => {
+    if (sort === "value") return [...filtered].sort((a, b) => offerValue(b) - offerValue(a));
+    if (sort === "point") return [...filtered].sort((a, b) => (b.reward_points ?? 0) - (a.reward_points ?? 0));
+    return filtered;
+  }, [filtered, sort]);
 
   return (
     <>
@@ -58,6 +76,26 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
         ))}
       </div>
 
+      <div style={{ display: "flex", gap: 6, margin: "2px 0 14px" }}>
+        {SORTS.map((s) => (
+          <span
+            key={s.v}
+            onClick={() => setSort(s.v)}
+            style={{
+              fontSize: 12,
+              fontWeight: 800,
+              padding: "6px 12px",
+              borderRadius: 20,
+              cursor: "pointer",
+              background: sort === s.v ? "var(--ink)" : "var(--chip)",
+              color: sort === s.v ? "#fff" : "var(--ink2)",
+            }}
+          >
+            {s.l}
+          </span>
+        ))}
+      </div>
+
       {filtered.length === 0 && (
         <div style={{ padding: "40px 0", textAlign: "center", fontSize: 13.5, color: "var(--ink3)" }}>
           이 조건의 캠페인이 아직 없어요. 다른 필터를 눌러보세요!
@@ -65,7 +103,7 @@ export default function CampaignGrid({ list }: { list: Campaign[] }) {
       )}
 
       <div className="grid">
-        {filtered.map((c) => (
+        {sorted.map((c) => (
           <Link className="gcard" key={c.id} href={"/campaign?id=" + c.id} style={{ display: "block" }}>
             <div className="gthumb" style={c.image_url ? { backgroundImage: "url(" + c.image_url + ")" } : undefined}>
               {cardBadge(c) ? <span className="gbadge hot">{cardBadge(c)}</span> : null}
