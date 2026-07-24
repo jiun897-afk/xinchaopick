@@ -17,7 +17,15 @@ type P = {
   image_url: string | null;
 };
 type Stat = { place_id: string; review_count: number; avg_rating: number };
-type Camp = { place_id: string; mission_type: string; today_available: boolean | null; camp_type: string | null };
+type Camp = {
+  place_id: string;
+  mission_type: string;
+  today_available: boolean | null;
+  camp_type: string | null;
+  avail_type: string | null;
+  avail_dates: string[] | null;
+};
+type Agg = { n: number; today: boolean; chs: string[]; jj: boolean };
 
 const CH_SHORT: Record<string, string> = {
   "네이버 블로그": "블로그",
@@ -38,21 +46,45 @@ function inVietnam(lat: number, lng: number) {
   return lat > 8 && lat < 24 && lng > 101.5 && lng < 110.5;
 }
 
+function availOn(c: Camp, iso: string): boolean {
+  if (!iso) return true;
+  if (c.avail_type === "dates") return (c.avail_dates ?? []).includes(iso);
+  return true; // 언제나 가능
+}
+
 export default function MapPage() {
   const supabase = getSupabase();
   const ref = useRef<HTMLDivElement>(null);
   const mapRef = useRef<any>(null);
   const meRef = useRef<any>(null);
   const posRef = useRef<{ lat: number; lng: number } | null>(null);
+  const markersRef = useRef<Record<string, any>>({});
+  const aggRef = useRef<Record<string, Agg>>({});
+  const dateRef = useRef("");
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
   const [noGeo, setNoGeo] = useState(false);
   const [view, setView] = useState<"map" | "list">("map");
   const [rows, setRows] = useState<P[] | null>(null);
   const [stats, setStats] = useState<Record<string, Stat>>({});
-  const [camps, setCamps] = useState<Record<string, { n: number; today: boolean; chs: string[]; jj: boolean }>>({});
+  const [byPlace, setByPlace] = useState<Record<string, Camp[]>>({});
   const [sort, setSort] = useState("near");
   const [cat, setCat] = useState("전체");
   const [sns, setSns] = useState("전체");
+  const [date, setDate] = useState(""); // '' = 전체 날짜
+
+  const DATES = useMemo(() => {
+    const out: { iso: string; label: string }[] = [];
+    const now = new Date();
+    for (let i = 0; i < 14; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+      const iso =
+        d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+      const label =
+        i === 0 ? "오늘" : i === 1 ? "내일" : d.getMonth() + 1 + "/" + d.getDate() + "(" + "일월화수목금토"[d.getDay()] + ")";
+      out.push({ iso, label });
+    }
+    return out;
+  }, []);
 
   function locate(fly: boolean) {
     if (!navigator.geolocation) {
@@ -97,31 +129,31 @@ export default function MapPage() {
       const [{ data: pl }, { data: st }, { data: cp }] = await Promise.all([
         supabase.from("places").select("id, name, category, subcategory, area, lat, lng, image_url").not("lat", "is", null),
         supabase.from("place_stats").select("*"),
-        supabase.from("campaigns").select("place_id, mission_type, today_available, camp_type").eq("status", "active").not("place_id", "is", null),
+        supabase
+          .from("campaigns")
+          .select("place_id, mission_type, today_available, camp_type, avail_type, avail_dates")
+          .eq("status", "active")
+          .not("place_id", "is", null),
       ]);
       const sm: Record<string, Stat> = {};
       ((st as Stat[]) ?? []).forEach((x) => (sm[x.place_id] = x));
       setStats(sm);
-      const cm: Record<string, { n: number; today: boolean; chs: string[]; jj: boolean }> = {};
+      const bp: Record<string, Camp[]> = {};
       ((cp as Camp[]) ?? []).forEach((c) => {
-        const e = (cm[c.place_id] = cm[c.place_id] ?? { n: 0, today: false, chs: [], jj: false });
-        e.n += 1;
-        if (c.today_available) e.today = true;
-        if (c.camp_type === "기자단") e.jj = true;
-        const s = CH_SHORT[c.mission_type] ?? c.mission_type;
-        if (!e.chs.includes(s)) e.chs.push(s);
+        (bp[c.place_id] = bp[c.place_id] ?? []).push(c);
       });
-      setCamps(cm);
+      setByPlace(bp);
       const list = (pl as P[]) ?? [];
       setRows(list);
       list.forEach((p) => {
         const s = sm[p.id] ?? { review_count: 0, avg_rating: 0 };
-        const cInfo = cm[p.id];
-        L.circleMarker([p.lat, p.lng], { radius: 10, color: "#fff", fillColor: "#F04E1A", fillOpacity: 0.95, weight: 2.5 })
+        const mk = L.circleMarker([p.lat, p.lng], { radius: 10, color: "#fff", fillColor: "#F04E1A", fillOpacity: 0.95, weight: 2.5 })
           .addTo(map)
           .bindPopup(() => {
             const my = posRef.current;
             const d = my ? distM(my.lat, my.lng, p.lat, p.lng) : null;
+            const a = aggRef.current[p.id];
+            const dsel = dateRef.current;
             return (
               '<div style="font-family:inherit;min-width:150px">' +
               '<b style="font-size:14px">' + p.name + "</b><br/>" +
@@ -130,10 +162,15 @@ export default function MapPage() {
               '<span style="font-size:11px;color:#999"> (' + s.review_count + ")</span>" +
               (d !== null ? '<span style="font-size:11.5px;color:#D9420F;font-weight:800"> · 내 위치에서 ' + fmtDist(d) + "</span>" : "") +
               "<br/>" +
-              (cInfo ? '<span style="font-size:11px;color:#1FA45B;font-weight:800">체험단 ' + cInfo.n + "개 모집중" + (cInfo.today ? " · 오늘 가능" : "") + "</span><br/>" : "") +
+              (a
+                ? '<span style="font-size:11px;color:#1FA45B;font-weight:800">' +
+                  (dsel ? "선택 날짜 체험 가능 · " : "") + "체험단 " + a.n + "개 모집중" + (a.today ? " · 오늘 가능" : "") +
+                  "</span><br/>"
+                : "") +
               '<a href="/place?id=' + p.id + '" style="font-size:12.5px;font-weight:800;color:#D9420F">자세히 보기 →</a></div>'
             );
           });
+        markersRef.current[p.id] = mk;
       });
     });
     return () => {
@@ -142,10 +179,39 @@ export default function MapPage() {
         mapRef.current.remove();
         mapRef.current = null;
         meRef.current = null;
+        markersRef.current = {};
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
+
+  const agg = useMemo(() => {
+    const m: Record<string, Agg> = {};
+    Object.entries(byPlace).forEach(([pid, cs]) => {
+      const av = cs.filter((c) => availOn(c, date));
+      if (!av.length) return;
+      const e: Agg = { n: av.length, today: av.some((c) => !!c.today_available), chs: [], jj: av.some((c) => c.camp_type === "기자단") };
+      av.forEach((c) => {
+        const s = CH_SHORT[c.mission_type] ?? c.mission_type;
+        if (!e.chs.includes(s)) e.chs.push(s);
+      });
+      m[pid] = e;
+    });
+    return m;
+  }, [byPlace, date]);
+
+  useEffect(() => {
+    aggRef.current = agg;
+    dateRef.current = date;
+    // 날짜 선택 시 해당 날짜 가능 업체만 지도에 표시
+    const map = mapRef.current;
+    if (!map) return;
+    Object.entries(markersRef.current).forEach(([pid, mk]) => {
+      const show = date === "" || !!agg[pid];
+      if (show && !map.hasLayer(mk)) mk.addTo(map);
+      else if (!show && map.hasLayer(mk)) map.removeLayer(mk);
+    });
+  }, [agg, date]);
 
   const cats = useMemo(() => {
     const s = new Set<string>();
@@ -155,10 +221,11 @@ export default function MapPage() {
 
   const listed = useMemo(() => {
     let r = rows ?? [];
+    if (date !== "") r = r.filter((p) => agg[p.id]);
     if (cat !== "전체") r = r.filter((p) => p.category === cat);
     if (sns !== "전체") {
       r = r.filter((p) => {
-        const c = camps[p.id];
+        const c = agg[p.id];
         if (!c) return false;
         return sns === "기자단" ? c.jj : c.chs.includes(sns);
       });
@@ -169,25 +236,26 @@ export default function MapPage() {
     if (sort === "near" && pos) r = [...r].sort((a, b) => dist(a) - dist(b));
     else if (sort === "today")
       r = [...r].sort((a, b) => {
-        const ta = camps[a.id]?.today ? 1 : 0;
-        const tb = camps[b.id]?.today ? 1 : 0;
+        const ta = agg[a.id]?.today ? 1 : 0;
+        const tb = agg[b.id]?.today ? 1 : 0;
         if (tb !== ta) return tb - ta;
         return pos ? dist(a) - dist(b) : reco(b) - reco(a);
       });
     else r = [...r].sort((a, b) => reco(b) - reco(a));
     return r;
-  }, [rows, cat, sns, sort, pos, stats, camps]);
+  }, [rows, agg, date, cat, sns, sort, pos, stats]);
 
-  const chip = (on: boolean): React.CSSProperties => ({
+  const chip = (on: boolean, brand = false): React.CSSProperties => ({
     fontSize: 12,
     fontWeight: 800,
     padding: "7px 13px",
     borderRadius: 999,
     cursor: "pointer",
     flexShrink: 0,
-    background: on ? "var(--ink)" : "#fff",
+    background: on ? (brand ? "var(--brand)" : "var(--ink)") : "#fff",
     color: on ? "#fff" : "var(--ink2)",
-    border: on ? "1px solid var(--ink)" : "1px solid var(--line)",
+    border: on ? "1px solid transparent" : "1px solid var(--line)",
+    boxShadow: "0 1px 6px rgba(0,0,0,.06)",
   });
   const selStyle: React.CSSProperties = {
     border: "1px solid var(--line)",
@@ -201,12 +269,29 @@ export default function MapPage() {
     outline: "none",
   };
 
+  const dateChips = (
+    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }} className="regionrow">
+      <span style={chip(date === "", true)} onClick={() => setDate("")}>
+        날짜 전체
+      </span>
+      {DATES.map((d) => (
+        <span key={d.iso} style={chip(date === d.iso, true)} onClick={() => setDate(date === d.iso ? "" : d.iso)}>
+          {d.label}
+        </span>
+      ))}
+    </div>
+  );
+
   return (
     <div style={{ position: "relative" }}>
       <div style={{ position: "absolute", top: 12, left: 12, right: 12, zIndex: 500, display: "flex", gap: 8, alignItems: "center" }}>
         <div style={{ background: "#fff", borderRadius: 12, padding: "10px 14px", fontSize: 14, fontWeight: 900, boxShadow: "0 2px 12px rgba(0,0,0,.12)" }}>
           주변 체험 지도
-          {rows !== null && <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink3)", marginLeft: 7 }}>업체 {rows.length}곳</span>}
+          {rows !== null && (
+            <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink3)", marginLeft: 7 }}>
+              업체 {date === "" ? rows.length : listed.length}곳
+            </span>
+          )}
         </div>
         <div
           onClick={() => setView((v) => (v === "map" ? "list" : "map"))}
@@ -225,6 +310,10 @@ export default function MapPage() {
           {view === "map" ? "목록 보기 ≡" : "지도 보기 🗺"}
         </div>
       </div>
+
+      {view === "map" && (
+        <div style={{ position: "absolute", top: 58, left: 12, right: 12, zIndex: 500 }}>{dateChips}</div>
+      )}
 
       <div ref={ref} style={{ height: "calc(100dvh - 132px)", minHeight: 420, zIndex: 0 }} />
 
@@ -272,7 +361,8 @@ export default function MapPage() {
             borderRadius: "18px 18px 0 0",
           }}
         >
-          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }} className="regionrow">
+          {dateChips}
+          <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2, marginTop: 8 }} className="regionrow">
             <span style={chip(sort === "near")} onClick={() => { setSort("near"); if (!pos) locate(false); }}>
               📍 가까운순
             </span>
@@ -306,12 +396,14 @@ export default function MapPage() {
 
           {rows === null && <div style={{ marginTop: 20, fontSize: 13.5, color: "var(--ink3)" }}>불러오는 중…</div>}
           {rows !== null && listed.length === 0 && (
-            <div style={{ marginTop: 30, textAlign: "center", fontSize: 13.5, color: "var(--ink3)" }}>이 조건의 업체가 아직 없어요.</div>
+            <div style={{ marginTop: 30, textAlign: "center", fontSize: 13.5, color: "var(--ink3)" }}>
+              {date ? "이 날짜에 가능한 업체가 아직 없어요." : "이 조건의 업체가 아직 없어요."}
+            </div>
           )}
 
           {listed.map((p) => {
             const s = stats[p.id] ?? { review_count: 0, avg_rating: 0 };
-            const c = camps[p.id];
+            const c = agg[p.id];
             const d = pos ? distM(pos.lat, pos.lng, p.lat, p.lng) : null;
             return (
               <Link
