@@ -76,7 +76,7 @@ function Icon({ name }: { name: string }) {
 
 export default function TabBar() {
   const pathname = usePathname();
-  const [unread, setUnread] = useState(0);
+  const [unread, setUnread] = useState<number | null>(null);
   const supabase = getSupabase();
   useEffect(() => {
     if (!supabase) return;
@@ -86,7 +86,7 @@ export default function TabBar() {
         data: { session },
       } = await supabase!.auth.getSession();
       if (!session) {
-        setUnread(0);
+        setUnread(null);
         return;
       }
       const { count } = await supabase!
@@ -96,7 +96,7 @@ export default function TabBar() {
         .eq("read", false);
       setUnread((prev) => {
         const next = count ?? 0;
-        if (next > prev) playChime();
+        if (prev !== null && next > prev) playChime();
         return next;
       });
     }
@@ -110,7 +110,7 @@ export default function TabBar() {
         <Link key={t.href} href={t.href} className={"ti" + (pathname === t.href ? " on" : "")} style={{ position: "relative" }}>
           <Icon name={t.icon} />
           {t.label}
-          {t.href === "/me" && unread > 0 && (
+          {t.href === "/me" && (unread ?? 0) > 0 && (
             <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", width: 8, height: 8, borderRadius: "50%", background: "var(--brand)" }} />
           )}
         </Link>
