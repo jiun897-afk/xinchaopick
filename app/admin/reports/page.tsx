@@ -18,6 +18,8 @@ export default function AdminReportsPage() {
   const supabase = getSupabase();
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [rows, setRows] = useState<Report[]>([]);
+  const [chatRows, setChatRows] = useState<any[]>([]);
+  const [nick, setNick] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
 
@@ -28,6 +30,17 @@ export default function AdminReportsPage() {
       .select("id, reason, status, created_at, place_reviews(id, rating, content, verified, place_id)")
       .order("created_at", { ascending: false });
     setRows((data as unknown as Report[]) ?? []);
+    // 채팅 신고
+    const { data: cr } = await supabase.from("chat_reports").select("*").order("created_at", { ascending: false });
+    const crs = (cr as any[]) ?? [];
+    setChatRows(crs);
+    const ids = Array.from(new Set(crs.flatMap((r) => [r.reporter, r.target_user]).filter(Boolean)));
+    if (ids.length) {
+      const { data: ps } = await supabase.from("profiles").select("id, nickname, suspended").in("id", ids);
+      const m: Record<string, string> = {};
+      ((ps as any[]) ?? []).forEach((p) => (m[p.id] = (p.nickname ?? "회원") + (p.suspended ? " ⛔정지중" : "")));
+      setNick(m);
+    }
   }
 
   useEffect(() => {
@@ -119,6 +132,68 @@ export default function AdminReportsPage() {
           {done.map((r) => card(r, false))}
         </>
       )}
+      <h2 style={{ fontSize: 17, fontWeight: 900, marginTop: 34 }}>채팅 신고</h2>
+      {chatRows.length === 0 && <div style={{ marginTop: 10, fontSize: 13, color: "var(--ink3)" }}>접수된 채팅 신고가 없어요.</div>}
+      {chatRows.map((r) => (
+        <div key={r.id} style={{ border: "1px solid var(--line)", borderRadius: 14, padding: "13px 15px", marginTop: 10 }}>
+          <div style={{ fontSize: 12, color: "var(--ink3)" }}>
+            {new Date(r.created_at).toLocaleString("ko-KR")} · {r.kind === "dm" ? "1:1 채팅" : "캠페인 채팅"} ·{" "}
+            <b style={{ color: r.status === "open" ? "#C0392B" : "var(--green)" }}>{r.status === "open" ? "미처리" : "처리됨"}</b>
+          </div>
+          <div style={{ fontSize: 13.5, fontWeight: 800, marginTop: 5 }}>사유: {r.reason}</div>
+          <div style={{ fontSize: 12, color: "var(--ink2)", marginTop: 3 }}>
+            신고자: {nick[r.reporter] ?? "-"} → 대상: {r.target_user ? nick[r.target_user] ?? "-" : "-"}
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+            {r.status === "open" && (
+              <button
+                className="btn ghost"
+                style={{ padding: "8px 13px", fontSize: 12 }}
+                disabled={busy === r.id}
+                onClick={async () => {
+                  setBusy(r.id);
+                  await supabase!.from("chat_reports").update({ status: "closed" }).eq("id", r.id);
+                  setBusy(null);
+                  load();
+                }}
+              >
+                처리 완료
+              </button>
+            )}
+            {r.target_user && (
+              <>
+                <button
+                  className="btn ghost"
+                  style={{ padding: "8px 13px", fontSize: 12, color: "#C0392B" }}
+                  disabled={busy === r.id}
+                  onClick={async () => {
+                    if (!confirm("이 회원을 정지할까요?")) return;
+                    setBusy(r.id);
+                    await supabase!.rpc("admin_set_suspend", { p_user: r.target_user, p_flag: true });
+                    setBusy(null);
+                    load();
+                  }}
+                >
+                  계정 정지
+                </button>
+                <button
+                  className="btn ghost"
+                  style={{ padding: "8px 13px", fontSize: 12 }}
+                  disabled={busy === r.id}
+                  onClick={async () => {
+                    setBusy(r.id);
+                    await supabase!.rpc("admin_set_suspend", { p_user: r.target_user, p_flag: false });
+                    setBusy(null);
+                    load();
+                  }}
+                >
+                  정지 해제
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

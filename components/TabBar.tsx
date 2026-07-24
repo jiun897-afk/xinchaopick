@@ -79,6 +79,7 @@ export default function TabBar() {
   const pathname = usePathname();
   const [unread, setUnread] = useState<number | null>(null);
   const [chatUnread, setChatUnread] = useState<number>(0);
+  const [suspended, setSuspended] = useState(false);
   const supabase = getSupabase();
   // 채팅방에서는 탭바 숨김 (입력창이 화면 맨 아래 붙게)
   const hideTab = pathname?.startsWith("/chatroom") || pathname?.startsWith("/dm");
@@ -119,6 +120,12 @@ export default function TabBar() {
       poll(true);
       if (session) {
         initNativePush(supabase!); // APK 안에서만 동작 (FCM 토큰 등록)
+        supabase!
+          .from("profiles")
+          .select("suspended")
+          .eq("id", session.user.id)
+          .maybeSingle()
+          .then(({ data }) => setSuspended(!!(data as any)?.suspended));
         // 실시간: 새 알림 도착 즉시 뱃지+소리
         ch = supabase!
           .channel("notif-rt-" + session.user.id)
@@ -145,8 +152,30 @@ export default function TabBar() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
-  if (hideTab) return null;
+  const banner = suspended ? (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 990,
+        background: "#C0392B",
+        color: "#fff",
+        fontSize: 12,
+        fontWeight: 800,
+        textAlign: "center",
+        padding: "9px 14px",
+      }}
+    >
+      ⛔ 신고 누적으로 계정이 일시 정지됐어요 · 문의: 고객센터 1666-0464
+    </div>
+  ) : null;
+
+  if (hideTab) return banner;
   return (
+    <>
+      {banner}
     <nav className="tabbar-app">
       {TABS.map((t) => (
         <Link
@@ -192,5 +221,6 @@ export default function TabBar() {
         </Link>
       ))}
     </nav>
+    </>
   );
 }

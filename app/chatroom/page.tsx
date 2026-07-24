@@ -3,8 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
+import { compressImage } from "../../lib/imageTool";
 
-type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null };
+type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null };
 type Room = {
   id: string;
   user_id: string;
@@ -31,6 +32,8 @@ export default function ChatRoomPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [showQuick, setShowQuick] = useState(false);
+  const [viewer, setViewer] = useState<string | null>(null);
+  const imgInRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
 
@@ -42,7 +45,7 @@ export default function ChatRoomPage() {
     if (!supabase) return;
     const { data } = await supabase
       .from("messages")
-      .select("id, sender_id, content, created_at, read_at")
+      .select("id, sender_id, content, created_at, read_at, image_url")
       .eq("application_id", id)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -113,6 +116,36 @@ export default function ChatRoomPage() {
     loadMsgs(appId);
   }
 
+  async function sendImage(f: File) {
+    if (!supabase || !appId || !me) return;
+    setBusy(true);
+    setErr("");
+    try {
+      const blob = await compressImage(f, 1280, 0.8);
+      const path = me + "/" + Date.now() + ".jpg";
+      const { error: ue } = await supabase.storage.from("chat").upload(path, blob, { contentType: "image/jpeg" });
+      if (ue) throw new Error(ue.message);
+      const { data: pub } = supabase.storage.from("chat").getPublicUrl(path);
+      const { error } = await supabase.from("messages").insert({ application_id: appId, sender_id: me, content: "📷 사진", image_url: pub.publicUrl });
+      if (error) throw new Error(error.message);
+      loadMsgs(appId);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reportPartner() {
+    if (!supabase || !appId || !room || !me) return;
+    const other = room.campaigns?.owner_id === me ? room.user_id : room.campaigns?.owner_id;
+    const reason = prompt("신고 사유를 알려주세요 (예: 욕설, 부적절한 사진, 노쇼 등)");
+    if (!reason || !reason.trim()) return;
+    const { error } = await supabase.rpc("report_chat", { p_kind: "camp", p_room: appId, p_target: other ?? null, p_reason: reason.trim() });
+    if (error) alert(error.message);
+    else alert("신고가 접수됐어요. 운영팀이 확인할게요.");
+  }
+
   const iAmOwner = room && me && room.campaigns?.owner_id === me;
   const title = room?.campaigns?.store_name ?? "채팅";
   const partner = iAmOwner ? "리뷰어" : "사장님";
@@ -139,6 +172,9 @@ export default function ChatRoomPage() {
           <div style={{ fontSize: 15, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{title}</div>
           <div style={{ fontSize: 11, color: "var(--ink3)" }}>{partner}와의 대화 · 방문 일정을 정해보세요</div>
         </div>
+        <span onClick={reportPartner} style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: "var(--ink3)", cursor: "pointer", flexShrink: 0, padding: "6px 4px" }}>
+          신고
+        </span>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "14px 2px" }}>
@@ -168,7 +204,16 @@ export default function ChatRoomPage() {
                   wordBreak: "break-word",
                 }}
               >
-                {m.content}
+                {m.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={m.image_url}
+                    alt=""
+                    onClick={() => setViewer(m.image_url)}
+                    style={{ maxWidth: 200, width: "100%", borderRadius: 12, display: "block", cursor: "pointer", marginBottom: m.content && m.content !== "📷 사진" ? 6 : 0 }}
+                  />
+                )}
+                {(!m.image_url || m.content !== "📷 사진") && m.content}
                 <div style={{ fontSize: 9.5, opacity: 0.65, marginTop: 4, textAlign: "right" }}>
                   {new Date(m.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                 </div>
@@ -210,6 +255,8 @@ export default function ChatRoomPage() {
         >
           {showQuick ? "×" : "+"}
         </button>
+        <input ref={imgInRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) sendImage(f); }} />
+        <span onClick={() => imgInRef.current?.click()} style={{ fontSize: 20, cursor: "pointer", alignSelf: "center", flexShrink: 0 }}>📷</span>
         <input
           style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 999, padding: "12px 16px", fontSize: 14, fontFamily: "inherit", outline: "none", background: "#fff" }}
           placeholder="메시지 입력"
@@ -221,6 +268,20 @@ export default function ChatRoomPage() {
           전송
         </button>
       </div>
+
+      {viewer && (
+        <div
+          onClick={() => setViewer(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 960, background: "rgba(10,8,6,.93)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewer} alt="" style={{ maxWidth: "94vw", maxHeight: "80vh", borderRadius: 12 }} />
+          <div style={{ display: "flex", gap: 16 }}>
+            <span style={{ color: "#ccc", fontSize: 13, fontWeight: 800 }}>탭하면 닫기</span>
+            <span onClick={(e) => { e.stopPropagation(); setViewer(null); reportPartner(); }} style={{ color: "#ff8a80", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🚨 이 사진 신고</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

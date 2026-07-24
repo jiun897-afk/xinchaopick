@@ -4,9 +4,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import Avatar from "../../components/Avatar";
+import { compressImage } from "../../lib/imageTool";
 
 /* 유저 간 1:1 채팅 (DM) */
-type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null };
+type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null };
 
 export default function DmPage() {
   const supabase = getSupabase();
@@ -19,6 +20,8 @@ export default function DmPage() {
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [viewer, setViewer] = useState<string | null>(null);
+  const imgInRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
 
@@ -30,7 +33,7 @@ export default function DmPage() {
     if (!supabase) return;
     const { data } = await supabase
       .from("dm_messages")
-      .select("id, sender_id, content, created_at, read_at")
+      .select("id, sender_id, content, created_at, read_at, image_url")
       .eq("room_id", id)
       .order("created_at", { ascending: true })
       .limit(300);
@@ -101,6 +104,35 @@ export default function DmPage() {
     loadMsgs(roomId);
   }
 
+  async function sendImage(f: File) {
+    if (!supabase || !roomId || !me) return;
+    setBusy(true);
+    setErr("");
+    try {
+      const blob = await compressImage(f, 1280, 0.8);
+      const path = me + "/" + Date.now() + ".jpg";
+      const { error: ue } = await supabase.storage.from("chat").upload(path, blob, { contentType: "image/jpeg" });
+      if (ue) throw new Error(ue.message);
+      const { data: pub } = supabase.storage.from("chat").getPublicUrl(path);
+      const { error } = await supabase.from("dm_messages").insert({ room_id: roomId, sender_id: me, content: "📷 사진", image_url: pub.publicUrl });
+      if (error) throw new Error(error.message);
+      loadMsgs(roomId);
+    } catch (e: any) {
+      setErr(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function reportPartner() {
+    if (!supabase || !roomId || !partner) return;
+    const reason = prompt("신고 사유를 알려주세요 (예: 욕설, 부적절한 사진, 광고 등)");
+    if (!reason || !reason.trim()) return;
+    const { error } = await supabase.rpc("report_chat", { p_kind: "dm", p_room: roomId, p_target: partner.id, p_reason: reason.trim() });
+    if (error) alert(error.message);
+    else alert("신고가 접수됐어요. 운영팀이 확인할게요.");
+  }
+
   return (
     <div className="wrap" style={{ maxWidth: 640, paddingTop: 12, paddingBottom: 10, display: "flex", flexDirection: "column", height: "100dvh", overflow: "hidden" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, paddingBottom: 12, borderBottom: "1px solid var(--line)" }}>
@@ -112,6 +144,11 @@ export default function DmPage() {
           <div style={{ fontSize: 15, fontWeight: 900 }}>{partner?.nickname ?? "채팅"}</div>
           <div style={{ fontSize: 11, color: "var(--ink3)" }}>{blocked ? "차단한 상대" : "회원 간 1:1 대화"}</div>
         </div>
+        {partner && (
+          <span onClick={reportPartner} style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: "var(--ink3)", cursor: "pointer", flexShrink: 0, padding: "6px 4px" }}>
+            신고
+          </span>
+        )}
         {partner && isFriend === false && !blocked && (
           <span
             onClick={async () => {
@@ -119,7 +156,7 @@ export default function DmPage() {
               await supabase.from("friends").insert({ user_id: me, friend_id: partner.id });
               setIsFriend(true);
             }}
-            style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: "var(--brand-dark)", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
+            style={{ fontSize: 12, fontWeight: 800, color: "var(--brand-dark)", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
           >
             ＋ 친구 추가
           </span>
@@ -138,7 +175,7 @@ export default function DmPage() {
                 setBlocked(true);
               }
             }}
-            style={{ marginLeft: isFriend === false && !blocked ? 0 : "auto", fontSize: 12, fontWeight: 800, color: blocked ? "var(--ink3)" : "#C0392B", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
+            style={{ fontSize: 12, fontWeight: 800, color: blocked ? "var(--ink3)" : "#C0392B", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
           >
             {blocked ? "차단 해제" : "차단"}
           </span>
@@ -170,7 +207,16 @@ export default function DmPage() {
                   wordBreak: "break-word",
                 }}
               >
-                {m.content}
+                {m.image_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={m.image_url}
+                    alt=""
+                    onClick={() => setViewer(m.image_url)}
+                    style={{ maxWidth: 200, width: "100%", borderRadius: 12, display: "block", cursor: "pointer", marginBottom: m.content && m.content !== "📷 사진" ? 6 : 0 }}
+                  />
+                )}
+                {(!m.image_url || m.content !== "📷 사진") && m.content}
                 <div style={{ fontSize: 9.5, opacity: 0.65, marginTop: 4, textAlign: "right" }}>
                   {new Date(m.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                 </div>
@@ -188,7 +234,9 @@ export default function DmPage() {
 
       {err && <div style={{ fontSize: 12.5, fontWeight: 700, color: "#C0392B", padding: "6px 0" }}>{err}</div>}
 
-      <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+      <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: "1px solid var(--line)", alignItems: "center" }}>
+        <input ref={imgInRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) sendImage(f); }} />
+        <span onClick={() => imgInRef.current?.click()} style={{ fontSize: 20, cursor: "pointer", padding: "0 2px", flexShrink: 0 }}>📷</span>
         <input
           style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 999, padding: "12px 16px", fontSize: 14, fontFamily: "inherit", outline: "none" }}
           placeholder="메시지 입력"
@@ -200,6 +248,17 @@ export default function DmPage() {
           전송
         </button>
       </div>
+
+      {viewer && (
+        <div onClick={() => setViewer(null)} style={{ position: "fixed", inset: 0, zIndex: 960, background: "rgba(10,8,6,.93)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 14 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={viewer} alt="" style={{ maxWidth: "94vw", maxHeight: "80vh", borderRadius: 12 }} />
+          <div style={{ display: "flex", gap: 16 }}>
+            <span style={{ color: "#ccc", fontSize: 13, fontWeight: 800 }}>탭하면 닫기</span>
+            <span onClick={(e) => { e.stopPropagation(); setViewer(null); reportPartner(); }} style={{ color: "#ff8a80", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🚨 이 사진 신고</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
