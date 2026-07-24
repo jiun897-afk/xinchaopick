@@ -17,9 +17,15 @@ export async function initNativePush(supabase: SupabaseClient) {
     if (!session) return;
 
     // 베자뷰 목소리 알림 채널
+    // 주의: 안드로이드는 채널 설정(소리)을 최초 생성 시점 그대로 영구 캐시함.
+    // 초기 APK에서 소리 파일 없이 만들어진 'vejaview' 채널이 무음으로 굳은 폰들이 있어
+    // 채널을 v2로 재생성 (기존 채널은 삭제)
+    try {
+      await PN.deleteChannel({ id: "vejaview" });
+    } catch {}
     try {
       await PN.createChannel({
-        id: "vejaview",
+        id: "vejaview2",
         name: "베자뷰 알림",
         description: "선정·채팅·오늘 방문 알림",
         importance: 5,

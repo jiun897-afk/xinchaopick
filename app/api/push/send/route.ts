@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
                 notification: { title, body },
                 data: { link: link ?? "/" },
                 android: {
-                  notification: { channel_id: "vejaview", sound: "vejaview" },
+                  notification: { channel_id: "vejaview2", sound: "vejaview", default_vibrate_timings: true },
                   priority: "HIGH",
                 },
               },
