@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import MascotIcon from "./MascotIcon";
+import { useLang, VI_REGION } from "../lib/i18n";
 
 type Region = { name: string; q: string; emoji: string; bg: string };
 
@@ -22,7 +23,7 @@ const MORE: Region[] = [
   { name: "사파", q: "사파", emoji: "🌾", bg: "#F0EDE0" },
 ];
 
-function Circle({ r, onGo }: { r: Region; onGo: (q: string) => void }) {
+function Circle({ r, onGo, label }: { r: Region; onGo: (q: string) => void; label?: string }) {
   return (
     <div onClick={() => onGo(r.q)} style={{ textAlign: "center", width: 62, flexShrink: 0, cursor: "pointer" }}>
       <div
@@ -40,7 +41,7 @@ function Circle({ r, onGo }: { r: Region; onGo: (q: string) => void }) {
         <MascotIcon name={r.name} size={46} />
       </div>
       <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, color: "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-        {r.name}
+        {label ?? r.name}
       </div>
     </div>
   );
@@ -48,16 +49,18 @@ function Circle({ r, onGo }: { r: Region; onGo: (q: string) => void }) {
 
 export default function RegionRow() {
   const [more, setMore] = useState(false);
+  const [lang] = useLang();
   const router = useRouter();
   const go = (q: string) => router.push("/search?q=" + encodeURIComponent(q));
+  const nm = (r: Region) => (lang === "vi" ? VI_REGION[r.name] ?? r.name : r.name);
   return (
     <div className="selcard">
-      <div className="sclabel">지역</div>
+      <div className="sclabel">{lang === "vi" ? "Khu vực" : "지역"}</div>
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
         {MAIN.map((r) => (
-          <Circle key={r.name} r={r} onGo={go} />
+          <Circle key={r.name} r={r} onGo={go} label={nm(r)} />
         ))}
-        {more && MORE.map((r) => <Circle key={r.name} r={r} onGo={go} />)}
+        {more && MORE.map((r) => <Circle key={r.name} r={r} onGo={go} label={nm(r)} />)}
         <div style={{ textAlign: "center", width: 62, flexShrink: 0, cursor: "pointer" }} onClick={() => setMore((v) => !v)}>
           <div
             style={{
@@ -76,7 +79,9 @@ export default function RegionRow() {
           >
             {more ? "−" : "+"}
           </div>
-          <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, color: "var(--ink2)" }}>{more ? "접기" : "더보기"}</div>
+          <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, color: "var(--ink2)" }}>
+            {more ? (lang === "vi" ? "Thu gọn" : "접기") : lang === "vi" ? "Thêm" : "더보기"}
+          </div>
         </div>
       </div>
     </div>

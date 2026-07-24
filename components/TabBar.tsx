@@ -6,13 +6,14 @@ import { useEffect, useState } from "react";
 import { getSupabase } from "../lib/supabase";
 import { playChime, initChime } from "../lib/chime";
 import { initNativePush } from "../lib/nativePush";
+import { useLang } from "../lib/i18n";
 
 const TABS = [
-  { href: "/", label: "홈", icon: "home" },
-  { href: "/map", label: "지도", icon: "map" },
-  { href: "/search", label: "검색", icon: "search" },
-  { href: "/chat", label: "채팅", icon: "chat" },
-  { href: "/me", label: "마이", icon: "user" },
+  { href: "/", label: "홈", vi: "Trang chủ", icon: "home" },
+  { href: "/map", label: "지도", vi: "Bản đồ", icon: "map" },
+  { href: "/search", label: "검색", vi: "Tìm", icon: "search" },
+  { href: "/chat", label: "채팅", vi: "Chat", icon: "chat" },
+  { href: "/me", label: "마이", vi: "Của tôi", icon: "user" },
 ];
 
 function Icon({ name }: { name: string }) {
@@ -80,6 +81,7 @@ export default function TabBar() {
   const [unread, setUnread] = useState<number | null>(null);
   const [chatUnread, setChatUnread] = useState<number>(0);
   const [suspended, setSuspended] = useState(false);
+  const [lang] = useLang();
   const supabase = getSupabase();
   // 채팅방에서는 탭바 숨김 (입력창이 화면 맨 아래 붙게)
   const hideTab = pathname?.startsWith("/chatroom") || pathname?.startsWith("/dm");
@@ -240,7 +242,7 @@ export default function TabBar() {
           ) : (
             <Icon name={t.icon} />
           )}
-          {t.label}
+          {lang === "vi" ? t.vi : t.label}
           {t.href === "/me" && (unread ?? 0) > 0 && (
             <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", width: 8, height: 8, borderRadius: "50%", background: "var(--brand)" }} />
           )}

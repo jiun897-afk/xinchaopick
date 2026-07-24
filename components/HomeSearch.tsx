@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLang } from "../lib/i18n";
 
 const SCOPES = [
   { v: "all", t: "전체" },
@@ -15,6 +16,7 @@ const HOT = ["마사지", "한식", "스냅사진", "네일", "호이안 투어"
 export default function HomeSearch() {
   const [q, setQ] = useState("");
   const [scope, setScope] = useState("all");
+  const [lang] = useLang();
   const router = useRouter();
 
   function go(term?: string) {
@@ -63,7 +65,7 @@ export default function HomeSearch() {
         </select>
         <input
           style={{ flex: 1, border: "none", outline: "none", padding: "14px 12px", fontSize: 14.5, fontFamily: "inherit", minWidth: 0 }}
-          placeholder="맛집, 마사지, 업체 이름 검색"
+          placeholder={lang === "vi" ? "Tìm quán ăn, massage, tên cửa hàng" : "맛집, 마사지, 업체 이름 검색"}
           value={q}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && go()}

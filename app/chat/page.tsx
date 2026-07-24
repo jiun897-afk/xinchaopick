@@ -33,6 +33,8 @@ export default function ChatListPage() {
   const [sBusy, setSBusy] = useState(false);
   const [tab, setTab] = useState<"dm" | "camp" | "friends">("dm");
   const longRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const roomLongRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressRef = useRef(false);
 
   useEffect(() => {
     if (!supabase) {
@@ -287,6 +289,27 @@ export default function ChatListPage() {
               key={r.kind + r.rid}
               href={(r.kind === "camp" ? "/chatroom?id=" : "/dm?id=") + r.rid}
               style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "14px 2px" }}
+              onClick={(e) => {
+                if (suppressRef.current) e.preventDefault();
+              }}
+              onPointerDown={() => {
+                if (r.kind !== "dm") return;
+                // 꾹 눌러서 채팅방 나가기 (카톡식)
+                roomLongRef.current = setTimeout(async () => {
+                  roomLongRef.current = null;
+                  suppressRef.current = true;
+                  if (confirm(r.title + "님과의 채팅방을 나갈까요?\n대화 내용이 사라지고 목록에서 삭제돼요.")) {
+                    await supabase?.rpc("leave_dm_room", { p_room: r.rid });
+                    setChatRooms((prev) => (prev ?? []).filter((x) => !(x.kind === "dm" && x.rid === r.rid)));
+                  }
+                  setTimeout(() => {
+                    suppressRef.current = false;
+                  }, 400);
+                }, 600);
+              }}
+              onPointerUp={() => roomLongRef.current && clearTimeout(roomLongRef.current)}
+              onPointerMove={() => roomLongRef.current && clearTimeout(roomLongRef.current)}
+              onPointerLeave={() => roomLongRef.current && clearTimeout(roomLongRef.current)}
             >
               {r.kind === "camp" ? (
                 <div

@@ -38,6 +38,7 @@ export default function DmPage() {
   const imgInRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
+  const leftAtRef = useRef<string | null>(null); // 내가 방을 나갔던 시각 — 그 이후 메시지만 표시
 
   useEffect(() => {
     setRoomId(new URLSearchParams(window.location.search).get("id"));
@@ -45,12 +46,12 @@ export default function DmPage() {
 
   async function loadMsgs(id: string) {
     if (!supabase) return;
-    const { data } = await supabase
+    let qy = supabase
       .from("dm_messages")
       .select("id, sender_id, content, created_at, read_at, image_url")
-      .eq("room_id", id)
-      .order("created_at", { ascending: true })
-      .limit(300);
+      .eq("room_id", id);
+    if (leftAtRef.current) qy = qy.gt("created_at", leftAtRef.current);
+    const { data } = await qy.order("created_at", { ascending: true }).limit(300);
     const rows = (data as Msg[]) ?? [];
     setMsgs(rows);
     if (rows.some((m) => m.read_at === null)) {
@@ -75,9 +76,10 @@ export default function DmPage() {
         return;
       }
       setMe(session.user.id);
-      const { data: r } = await supabase.from("dm_rooms").select("id, user_a, user_b").eq("id", roomId).maybeSingle();
+      const { data: r } = await supabase.from("dm_rooms").select("id, user_a, user_b, left_a, left_b").eq("id", roomId).maybeSingle();
       if (r) {
         const other = (r as any).user_a === session.user.id ? (r as any).user_b : (r as any).user_a;
+        leftAtRef.current = ((r as any).user_a === session.user.id ? (r as any).left_a : (r as any).left_b) ?? null;
         const [{ data: pv }, { data: blk }, { data: fr }] = await Promise.all([
           supabase.rpc("profiles_view", { p_ids: [other] }),
           supabase.from("blocks").select("blocked_id").eq("blocked_id", other).maybeSingle(),

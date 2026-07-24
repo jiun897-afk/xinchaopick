@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import MascotIcon from "./MascotIcon";
+import { useLang, VI_CAT, VI_CAT_SUB } from "../lib/i18n";
 
 const CATS: { key: string; sub: string; bg: string }[] = [
   { key: "로컬맛집", sub: "쌀국수 · 분짜 · 해산물", bg: "#FFF1E8" },
@@ -20,6 +21,9 @@ const CATS: { key: string; sub: string; bg: string }[] = [
 export default function CategoryIcons() {
   const router = useRouter();
   const [openAll, setOpenAll] = useState(false);
+  const [lang] = useLang();
+  const nm = (k: string) => (lang === "vi" ? VI_CAT[k] ?? k : k);
+  const sb = (k: string, s: string) => (lang === "vi" ? VI_CAT_SUB[k] ?? s : s);
   return (
     <div
       className="selcard"
@@ -31,7 +35,7 @@ export default function CategoryIcons() {
     >
       <div style={{ display: "flex", alignItems: "center", marginBottom: 9 }}>
         <div className="sclabel" style={{ color: "rgba(255,255,255,.9)", marginBottom: 0 }}>
-          업종으로 찾기
+          {lang === "vi" ? "Tìm theo ngành" : "업종으로 찾기"}
         </div>
         <span
           onClick={() => setOpenAll((v) => !v)}
@@ -74,7 +78,7 @@ export default function CategoryIcons() {
             >
               <MascotIcon name={c.key} size={40} />
               <div style={{ fontSize: 12.5, fontWeight: 900, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {c.key}
+                {nm(c.key)}
               </div>
             </div>
           ))}
@@ -117,12 +121,12 @@ export default function CategoryIcons() {
               <MascotIcon name={c.key} size={72} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 17.5, fontWeight: 900, color: "var(--ink)" }}>{c.key}</div>
+              <div style={{ fontSize: 17.5, fontWeight: 900, color: "var(--ink)" }}>{nm(c.key)}</div>
               <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink3)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                {c.sub}
+                {sb(c.key, c.sub)}
               </div>
               <div style={{ fontSize: 11.5, fontWeight: 900, color: "var(--brand-dark)", marginTop: 8 }}>
-                캠페인 보기 →
+                {lang === "vi" ? "Xem chiến dịch →" : "캠페인 보기 →"}
               </div>
             </div>
           </div>

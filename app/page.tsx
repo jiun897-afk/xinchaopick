@@ -8,6 +8,8 @@ import NotificationBell from "../components/NotificationBell";
 import ChannelIcons from "../components/ChannelIcons";
 import CategoryIcons from "../components/CategoryIcons";
 import Mascot from "../components/Mascot";
+import T from "../components/T";
+import LangToggle from "../components/LangToggle";
 
 export const revalidate = 60;
 
@@ -84,10 +86,11 @@ export default async function Home() {
         <div className="wrap hbar">
           <Logo />
           <nav className="hnav">
-            <a href="#campaigns">체험단 찾기</a>
-            <a href="/partner">사장님 입점 문의</a>
+            <a href="#campaigns"><T ko="체험단 찾기" vi="Tìm trải nghiệm" /></a>
+            <a href="/partner"><T ko="사장님 입점 문의" vi="Dành cho chủ quán" /></a>
           </nav>
-          <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+            <LangToggle />
             <NotificationBell />
             <AuthButton />
           </span>
@@ -97,15 +100,19 @@ export default async function Home() {
       <div className="hero">
         <div className="wrap">
           <div className="launch">
-            <b>다낭 정식 오픈</b>&nbsp;· 신청 무료
+            <b><T ko="다낭 정식 오픈" vi="Chính thức ra mắt tại Đà Nẵng" /></b>&nbsp;<T ko="· 신청 무료" vi="· Đăng ký miễn phí" />
           </div>
           <h1>
-            베트남의 모든 체험,<br />
-            <em>리뷰로 돌려받다</em>
+            <T
+              ko={<>베트남의 모든 체험,<br /><em>리뷰로 돌려받다</em></>}
+              vi={<>Mọi trải nghiệm ở Việt Nam,<br /><em>nhận lại bằng review</em></>}
+            />
           </h1>
           <div className="sub">
-            다낭 맛집·마사지·액티비티를 무료로 체험하고<br />
-            네이버 블로그·유튜브·인스타그램에 솔직한 리뷰를 남겨보세요.
+            <T
+              ko={<>다낭 맛집·마사지·액티비티를 무료로 체험하고<br />네이버 블로그·유튜브·인스타그램에 솔직한 리뷰를 남겨보세요.</>}
+              vi={<>Trải nghiệm miễn phí quán ăn, massage, hoạt động tại Đà Nẵng<br />và để lại review chân thật trên Blog, YouTube, Instagram.</>}
+            />
           </div>
           <HomeSearch />
         </div>
@@ -117,8 +124,8 @@ export default async function Home() {
         <div className="wrap">
           <div className="shead">
             <div>
-              <div className="stitle">어떤 체험을 찾으세요?</div>
-              <div className="ssub">베트남 전역 · 지금 모집 중 {list.length}개 캠페인</div>
+              <div className="stitle"><T ko="어떤 체험을 찾으세요?" vi="Bạn muốn trải nghiệm gì?" /></div>
+              <div className="ssub"><T ko={<>베트남 전역 · 지금 모집 중 {list.length}개 캠페인</>} vi={<>Toàn Việt Nam · Đang tuyển {list.length} chiến dịch</>} /></div>
             </div>
           </div>
 
@@ -141,8 +148,8 @@ export default async function Home() {
               <span style={{ width: 74, height: 74, borderRadius: "50%", background: "rgba(255,255,255,.94)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "inset 0 -3px 8px rgba(217,66,15,.12)" }}>
                 <Mascot variant="eat" size={60} />
               </span>
-              <span style={{ fontSize: 17, fontWeight: 900 }}>체험단</span>
-              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>방문하고 무료 체험</span>
+              <span style={{ fontSize: 17, fontWeight: 900 }}><T ko="체험단" vi="Trải nghiệm" /></span>
+              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}><T ko="방문하고 무료 체험" vi="Ghé quán & trải nghiệm miễn phí" /></span>
             </Link>
             <Link
               href="/browse?t=기자단"
@@ -162,8 +169,8 @@ export default async function Home() {
               <span style={{ width: 74, height: 74, borderRadius: "50%", background: "rgba(255,255,255,.94)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "inset 0 -3px 8px rgba(76,29,149,.12)" }}>
                 <Mascot variant="write" size={60} />
               </span>
-              <span style={{ fontSize: 17, fontWeight: 900 }}>기자단</span>
-              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}>방문 없이 원고 작성</span>
+              <span style={{ fontSize: 17, fontWeight: 900 }}><T ko="기자단" vi="Viết bài" /></span>
+              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.9 }}><T ko="방문 없이 원고 작성" vi="Viết bài không cần ghé quán" /></span>
             </Link>
           </div>
 
@@ -192,9 +199,9 @@ export default async function Home() {
               🗺️
             </span>
             <span style={{ flex: 1, minWidth: 0 }}>
-              <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}>내 주변에서 찾기</span>
+              <span style={{ display: "block", fontSize: 15, fontWeight: 900 }}><T ko="내 주변에서 찾기" vi="Tìm quanh tôi" /></span>
               <span style={{ display: "block", fontSize: 11.5, fontWeight: 700, color: "var(--ink3)", marginTop: 2 }}>
-                지도로 가까운 체험 업체 보기 · 거리순 목록
+                <T ko="지도로 가까운 체험 업체 보기 · 거리순 목록" vi="Xem quán gần bạn trên bản đồ · theo khoảng cách" />
               </span>
             </span>
             <span style={{ color: "var(--ink3)", fontWeight: 900 }}>›</span>
@@ -205,7 +212,7 @@ export default async function Home() {
             className="btn ghost"
             style={{ width: "100%", marginTop: 14, padding: "14px 0", fontSize: 14.5, borderRadius: 16, background: "#fff" }}
           >
-            전체 캠페인 {list.length}개 모두 보기 →
+            <T ko={<>전체 캠페인 {list.length}개 모두 보기 →</>} vi={<>Xem tất cả {list.length} chiến dịch →</>} />
           </Link>
         </div>
       </section>
