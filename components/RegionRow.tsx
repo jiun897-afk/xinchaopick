@@ -51,7 +51,8 @@ export default function RegionRow() {
   const router = useRouter();
   const go = (q: string) => router.push("/search?q=" + encodeURIComponent(q));
   return (
-    <div style={{ margin: "18px 0 4px" }}>
+    <div style={{ margin: "14px 0 4px" }}>
+      <div style={{ fontSize: 11, fontWeight: 900, color: "var(--ink3)", letterSpacing: 0.3, marginBottom: 8 }}>지역</div>
       <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
         {MAIN.map((r) => (
           <Circle key={r.name} r={r} onGo={go} />

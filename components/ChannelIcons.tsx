@@ -3,45 +3,44 @@
 import { useRouter } from "next/navigation";
 
 const CHANNELS = [
-  { key: "블로그", emoji: "✍️", bg: "#E8F7EF" },
-  { key: "유튜브", emoji: "▶️", bg: "#FFE9EC" },
-  { key: "쇼츠", emoji: "🎬", bg: "#FFE9DC" },
-  { key: "클립", emoji: "🎞️", bg: "#E6F3E6" },
-  { key: "인스타", emoji: "📸", bg: "#EEEAFF" },
-  { key: "릴스", emoji: "🎥", bg: "#FFE3F1" },
-  { key: "페북", emoji: "👥", bg: "#E3F0FA" },
-  { key: "스레드", emoji: "🧵", bg: "#F0EDE0" },
-  { key: "X", emoji: "✖️", bg: "#EDEDED" },
-  { key: "기자단", emoji: "📰", bg: "#FFF3D6" },
+  { key: "블로그", emoji: "✍️", c: "#1FA45B", bg: "#E8F7EF" },
+  { key: "유튜브", emoji: "▶️", c: "#D93025", bg: "#FDECEC" },
+  { key: "쇼츠", emoji: "🎬", c: "#D9420F", bg: "#FFE9DC" },
+  { key: "클립", emoji: "🎞️", c: "#2E7D32", bg: "#E6F3E6" },
+  { key: "인스타", emoji: "📸", c: "#7C3AED", bg: "#EEEAFF" },
+  { key: "릴스", emoji: "🎥", c: "#C2185B", bg: "#FFE3F1" },
+  { key: "페북", emoji: "👥", c: "#1A56DB", bg: "#E3F0FA" },
+  { key: "스레드", emoji: "🧵", c: "#5C554D", bg: "#F0EDE0" },
+  { key: "X", emoji: "✖️", c: "#26211C", bg: "#EDEDED" },
+  { key: "기자단", emoji: "📰", c: "#8A6D1A", bg: "#FFF3D6" },
 ];
 
 export default function ChannelIcons() {
   const router = useRouter();
   return (
-    <div style={{ margin: "16px 0 4px" }}>
-      <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
-        {CHANNELS.map((c) => (
+    <div style={{ margin: "10px 0 4px" }}>
+      <div style={{ fontSize: 11, fontWeight: 900, color: "var(--ink3)", letterSpacing: 0.3, marginBottom: 8 }}>SNS 채널로 모아보기</div>
+      <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
+        {CHANNELS.map((ch) => (
           <div
-            key={c.key}
-            onClick={() => router.push("/channel?c=" + encodeURIComponent(c.key))}
-            style={{ textAlign: "center", width: 62, flexShrink: 0, cursor: "pointer" }}
+            key={ch.key}
+            onClick={() => router.push("/channel?c=" + encodeURIComponent(ch.key))}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              flexShrink: 0,
+              background: ch.bg,
+              borderRadius: 999,
+              padding: "9px 14px 9px 11px",
+              cursor: "pointer",
+              fontSize: 12.5,
+              fontWeight: 800,
+              color: ch.c,
+            }}
           >
-            <div
-              style={{
-                width: 54,
-                height: 54,
-                margin: "0 auto",
-                borderRadius: "50%",
-                background: c.bg,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 22,
-              }}
-            >
-              {c.emoji}
-            </div>
-            <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, color: "var(--ink2)", whiteSpace: "nowrap" }}>{c.key}</div>
+            <span style={{ fontSize: 14 }}>{ch.emoji}</span>
+            {ch.key}
           </div>
         ))}
       </div>

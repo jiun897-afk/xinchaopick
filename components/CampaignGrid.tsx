@@ -74,40 +74,50 @@ function IconRow({
   items,
   sel,
   onSel,
+  label,
+  shape = "circle",
 }: {
   items: { key: string; emoji: string; bg: string }[];
   sel: string;
   onSel: (k: string) => void;
+  label?: string;
+  shape?: "circle" | "square";
 }) {
+  const sq = shape === "square";
+  const size = sq ? 46 : 54;
   return (
-    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, margin: "6px 0 4px" }} className="regionrow">
-      {items.map((it) => {
-        const on = sel === it.key;
-        return (
-          <div key={it.key} onClick={() => onSel(it.key)} style={{ textAlign: "center", width: 62, flexShrink: 0, cursor: "pointer" }}>
-            <div
-              style={{
-                width: 54,
-                height: 54,
-                margin: "0 auto",
-                borderRadius: "50%",
-                background: it.bg,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: 22,
-                border: on ? "2.5px solid var(--brand)" : "2.5px solid transparent",
-                transition: "border 0.15s",
-              }}
-            >
-              {it.emoji}
+    <div style={{ margin: "10px 0 4px" }}>
+      {label && <div style={{ fontSize: 11, fontWeight: 900, color: "var(--ink3)", letterSpacing: 0.3, marginBottom: 8 }}>{label}</div>}
+      <div style={{ display: "flex", gap: sq ? 8 : 6, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
+        {items.map((it) => {
+          const on = sel === it.key;
+          return (
+            <div key={it.key} onClick={() => onSel(it.key)} style={{ textAlign: "center", width: sq ? 56 : 62, flexShrink: 0, cursor: "pointer" }}>
+              <div
+                style={{
+                  width: size,
+                  height: size,
+                  margin: "0 auto",
+                  borderRadius: sq ? 14 : "50%",
+                  background: on && sq ? "var(--brand)" : it.bg,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: sq ? 19 : 22,
+                  border: !sq && on ? "2.5px solid var(--brand)" : "2.5px solid transparent",
+                  boxShadow: sq && on ? "0 4px 12px rgba(240,78,26,.3)" : "none",
+                  transition: "all 0.15s",
+                }}
+              >
+                {it.emoji}
+              </div>
+              <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 800, color: on ? "var(--brand-dark)" : "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {it.key}
+              </div>
             </div>
-            <div style={{ marginTop: 6, fontSize: 10.5, fontWeight: 800, color: on ? "var(--brand-dark)" : "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {it.key}
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -154,8 +164,8 @@ export default function CampaignGrid({
 
   return (
     <>
-      {showRegions && <IconRow items={REGIONS} sel={region} onSel={setRegion} />}
-      <IconRow items={CATS} sel={cat} onSel={setCat} />
+      {showRegions && <IconRow items={REGIONS} sel={region} onSel={setRegion} label="지역" />}
+      <IconRow items={CATS} sel={cat} onSel={setCat} label="업종" shape="square" />
 
       <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0 16px" }}>
         <span
