@@ -27,8 +27,19 @@ export default function MePage() {
   }, [supabase, email]);
 
   async function toJpeg(f: File): Promise<Blob> {
-    const bmp = await createImageBitmap(f).catch(() => null);
-    if (!bmp) throw new Error("이 사진 형식(HEIC 등)은 지원되지 않아요.\n'사진 찍기'로 찍거나 JPG 사진을 선택해주세요.");
+    let src: Blob = f;
+    let bmp = await createImageBitmap(src).catch(() => null);
+    if (!bmp) {
+      // HEIC 등 브라우저가 못 읽는 형식 → 변환기 통과
+      try {
+        // @ts-ignore
+        const heic2any = (await import("heic2any")).default;
+        const out = await heic2any({ blob: f, toType: "image/jpeg", quality: 0.9 });
+        src = Array.isArray(out) ? out[0] : out;
+        bmp = await createImageBitmap(src).catch(() => null);
+      } catch {}
+    }
+    if (!bmp) throw new Error("이 사진은 읽을 수 없었어요. 다른 사진을 선택하거나 '사진 찍기'를 이용해주세요.");
     const max = 512;
     const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
     const canvas = document.createElement("canvas");
