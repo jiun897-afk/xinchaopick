@@ -26,10 +26,24 @@ export default function MePage() {
     })();
   }, [supabase, email]);
 
+  async function toJpeg(f: File): Promise<Blob> {
+    const bmp = await createImageBitmap(f).catch(() => null);
+    if (!bmp) throw new Error("이 사진 형식(HEIC 등)은 지원되지 않아요.\n'사진 찍기'로 찍거나 JPG 사진을 선택해주세요.");
+    const max = 512;
+    const scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bmp.width * scale));
+    canvas.height = Math.max(1, Math.round(bmp.height * scale));
+    canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    return await new Promise((res, rej) =>
+      canvas.toBlob((b) => (b ? res(b) : rej(new Error("사진 변환에 실패했어요."))), "image/jpeg", 0.85)
+    );
+  }
+
   async function uploadAvatar(f: File) {
     if (!supabase) return;
-    if (f.size > 5 * 1024 * 1024) {
-      alert("사진은 5MB 이하로 올려주세요.");
+    if (f.size > 15 * 1024 * 1024) {
+      alert("사진은 15MB 이하로 올려주세요.");
       return;
     }
     setUpBusy(true);
@@ -38,11 +52,17 @@ export default function MePage() {
         data: { session },
       } = await supabase.auth.getSession();
       if (!session) return;
-      const ext = (f.name.split(".").pop() || "jpg").toLowerCase();
-      const path = session.user.id + "/avatar_" + Date.now() + "." + ext;
-      const { error } = await supabase.storage.from("avatars").upload(path, f, { upsert: true });
+      let blob: Blob;
+      try {
+        blob = await toJpeg(f);
+      } catch (e: any) {
+        alert(e.message);
+        return;
+      }
+      const path = session.user.id + "/avatar_" + Date.now() + ".jpg";
+      const { error } = await supabase.storage.from("avatars").upload(path, blob, { upsert: true, contentType: "image/jpeg" });
       if (error) {
-        alert(error.message);
+        alert("업로드 실패: " + error.message);
         return;
       }
       const { data: pub } = supabase.storage.from("avatars").getPublicUrl(path);
