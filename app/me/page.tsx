@@ -10,7 +10,9 @@ export default function MePage() {
   const [ready, setReady] = useState(false);
   const [avatar, setAvatar] = useState<string | null>(null);
   const [upBusy, setUpBusy] = useState(false);
+  const [picker, setPicker] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const camRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!supabase || !email) return;
@@ -157,7 +159,7 @@ export default function MePage() {
           padding: "18px 18px",
         }}
       >
-        <div style={{ position: "relative", flexShrink: 0, cursor: email ? "pointer" : "default" }} onClick={() => email && fileRef.current?.click()}>
+        <div style={{ position: "relative", flexShrink: 0, cursor: email ? "pointer" : "default" }} onClick={() => email && setPicker(true)}>
           <div
             style={{
               width: 58,
@@ -204,7 +206,50 @@ export default function MePage() {
             style={{ display: "none" }}
             onChange={(e) => e.target.files?.[0] && uploadAvatar(e.target.files[0])}
           />
+          <input
+            ref={camRef}
+            type="file"
+            accept="image/*"
+            capture="user"
+            style={{ display: "none" }}
+            onChange={(e) => e.target.files?.[0] && uploadAvatar(e.target.files[0])}
+          />
         </div>
+        {picker && (
+          <div
+            onClick={() => setPicker(false)}
+            style={{ position: "fixed", inset: 0, zIndex: 900, background: "rgba(20,15,10,.45)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+          >
+            <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: "#fff", borderRadius: "22px 22px 0 0", padding: "18px 18px 26px" }}>
+              <div style={{ fontSize: 14.5, fontWeight: 900, marginBottom: 12 }}>프로필 사진</div>
+              <div
+                onClick={() => { setPicker(false); camRef.current?.click(); }}
+                style={{ padding: "14px 4px", borderBottom: "1px solid var(--line)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}
+              >
+                📷 사진 찍기
+              </div>
+              <div
+                onClick={() => { setPicker(false); fileRef.current?.click(); }}
+                style={{ padding: "14px 4px", borderBottom: "1px solid var(--line)", fontSize: 14.5, fontWeight: 700, cursor: "pointer" }}
+              >
+                🖼️ 앨범에서 선택
+              </div>
+              {avatar && (
+                <div
+                  onClick={async () => {
+                    setPicker(false);
+                    if (!supabase || !confirm("프로필 사진을 삭제할까요?")) return;
+                    await supabase.rpc("set_my_avatar", { p_url: null });
+                    setAvatar(null);
+                  }}
+                  style={{ padding: "14px 4px", fontSize: 14.5, fontWeight: 700, color: "#C0392B", cursor: "pointer" }}
+                >
+                  🗑 사진 삭제
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <div style={{ flex: 1, minWidth: 0 }}>
           {!ready ? (
             <div style={{ fontSize: 14, color: "var(--ink3)" }}>확인 중…</div>
