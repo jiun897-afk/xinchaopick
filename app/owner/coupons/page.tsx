@@ -27,6 +27,12 @@ const VI: Record<string, string> = {
   "특정 메뉴/서비스만 (선택)": "Chỉ áp dụng cho món/dịch vụ (tùy chọn)",
   "예: 아로마 마사지": "VD: Massage aroma",
   "유효기간 (선택)": "Hạn dùng (tùy chọn)",
+  "사용 방식": "Cách sử dụng",
+  "1인 1회": "1 lần / khách",
+  "재사용 가능 (방문마다)": "Dùng lại được (mỗi lần ghé)",
+  "수량 한정 (선택, 총 발행 매수 · 비우면 무제한)": "Giới hạn số lượng (tùy chọn · trống = không giới hạn)",
+  "재사용": "Dùng lại",
+  "한정": "Giới hạn",
   "쿠폰 발행하기": "Phát hành coupon",
   "발행 중…": "Đang phát hành…",
   "값을 입력해주세요.": "Vui lòng nhập giá trị.",
@@ -68,6 +74,8 @@ export default function OwnerCouponsPage() {
   const [minSpend, setMinSpend] = useState("");
   const [target, setTarget] = useState("");
   const [expires, setExpires] = useState("");
+  const [usage, setUsage] = useState<"once" | "multi">("once");
+  const [maxClaims, setMaxClaims] = useState("");
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -124,6 +132,8 @@ export default function OwnerCouponsPage() {
       min_spend: Number(minSpend.replace(/[^0-9]/g, "")) || 0,
       target: target.trim(),
       expires_at: expires || null,
+      usage,
+      max_claims: Number(maxClaims.replace(/[^0-9]/g, "")) || null,
     });
     setBusy(false);
     if (error) return setMsg(t("발행 실패: ") + error.message);
@@ -254,6 +264,41 @@ export default function OwnerCouponsPage() {
             <label style={lbl}>{t("특정 메뉴/서비스만 (선택)")}</label>
             <input style={inp} value={target} onChange={(e) => setTarget(e.target.value)} placeholder={t("예: 아로마 마사지")} />
 
+            <label style={lbl}>{t("사용 방식")}</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {([
+                { v: "once", l: t("1인 1회") },
+                { v: "multi", l: t("재사용 가능 (방문마다)") },
+              ] as const).map((o) => (
+                <div
+                  key={o.v}
+                  onClick={() => setUsage(o.v)}
+                  style={{
+                    flex: 1,
+                    border: usage === o.v ? "2px solid var(--brand)" : "1.5px solid var(--line)",
+                    background: usage === o.v ? "var(--brand-bg)" : "#fff",
+                    borderRadius: 12,
+                    padding: "11px 8px",
+                    cursor: "pointer",
+                    textAlign: "center",
+                    fontSize: 13,
+                    fontWeight: 800,
+                  }}
+                >
+                  {o.l}
+                </div>
+              ))}
+            </div>
+
+            <label style={lbl}>{t("수량 한정 (선택, 총 발행 매수 · 비우면 무제한)")}</label>
+            <input
+              style={inp}
+              inputMode="numeric"
+              value={maxClaims ? Number(maxClaims.replace(/[^0-9]/g, "")).toLocaleString() : ""}
+              onChange={(e) => setMaxClaims(e.target.value.replace(/[^0-9]/g, ""))}
+              placeholder="100"
+            />
+
             <label style={lbl}>{t("유효기간 (선택)")}</label>
             <input style={inp} type="date" value={expires} onChange={(e) => setExpires(e.target.value)} />
 
@@ -268,11 +313,11 @@ export default function OwnerCouponsPage() {
           {coupons.length === 0 && <div style={{ marginTop: 10, fontSize: 13, color: "var(--ink3)" }}>{t("발행된 쿠폰이 없어요.")}</div>}
           {coupons.map((c) => (
             <div key={c.id} style={{ display: "flex", alignItems: "center", gap: 10, border: "1px solid var(--line)", borderRadius: 14, padding: "13px 15px", marginTop: 10, opacity: couponValid(c) ? 1 : 0.55 }}>
-              <span style={{ fontSize: 20 }}>🎟</span>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14, fontWeight: 800 }}>{couponTitle(c)}</div>
                 <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 2 }}>
-                  {couponCond(c) || "조건 없음"}
+                  {(c.usage === "multi" ? t("재사용") : t("1인 1회")) + (c.max_claims ? " · " + t("한정") + " " + c.max_claims : "")}
+                  {couponCond(c) ? " · " + couponCond(c) : ""}
                   {!c.active && " · " + t("중지됨")}
                 </div>
               </div>

@@ -49,6 +49,9 @@ export default function PlaceDetailPage() {
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [claimed, setClaimed] = useState<Record<string, string>>({});
   const [reportRid, setReportRid] = useState<string | null>(null);
+  const [isFan, setIsFan] = useState(false);
+  const [fanN, setFanN] = useState<number | null>(null);
+  const [fanBusy, setFanBusy] = useState(false);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [me, setMe] = useState<string | null>(null);
   const [rating, setRating] = useState(0);
@@ -102,6 +105,11 @@ export default function PlaceDetailPage() {
       setCoupons(((cp as Coupon[]) ?? []).filter(couponValid));
       setMe(sess.data.session?.user?.id ?? null);
       loadReviews(id);
+      // 단골 수 + 내 단골 여부
+      supabase.rpc("fan_count", { p_place: id }).then(({ data }) => setFanN(typeof data === "number" ? data : 0));
+      if (sess.data.session) {
+        supabase.from("place_fans").select("place_id").eq("place_id", id).maybeSingle().then(({ data }) => setIsFan(!!data));
+      }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, supabase]);
@@ -124,6 +132,23 @@ export default function PlaceDetailPage() {
     } else {
       alert("신고가 접수됐어요. 운영팀이 확인 후 조치할게요.");
     }
+  }
+
+  async function toggleFanBtn() {
+    if (!supabase) return;
+    if (!me) {
+      window.location.href = "/login";
+      return;
+    }
+    if (fanBusy || !id) return;
+    setFanBusy(true);
+    const { data, error } = await supabase.rpc("toggle_fan", { p_place: id });
+    if (!error) {
+      const on = !!data;
+      setIsFan(on);
+      setFanN((n) => Math.max(0, (n ?? 0) + (on ? 1 : -1)));
+    }
+    setFanBusy(false);
   }
 
   async function claimCoupon(cid: string) {
@@ -205,7 +230,34 @@ export default function PlaceDetailPage() {
           {place.category}
           {place.subcategory ? " · " + place.subcategory : ""} · {place.area}
         </div>
-        <h1 style={{ fontSize: 23, fontWeight: 900, marginTop: 4 }}>{place.name}</h1>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+          <h1 style={{ fontSize: 23, fontWeight: 900, flex: 1, minWidth: 0 }}>{place.name}</h1>
+          <button
+            onClick={toggleFanBtn}
+            disabled={fanBusy}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              flexShrink: 0,
+              border: isFan ? "1.5px solid var(--brand)" : "1.5px solid var(--line)",
+              background: isFan ? "var(--brand-bg)" : "#fff",
+              color: isFan ? "var(--brand-dark)" : "var(--ink2)",
+              borderRadius: 999,
+              padding: "9px 14px",
+              fontSize: 13,
+              fontWeight: 900,
+              fontFamily: "inherit",
+              cursor: "pointer",
+            }}
+          >
+            <svg viewBox="0 0 24 24" width={14} height={14} fill={isFan ? "currentColor" : "none"} stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+            </svg>
+            {isFan ? "단골" : "단골 맺기"}
+            {fanN !== null && <span style={{ fontWeight: 800, opacity: 0.75 }}>{fanN}</span>}
+          </button>
+        </div>
         <div style={{ marginTop: 6, fontSize: 14 }}>
           <Stars n={Math.round(avg)} size={16} />
           <b style={{ marginLeft: 6 }}>{avg ? avg.toFixed(1) : "-"}</b>
@@ -254,7 +306,9 @@ export default function PlaceDetailPage() {
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 15, fontWeight: 900, color: "var(--brand-dark)" }}>{couponTitle(c)}</div>
-                  <div style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 3 }}>{couponCond(c) || "조건 없음"}</div>
+                  <div style={{ fontSize: 11.5, color: "var(--ink2)", marginTop: 3 }}>
+                    {(c.usage === "multi" ? "재사용 가능" : "1인 1회") + (couponCond(c) ? " · " + couponCond(c) : "")}
+                  </div>
                 </div>
                 {claimed[c.id] ? (
                   <Link href="/my-coupons" style={{ fontSize: 12, fontWeight: 900, color: "var(--brand-dark)", flexShrink: 0, textDecoration: "underline" }}>

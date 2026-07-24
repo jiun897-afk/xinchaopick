@@ -8,7 +8,13 @@ export type Coupon = {
   gift: string;
   expires_at: string | null;
   active: boolean;
+  usage?: "once" | "multi";
+  max_claims?: number | null;
 };
+
+export function couponUsageLabel(c: Coupon): string {
+  return c.usage === "multi" ? "재사용 가능" : "1인 1회";
+}
 
 export function couponTitle(c: Coupon): string {
   const scope = c.target ? `${c.target} ` : "";

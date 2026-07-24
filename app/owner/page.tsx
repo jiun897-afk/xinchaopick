@@ -61,6 +61,7 @@ const VI: Record<string, string> = {
   "채팅": "Chat",
   "쿠폰": "Coupon",
   "쿠폰 인증": "Xác nhận coupon",
+  "단골 소식 보내기": "Gửi tin cho khách quen",
   "리뷰 승인": "Duyệt review",
   "문제제기": "Báo vấn đề",
   "해결됨·승인": "Đã ổn · Duyệt",
@@ -305,6 +306,13 @@ export default function OwnerPage() {
           {t("쿠폰 인증")}
         </Link>
       </div>
+
+      <Link
+        href="/owner/notice"
+        style={{ display: "block", marginTop: 8, border: "1px solid var(--line)", background: "#fff", borderRadius: 12, padding: "12px 14px", fontSize: 13, fontWeight: 800, textAlign: "center" }}
+      >
+        {t("단골 소식 보내기")}
+      </Link>
 
       <div
         onClick={() => {
