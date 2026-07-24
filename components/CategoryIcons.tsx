@@ -43,22 +43,11 @@ export default function CategoryIcons() {
           {CATS.map((c) => (
             <div
               key={c.key}
+              className="cattile"
               onClick={() => router.push(c.key === "전체 보기" ? "/browse" : "/browse?cat=" + encodeURIComponent(c.key))}
-              style={{ textAlign: "center", width: 72, flexShrink: 0, cursor: "pointer" }}
             >
-              <div
-                style={{
-                  width: 68,
-                  height: 68,
-                  margin: "0 auto",
-                  borderRadius: 20,
-                  background: c.bg,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <MascotIcon name={c.key} size={56} />
+              <div className="cbox" style={{ background: c.bg }}>
+                <MascotIcon name={c.key} size={52} />
               </div>
               <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, color: "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                 {c.key}
