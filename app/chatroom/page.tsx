@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import { compressImage } from "../../lib/imageTool";
 import ReportModal from "../../components/ReportModal";
+import { useChatTr } from "../../lib/useChatTr";
 
 type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null };
 type Room = {
@@ -38,6 +39,7 @@ export default function ChatRoomPage() {
   const [reportOpen, setReportOpen] = useState(false);
   const [selMode, setSelMode] = useState(false);
   const [selIds, setSelIds] = useState<Set<string>>(new Set());
+  const { trMap, translate } = useChatTr("camp"); // 한↔베 자동 번역
 
   function toggleSel(id: string) {
     setSelIds((prev) => {
@@ -65,6 +67,7 @@ export default function ChatRoomPage() {
       .limit(200);
     const rows = (data as Msg[]) ?? [];
     setMsgs(rows);
+    translate(rows);
     // 상대가 보낸 안읽은 메시지 → 읽음 처리
     if (rows.some((m) => m.read_at === null)) {
       supabase.rpc("mark_msgs_read", { p_app_id: id }).then(() => {});
@@ -249,6 +252,19 @@ export default function ChatRoomPage() {
                   />
                 )}
                 {(!m.image_url || m.content !== "📷 사진") && m.content}
+                {trMap[m.id] && (
+                  <div
+                    style={{
+                      marginTop: 6,
+                      paddingTop: 6,
+                      borderTop: mine ? "1px dashed rgba(255,255,255,.4)" : "1px dashed var(--line)",
+                      fontSize: 13.5,
+                      opacity: 0.95,
+                    }}
+                  >
+                    {trMap[m.id]}
+                  </div>
+                )}
                 <div style={{ fontSize: 9.5, opacity: 0.65, marginTop: 4, textAlign: "right" }}>
                   {new Date(m.created_at).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
                 </div>
