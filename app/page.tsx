@@ -117,7 +117,7 @@ export default async function Home() {
           <div className="shead">
             <div>
               <div className="stitle">지금 모집 중인 체험단</div>
-              <div className="ssub">다낭 · 총 {list.length}개 캠페인</div>
+              <div className="ssub">베트남 전역 · 총 {list.length}개 캠페인</div>
             </div>
           </div>
           <RegionRow />

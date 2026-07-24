@@ -33,7 +33,36 @@ const MISSION_SHORT: Record<string, string> = {
   "영상": "영상",
 };
 
-const CHIPS = ["전체", "오늘 가능", "포인트", "기자단", "로컬맛집", "한식", "마사지·스파", "카페·디저트", "투어·액티비티", "네일·뷰티", "기타"];
+const CATS = [
+  { key: "전체", emoji: "🧡", bg: "var(--brand-bg)" },
+  { key: "로컬맛집", emoji: "🍜", bg: "#FFE9DC" },
+  { key: "한식", emoji: "🥘", bg: "#FFF3D6" },
+  { key: "마사지·스파", emoji: "💆", bg: "#E8F7EF" },
+  { key: "카페·디저트", emoji: "☕", bg: "#F0EDE0" },
+  { key: "투어·액티비티", emoji: "🏖️", bg: "#DFF1FF" },
+  { key: "네일·뷰티", emoji: "💅", bg: "#FFE3F1" },
+  { key: "사진·스냅", emoji: "📷", bg: "#EEEAFF" },
+  { key: "숙소·풀빌라", emoji: "🏨", bg: "#E3F0FA" },
+  { key: "기타", emoji: "✨", bg: "#EDEDED" },
+];
+
+const REGIONS = [
+  { key: "전체", emoji: "🌏", bg: "var(--chip)" },
+  { key: "다낭", emoji: "🏖️", bg: "#FFE9DC" },
+  { key: "나트랑", emoji: "🌊", bg: "#DFF1FF" },
+  { key: "푸꾸옥", emoji: "🏝️", bg: "#E2F6E9" },
+  { key: "호치민", emoji: "🏙️", bg: "#EEEAFF" },
+  { key: "하노이", emoji: "🛵", bg: "#FFE9EC" },
+  { key: "달랏", emoji: "⛰️", bg: "#E6F3E6" },
+  { key: "무이네", emoji: "🏜️", bg: "#FFF0DB" },
+];
+
+const DANANG_SUB = new Set(["다낭", "미케비치", "안탕", "시내", "한시장", "호이안"]);
+
+function offerValue(c: Campaign): number {
+  const nums = Array.from((c.offer ?? "").matchAll(/([\d,]+)\s*₫/g)).map((m) => Number(m[1].replace(/,/g, "")));
+  return nums.length ? Math.max(...nums) : 0;
+}
 
 function cardBadge(c: Campaign): string | null {
   if (c.quota > 0 && c.applied / c.quota >= 0.8) return "마감임박";
@@ -41,101 +70,132 @@ function cardBadge(c: Campaign): string | null {
   return null;
 }
 
-function offerValue(c: Campaign): number {
-  const nums = Array.from((c.offer ?? "").matchAll(/([\d,]+)\s*₫/g)).map((m) => Number(m[1].replace(/,/g, "")));
-  return nums.length ? Math.max(...nums) : 0;
+function IconRow({
+  items,
+  sel,
+  onSel,
+}: {
+  items: { key: string; emoji: string; bg: string }[];
+  sel: string;
+  onSel: (k: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 4, margin: "6px 0 4px" }} className="regionrow">
+      {items.map((it) => {
+        const on = sel === it.key;
+        return (
+          <div key={it.key} onClick={() => onSel(it.key)} style={{ textAlign: "center", width: 62, flexShrink: 0, cursor: "pointer" }}>
+            <div
+              style={{
+                width: 54,
+                height: 54,
+                margin: "0 auto",
+                borderRadius: "50%",
+                background: it.bg,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 22,
+                border: on ? "2.5px solid var(--brand)" : "2.5px solid transparent",
+                transition: "border 0.15s",
+              }}
+            >
+              {it.emoji}
+            </div>
+            <div style={{ marginTop: 6, fontSize: 10.5, fontWeight: 800, color: on ? "var(--brand-dark)" : "var(--ink2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {it.key}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
-const SORTS = [
-  { v: "default", l: "기본순" },
-  { v: "value", l: "금액 높은순" },
-  { v: "point", l: "포인트순" },
-];
-
-export default function CampaignGrid({ list }: { list: Campaign[] }) {
-  const [sel, setSel] = useState("전체");
+export default function CampaignGrid({
+  list,
+  hideChannelRow = false,
+  showRegions = false,
+}: {
+  list: Campaign[];
+  hideChannelRow?: boolean;
+  showRegions?: boolean;
+}) {
+  const [cat, setCat] = useState("전체");
+  const [region, setRegion] = useState("전체");
   const [sort, setSort] = useState("default");
-  const [ch, setCh] = useState("전체");
   const [minP, setMinP] = useState(0);
+  const [todayOnly, setTodayOnly] = useState(false);
 
   const filtered = useMemo(() => {
     let r = list;
-    if (sel === "오늘 가능") r = r.filter((c) => c.today_available);
-    else if (sel === "포인트") r = r.filter((c) => (c.reward_points ?? 0) > 0);
-    else if (sel === "기자단") r = r.filter((c) => c.camp_type === "기자단");
-    else if (sel !== "전체") r = r.filter((c) => c.category === sel);
-    if (ch !== "전체") r = r.filter((c) => (MISSION_SHORT[c.mission_type] ?? c.mission_type) === ch);
+    if (cat !== "전체") r = r.filter((c) => c.category === cat);
+    if (todayOnly) r = r.filter((c) => c.today_available);
     if (minP > 0) r = r.filter((c) => (c.reward_points ?? 0) >= minP);
+    if (showRegions && region !== "전체") {
+      r = r.filter((c) => (region === "다낭" ? DANANG_SUB.has(c.area ?? "") : c.area === region));
+    }
+    if (sort === "value") r = [...r].sort((a, b) => offerValue(b) - offerValue(a));
+    else if (sort === "point") r = [...r].sort((a, b) => (b.reward_points ?? 0) - (a.reward_points ?? 0));
     return r;
-  }, [list, sel, ch, minP]);
+  }, [list, cat, region, sort, minP, todayOnly, showRegions]);
 
-  const sorted = useMemo(() => {
-    if (sort === "value") return [...filtered].sort((a, b) => offerValue(b) - offerValue(a));
-    if (sort === "point") return [...filtered].sort((a, b) => (b.reward_points ?? 0) - (a.reward_points ?? 0));
-    return filtered;
-  }, [filtered, sort]);
+  const selStyle: React.CSSProperties = {
+    border: "1px solid var(--line)",
+    borderRadius: 999,
+    padding: "7px 10px",
+    fontSize: 12,
+    fontWeight: 800,
+    fontFamily: "inherit",
+    background: "#fff",
+    color: "var(--ink2)",
+    outline: "none",
+  };
 
   return (
     <>
-      <div className="chips">
-        {CHIPS.map((ch) => (
-          <span key={ch} className={"chip" + (sel === ch ? " on" : "")} style={{ cursor: "pointer" }} onClick={() => setSel(ch)}>
-            {ch}
-          </span>
-        ))}
-      </div>
+      {showRegions && <IconRow items={REGIONS} sel={region} onSel={setRegion} />}
+      <IconRow items={CATS} sel={cat} onSel={setCat} />
 
-      <div className="chips" style={{ margin: "0 0 8px" }}>
-        {["전체", "블로그", "유튜브", "쇼츠", "클립", "인스타", "릴스", "페북", "스레드", "X"].map((c2) => (
-          <span key={c2} className={"chip" + (ch === c2 ? " on" : "")} style={{ cursor: "pointer", fontSize: 12, padding: "6px 12px" }} onClick={() => setCh(c2)}>
-            {c2 === "전체" ? "채널 전체" : c2}
-          </span>
-        ))}
-      </div>
-
-      <div style={{ display: "flex", gap: 6, margin: "2px 0 14px", flexWrap: "wrap" }}>
-        {[
-          { v: 0, l: "P 전체" },
-          { v: 10000, l: "1만P↑" },
-          { v: 30000, l: "3만P↑" },
-          { v: 50000, l: "5만P↑" },
-        ].map((o) => (
-          <span
-            key={o.v}
-            onClick={() => setMinP(o.v)}
-            style={{ fontSize: 12, fontWeight: 800, padding: "6px 12px", borderRadius: 20, cursor: "pointer", background: minP === o.v ? "var(--brand)" : "var(--chip)", color: minP === o.v ? "#fff" : "var(--ink2)" }}
-          >
-            {o.l}
-          </span>
-        ))}
-        <span style={{ width: 1, background: "var(--line)", margin: "2px 2px" }} />
-        {SORTS.map((s) => (
-          <span
-            key={s.v}
-            onClick={() => setSort(s.v)}
-            style={{
-              fontSize: 12,
-              fontWeight: 800,
-              padding: "6px 12px",
-              borderRadius: 20,
-              cursor: "pointer",
-              background: sort === s.v ? "var(--ink)" : "var(--chip)",
-              color: sort === s.v ? "#fff" : "var(--ink2)",
-            }}
-          >
-            {s.l}
-          </span>
-        ))}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0 16px" }}>
+        <span
+          onClick={() => setTodayOnly((v) => !v)}
+          style={{
+            fontSize: 12,
+            fontWeight: 800,
+            padding: "7px 13px",
+            borderRadius: 999,
+            cursor: "pointer",
+            background: todayOnly ? "var(--brand)" : "#fff",
+            color: todayOnly ? "#fff" : "var(--ink2)",
+            border: todayOnly ? "1px solid var(--brand)" : "1px solid var(--line)",
+          }}
+        >
+          오늘 가능
+        </span>
+        <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
+          <select style={selStyle} value={minP} onChange={(e) => setMinP(Number(e.target.value))}>
+            <option value={0}>포인트 전체</option>
+            <option value={10000}>1만P 이상</option>
+            <option value={30000}>3만P 이상</option>
+            <option value={50000}>5만P 이상</option>
+          </select>
+          <select style={selStyle} value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="default">기본순</option>
+            <option value="value">금액 높은순</option>
+            <option value="point">포인트순</option>
+          </select>
+        </span>
       </div>
 
       {filtered.length === 0 && (
         <div style={{ padding: "40px 0", textAlign: "center", fontSize: 13.5, color: "var(--ink3)" }}>
-          이 조건의 캠페인이 아직 없어요. 다른 필터를 눌러보세요!
+          이 조건의 캠페인이 아직 없어요. 다른 조건을 눌러보세요!
         </div>
       )}
 
       <div className="grid">
-        {sorted.map((c) => (
+        {filtered.map((c) => (
           <Link className="gcard" key={c.id} href={"/campaign?id=" + c.id} style={{ display: "block" }}>
             <div className="gthumb" style={c.image_url ? { backgroundImage: "url(" + c.image_url + ")" } : undefined}>
               {cardBadge(c) ? <span className="gbadge hot">{cardBadge(c)}</span> : null}
