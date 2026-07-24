@@ -4,9 +4,13 @@
    - 나에게만 삭제: 내 화면에서만 숨김 */
 import { useRef, useState } from "react";
 import { getSupabase } from "./supabase";
+import { useLang } from "./i18n";
+import { IcTrash } from "../components/Ic";
 
 export function useMsgActions(kind: "dm" | "camp", onChanged: () => void) {
   const supabase = getSupabase();
+  const [lang] = useLang();
+  const vi = lang === "vi";
   const [target, setTarget] = useState<{ id: string; mine: boolean; deleted: boolean } | null>(null);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState(false);
@@ -73,24 +77,29 @@ export function useMsgActions(kind: "dm" | "camp", onChanged: () => void) {
       style={{ position: "fixed", inset: 0, zIndex: 975, background: "rgba(20,15,10,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
     >
       <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: "#fff", borderRadius: "22px 22px 0 0", padding: "20px 18px 26px" }}>
-        <div style={{ fontSize: 15, fontWeight: 900 }}>메시지 삭제</div>
+        <div style={{ fontSize: 15, fontWeight: 900 }}>{vi ? "Xóa tin nhắn" : "메시지 삭제"}</div>
         {target.mine && !target.deleted && (
           <>
-            <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 4 }}>모두에게서 삭제하면 상대 화면에도 &ldquo;삭제된 메시지입니다&rdquo;로 바뀌어요.</div>
+            <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 4 }}>
+              {vi
+                ? "Xóa với mọi người thì phía đối phương cũng hiển thị “Tin nhắn đã bị xóa”."
+                : "모두에게서 삭제하면 상대 화면에도 “삭제된 메시지입니다”로 바뀌어요."}
+            </div>
             <button
               onClick={delAll}
               disabled={busy}
-              style={{ width: "100%", marginTop: 14, padding: "14px 0", borderRadius: 14, border: "none", background: "#E0483E", color: "#fff", fontSize: 14.5, fontWeight: 900, fontFamily: "inherit", cursor: "pointer" }}
+              style={{ width: "100%", marginTop: 14, padding: "14px 0", borderRadius: 14, border: "none", background: "#E0483E", color: "#fff", fontSize: 14.5, fontWeight: 900, fontFamily: "inherit", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 7 }}
             >
-              🗑 모두에게서 삭제
+              <IcTrash size={15} />
+              {vi ? "Xóa với mọi người" : "모두에게서 삭제"}
             </button>
           </>
         )}
         <button className="btn ghost" style={{ width: "100%", marginTop: 8, padding: "13px 0" }} disabled={busy} onClick={delMe}>
-          나에게만 삭제
+          {vi ? "Chỉ xóa ở phía tôi" : "나에게만 삭제"}
         </button>
         <button className="btn ghost" style={{ width: "100%", marginTop: 8, padding: "13px 0", border: "none", color: "var(--ink3)" }} onClick={() => setTarget(null)}>
-          취소
+          {vi ? "Hủy" : "취소"}
         </button>
       </div>
     </div>

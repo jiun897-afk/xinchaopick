@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import Avatar from "../../components/Avatar";
+import { useLang } from "../../lib/i18n";
+import { IcBell, IcBellOff, IcExit } from "../../components/Ic";
 
 type ChatRoom = {
   kind: "camp" | "dm";
@@ -39,6 +41,8 @@ export default function ChatListPage() {
   const pressPos = useRef<{ x: number; y: number } | null>(null);
   const [leaveTarget, setLeaveTarget] = useState<ChatRoom | null>(null);
   const [leaveBusy, setLeaveBusy] = useState(false);
+  const [lang] = useLang();
+  const vi = lang === "vi";
 
   async function toggleMute() {
     if (!leaveTarget || !supabase) return;
@@ -356,7 +360,11 @@ export default function ChatListPage() {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.title}
-                  {r.muted && <span style={{ marginLeft: 5, fontSize: 12, opacity: 0.55 }}>🔕</span>}
+                  {r.muted && (
+                    <span style={{ marginLeft: 5, opacity: 0.45, color: "var(--ink3)" }}>
+                      <IcBellOff size={12} />
+                    </span>
+                  )}
                 </div>
                 <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {r.last_msg ?? "대화를 시작해보세요"}
@@ -399,13 +407,23 @@ export default function ChatListPage() {
               <Avatar url={leaveTarget.image} name={leaveTarget.title} size={44} />
               <div>
                 <div style={{ fontSize: 16, fontWeight: 900 }}>{leaveTarget.title}</div>
-                <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 2 }}>채팅방 관리</div>
+                <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 2 }}>{vi ? "Quản lý phòng chat" : "채팅방 관리"}</div>
               </div>
             </div>
             <div style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 14, lineHeight: 1.6, background: "var(--chip)", borderRadius: 12, padding: "10px 13px" }}>
-              나가면 대화 내용이 사라지고 목록에서 삭제돼요.
-              <br />
-              상대가 다시 메시지를 보내면 새 대화로 이어져요.
+              {vi ? (
+                <>
+                  Rời phòng thì nội dung trò chuyện sẽ mất và phòng bị xóa khỏi danh sách.
+                  <br />
+                  Khi đối phương nhắn lại, cuộc trò chuyện mới sẽ bắt đầu.
+                </>
+              ) : (
+                <>
+                  나가면 대화 내용이 사라지고 목록에서 삭제돼요.
+                  <br />
+                  상대가 다시 메시지를 보내면 새 대화로 이어져요.
+                </>
+              )}
             </div>
             <button
               onClick={toggleMute}
@@ -423,7 +441,16 @@ export default function ChatListPage() {
                 cursor: "pointer",
               }}
             >
-              {leaveTarget.muted ? "🔔 이 방 알림 다시 켜기" : "🔕 이 방 알림 끄기"}
+              <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                {leaveTarget.muted ? <IcBell size={15} /> : <IcBellOff size={15} />}
+                {leaveTarget.muted
+                  ? vi
+                    ? "Bật lại thông báo phòng này"
+                    : "이 방 알림 다시 켜기"
+                  : vi
+                    ? "Tắt thông báo phòng này"
+                    : "이 방 알림 끄기"}
+              </span>
             </button>
             <button
               onClick={leaveRoom}
@@ -442,10 +469,13 @@ export default function ChatListPage() {
                 cursor: "pointer",
               }}
             >
-              {leaveBusy ? "나가는 중…" : "🚪 채팅방 나가기"}
+              <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7 }}>
+                <IcExit size={15} />
+                {leaveBusy ? (vi ? "Đang rời…" : "나가는 중…") : vi ? "Rời phòng chat" : "채팅방 나가기"}
+              </span>
             </button>
             <button className="btn ghost" style={{ width: "100%", marginTop: 8, padding: "13px 0" }} onClick={() => setLeaveTarget(null)}>
-              취소
+              {vi ? "Hủy" : "취소"}
             </button>
           </div>
         </div>

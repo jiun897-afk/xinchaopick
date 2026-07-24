@@ -7,6 +7,8 @@ import { compressImage } from "../../lib/imageTool";
 import ReportModal from "../../components/ReportModal";
 import { useChatTr } from "../../lib/useChatTr";
 import { useMsgActions } from "../../lib/useMsgActions";
+import { useLang } from "../../lib/i18n";
+import { IcGlobe } from "../../components/Ic";
 
 type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null; deleted_at?: string | null };
 type Room = {
@@ -42,6 +44,8 @@ export default function ChatRoomPage() {
   const [selIds, setSelIds] = useState<Set<string>>(new Set());
   const { trMap, translate, trOn, toggleTr, showOrig, toggleOrig } = useChatTr("camp"); // 한↔베 자동 번역
   const { hidden, loadHidden, pressHandlers, sheet: msgSheet } = useMsgActions("camp", () => appId && loadMsgs(appId)); // 꾹 눌러 삭제
+  const [lang] = useLang();
+  const vi = lang === "vi";
 
   function toggleSel(id: string) {
     setSelIds((prev) => {
@@ -211,9 +215,10 @@ export default function ChatRoomPage() {
             if (toggleTr()) translate(msgs);
           }}
           title="자동 번역 켜기/끄기"
-          style={{ marginLeft: "auto", color: trOn ? "var(--brand-dark)" : "var(--ink3)", opacity: trOn ? 1 : 0.55, fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 11px", border: trOn ? "1px solid var(--brand)" : "1px solid var(--line)", borderRadius: 999, background: "#fff" }}
+          style={{ marginLeft: "auto", display: "inline-flex", alignItems: "center", gap: 5, color: trOn ? "var(--brand-dark)" : "var(--ink3)", opacity: trOn ? 1 : 0.6, fontSize: 12.5, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 11px", border: trOn ? "1.5px solid var(--brand)" : "1px solid var(--line)", borderRadius: 999, background: "#fff" }}
         >
-          🌐{trOn ? "" : " OFF"}
+          <IcGlobe size={13} />
+          {trOn ? (vi ? "Dịch" : "번역") : vi ? "Tắt dịch" : "번역 꺼짐"}
         </span>
         <span onClick={reportPartner} style={{ color: "var(--ink2)", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}>
           신고
@@ -255,7 +260,7 @@ export default function ChatRoomPage() {
                 }}
               >
                 {m.deleted_at ? (
-                  <span style={{ opacity: 0.6, fontStyle: "italic", fontSize: 13 }}>삭제된 메시지입니다</span>
+                  <span style={{ opacity: 0.6, fontStyle: "italic", fontSize: 13 }}>{vi ? "Tin nhắn đã bị xóa" : "삭제된 메시지입니다"}</span>
                 ) : (
                   <>
                 {m.image_url && (
@@ -275,9 +280,28 @@ export default function ChatRoomPage() {
                       e.stopPropagation();
                       toggleOrig(m.id);
                     }}
-                    style={{ fontSize: 10, fontWeight: 800, opacity: 0.6, marginTop: 4, cursor: "pointer" }}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 4,
+                      fontSize: 10,
+                      fontWeight: 800,
+                      marginTop: 6,
+                      cursor: "pointer",
+                      padding: "3px 8px",
+                      borderRadius: 999,
+                      background: mine ? "rgba(255,255,255,.22)" : "var(--chip)",
+                      color: mine ? "#fff" : "var(--ink2)",
+                    }}
                   >
-                    {showOrig.has(m.id) ? "🌐 번역 보기" : "🌐 번역됨 · 원문 보기"}
+                    <IcGlobe size={10} />
+                    {showOrig.has(m.id)
+                      ? vi
+                        ? "Bản gốc · xem bản dịch"
+                        : "원문 · 번역 보기"
+                      : vi
+                        ? "Đã dịch · xem bản gốc"
+                        : "번역됨 · 원문 보기"}
                   </div>
                 )}
                   </>
@@ -288,7 +312,7 @@ export default function ChatRoomPage() {
               </div>
               {lastMine && (
                 <div style={{ fontSize: 10, fontWeight: 800, color: m.read_at ? "var(--ink3)" : "#F0A860", marginTop: 3, paddingRight: 4 }}>
-                  {m.read_at ? "읽음" : "안읽음"}
+                  {m.read_at ? (vi ? "Đã đọc" : "읽음") : vi ? "Chưa đọc" : "안읽음"}
                 </div>
               )}
             </div>
@@ -346,13 +370,13 @@ export default function ChatRoomPage() {
         </span>
         <input
           style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 999, padding: "12px 16px", fontSize: 14, fontFamily: "inherit", outline: "none", background: "#fff" }}
-          placeholder="메시지 입력"
+          placeholder={vi ? "Nhập tin nhắn" : "메시지 입력"}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && send()}
         />
         <button className="btn pri" style={{ padding: "13px 22px", fontSize: 14.5, borderRadius: 999, flexShrink: 0 }} onClick={() => send()} disabled={busy}>
-          전송
+          {vi ? "Gửi" : "전송"}
         </button>
       </div>
 
@@ -365,7 +389,7 @@ export default function ChatRoomPage() {
           <img src={viewer} alt="" style={{ maxWidth: "94vw", maxHeight: "80vh", borderRadius: 12 }} />
           <div style={{ display: "flex", gap: 16 }}>
             <span style={{ color: "#ccc", fontSize: 13, fontWeight: 800 }}>탭하면 닫기</span>
-            <span onClick={(e) => { e.stopPropagation(); setViewer(null); reportPartner(); }} style={{ color: "#ff8a80", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🚨 이 사진 신고</span>
+            <span onClick={(e) => { e.stopPropagation(); setViewer(null); reportPartner(); }} style={{ color: "#ff8a80", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>{vi ? "Báo cáo ảnh này" : "이 사진 신고"}</span>
           </div>
         </div>
       )}
