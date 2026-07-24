@@ -82,7 +82,17 @@ export async function POST(req: NextRequest) {
   }
   // ── 네이티브 앱(FCM) 발송 ──
   let fcmSent = 0;
-  const saRaw = process.env.FCM_SA;
+  let saRaw = process.env.FCM_SA;
+  if (!saRaw) {
+    // env에 없으면 DB 금고(app_secrets)에서 조회
+    saRaw = await fetch(url + "/rest/v1/rpc/get_fcm_sa", {
+      method: "POST",
+      headers: H,
+      body: JSON.stringify({ p_secret: secret }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null);
+  }
   if (saRaw) {
     try {
       const sa = JSON.parse(saRaw);
