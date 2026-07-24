@@ -93,6 +93,8 @@ export default function TabBar() {
     let timer: ReturnType<typeof setInterval>;
     let ch: any = null;
     let deb: ReturnType<typeof setTimeout> | null = null;
+    let dead = false;
+    let curSession: any = null;
     function refreshChatUnread() {
       if (deb) clearTimeout(deb);
       deb = setTimeout(async () => {
@@ -134,38 +136,67 @@ export default function TabBar() {
           .eq("id", session.user.id)
           .maybeSingle()
           .then(({ data }) => setSuspended(!!(data as any)?.suspended));
-        // 실시간: 새 알림 도착 즉시 뱃지+소리
-        ch = supabase!
-          .channel("notif-rt-" + session.user.id)
-          .on(
-            "postgres_changes",
-            { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + session.user.id },
-            () => {
-              setUnread((u) => (u ?? 0) + 1);
-              playChime();
-            }
-          )
-          .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload: any) => {
-            // 즉시 반영(+1) 후 서버값으로 보정
-            if (payload?.eventType === "INSERT" && payload?.new?.sender_id && payload.new.sender_id !== session.user.id) {
-              setChatUnread((u) => u + 1);
-              playChime();
-            }
-            refreshChatUnread();
-          })
-          .on("postgres_changes", { event: "*", schema: "public", table: "dm_messages" }, (payload: any) => {
-            if (payload?.eventType === "INSERT" && payload?.new?.sender_id && payload.new.sender_id !== session.user.id) {
-              setChatUnread((u) => u + 1);
-              playChime();
-            }
-            refreshChatUnread();
-          })
-          .subscribe();
+        // 실시간: 새 알림 도착 즉시 뱃지+소리 (연결 끊기면 자동 재구독)
+        subscribeRT(session);
       }
     })();
+    function subscribeRT(session: any) {
+      if (dead) return;
+      curSession = session;
+      if (ch) {
+        try {
+          supabase!.removeChannel(ch);
+        } catch {}
+        ch = null;
+      }
+      const inst = supabase!
+        .channel("notif-rt-" + session.user.id + "-" + Math.floor(Math.random() * 1e9))
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: "user_id=eq." + session.user.id },
+          () => {
+            setUnread((u) => (u ?? 0) + 1);
+            playChime();
+          }
+        )
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload: any) => {
+          // 즉시 반영(+1) 후 서버값으로 보정
+          if (payload?.eventType === "INSERT" && payload?.new?.sender_id && payload.new.sender_id !== session.user.id) {
+            setChatUnread((u) => u + 1);
+            playChime();
+          }
+          refreshChatUnread();
+        })
+        .on("postgres_changes", { event: "*", schema: "public", table: "dm_messages" }, (payload: any) => {
+          if (payload?.eventType === "INSERT" && payload?.new?.sender_id && payload.new.sender_id !== session.user.id) {
+            setChatUnread((u) => u + 1);
+            playChime();
+          }
+          refreshChatUnread();
+        });
+      ch = inst;
+      inst.subscribe((status: string) => {
+        if (dead || ch !== inst) return;
+        // 웹소켓이 끊기거나 타임아웃되면 3초 후 재구독 (소리/뱃지 실시간 유지)
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          setTimeout(() => {
+            if (!dead && ch === inst) subscribeRT(session);
+          }, 3000);
+        }
+      });
+    }
+    // 앱을 다시 앞으로 가져오면(화면 복귀) 연결이 죽어있을 수 있으니 뱃지 갱신 + 재구독
+    const onVis = () => {
+      if (document.hidden) return;
+      poll(true);
+      if (curSession) subscribeRT(curSession);
+    };
+    document.addEventListener("visibilitychange", onVis);
     timer = setInterval(() => poll(true), 60000); // 안전망 (소리는 실시간에서만)
     return () => {
+      dead = true;
       clearInterval(timer);
+      document.removeEventListener("visibilitychange", onVis);
       if (ch) supabase!.removeChannel(ch);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

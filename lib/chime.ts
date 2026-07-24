@@ -50,6 +50,12 @@ export function playChime(force = false) {
     const a = ensure();
     if (!a) return;
     a.currentTime = 0;
-    a.play().catch(() => {});
+    a.play().catch(() => {
+      // 재생 실패(오디오 잠금/일시 오류) → 다시 로드 후 1회 재시도
+      try {
+        a.load();
+        a.play().catch(() => {});
+      } catch {}
+    });
   } catch {}
 }

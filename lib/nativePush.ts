@@ -1,5 +1,6 @@
 /* 네이티브 앱(APK) 안에서만 동작하는 FCM 푸시 등록 — 웹/PWA에서는 no-op */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { playChime } from "./chime";
 
 export async function initNativePush(supabase: SupabaseClient) {
   try {
@@ -31,6 +32,13 @@ export async function initNativePush(supabase: SupabaseClient) {
     PN.addListener("registration", async (t: { value: string }) => {
       try {
         await supabase.rpc("save_fcm_token", { p_token: t.value });
+      } catch {}
+    });
+    // 앱을 보고 있는 중에 푸시가 도착하면(실시간 웹소켓이 끊겨 차임을 놓친 경우 대비) 소리 백업
+    // playChime 자체 스로틀(1.2초)이 있어 실시간 차임과 이중 재생은 안 됨
+    PN.addListener("pushNotificationReceived", () => {
+      try {
+        playChime();
       } catch {}
     });
     PN.addListener("pushNotificationActionPerformed", (a: any) => {
