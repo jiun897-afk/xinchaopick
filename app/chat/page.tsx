@@ -25,7 +25,11 @@ export default function ChatListPage() {
   const [sBusy, setSBusy] = useState(false);
 
   async function searchHandle() {
-    if (!supabase || q.trim().length < 4) return;
+    if (!supabase) return;
+    if (q.trim().length < 4) {
+      setFound("none");
+      return;
+    }
     setSBusy(true);
     setFound(null);
     const { data } = await supabase.rpc("find_by_handle", { p_handle: q });
@@ -85,22 +89,23 @@ export default function ChatListPage() {
       const all = [...a, ...b].filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
       setRooms(all);
 
-      // 유저 간 1:1 채팅방
-      const { data: dr } = await supabase.from("dm_rooms").select("id, user_a, user_b").order("created_at", { ascending: false });
+      // 1:1 채팅방 + 친구 목록 (동시 조회로 속도 개선)
+      const [{ data: dr }, { data: fr }] = await Promise.all([
+        supabase.from("dm_rooms").select("id, user_a, user_b").order("created_at", { ascending: false }),
+        supabase.from("friends").select("friend_id").eq("user_id", me),
+      ]);
       const drs = (dr as any[]) ?? [];
-      if (drs.length) {
-        const others = drs.map((r) => (r.user_a === me ? r.user_b : r.user_a));
-        const { data: profs } = await supabase.from("profiles").select("id, nickname").in("id", others);
-        const nm: Record<string, string> = {};
-        (profs ?? []).forEach((p: any) => (nm[p.id] = p.nickname));
-        setDms(drs.map((r) => ({ id: r.id, partner: nm[r.user_a === me ? r.user_b : r.user_a] ?? "회원" })));
-      }
-      // 친구 목록
-      const { data: fr } = await supabase.from("friends").select("friend_id").eq("user_id", me);
       const fids = ((fr as any[]) ?? []).map((x) => x.friend_id);
-      if (fids.length) {
-        const { data: fp } = await supabase.from("profiles").select("id, nickname, handle").in("id", fids);
-        setFriends(((fp as any[]) ?? []).map((p) => ({ id: p.id, nickname: p.nickname ?? "회원", handle: p.handle })));
+      const needIds = Array.from(new Set([...drs.map((r) => (r.user_a === me ? r.user_b : r.user_a)), ...fids]));
+      if (needIds.length) {
+        const { data: profs } = await supabase.from("profiles").select("id, nickname, handle").in("id", needIds);
+        const nm: Record<string, any> = {};
+        (profs ?? []).forEach((p: any) => (nm[p.id] = p));
+        setDms(drs.map((r) => {
+          const oid = r.user_a === me ? r.user_b : r.user_a;
+          return { id: r.id, partner: nm[oid]?.nickname ?? "회원" };
+        }));
+        setFriends(fids.map((id) => ({ id, nickname: nm[id]?.nickname ?? "회원", handle: nm[id]?.handle ?? null })));
       }
     })();
   }, [supabase]);

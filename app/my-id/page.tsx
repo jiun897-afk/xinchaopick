@@ -49,6 +49,10 @@ export default function MyIdPage() {
 
   async function save() {
     if (!supabase) return;
+    if (handle.trim().length < 4) {
+      setMsg({ t: "아이디는 4자 이상이어야 해요 (영문 소문자·숫자·언더바 4~20자)", ok: false });
+      return;
+    }
     setBusy(true);
     setMsg(null);
     const { error } = await supabase.rpc("set_my_handle", { p_handle: handle });
@@ -82,7 +86,7 @@ export default function MyIdPage() {
               onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
               maxLength={20}
             />
-            <button className="btn pri" style={{ padding: "0 20px" }} disabled={busy || handle.length < 4} onClick={save}>
+            <button className="btn pri" style={{ padding: "0 20px" }} disabled={busy} onClick={save}>
               {busy ? "저장 중…" : saved ? "변경" : "저장"}
             </button>
           </div>
