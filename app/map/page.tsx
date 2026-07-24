@@ -97,6 +97,9 @@ export default function MapPage() {
     }
     if (fly || inVietnam(la, ln)) map.setView([la, ln], 14);
     setFarAway(!inVietnam(la, ln));
+    try {
+      localStorage.setItem("vj_lastpos", JSON.stringify({ lat: la, lng: ln }));
+    } catch {}
   }
 
   function locate(fly: boolean) {
@@ -132,7 +135,20 @@ export default function MapPage() {
     let dead = false;
     loadLeaflet().then(async (L) => {
       if (dead || !ref.current || mapRef.current) return;
-      const map = L.map(ref.current, { zoomControl: false }).setView(DANANG, 13);
+      // 마지막 위치 기억: 다낭 거쳐가는 점프 방지
+      let init: [number, number] = DANANG as any;
+      let initZoom = 13;
+      try {
+        const saved = localStorage.getItem("vj_lastpos");
+        if (saved) {
+          const p0 = JSON.parse(saved);
+          if (p0 && typeof p0.lat === "number") {
+            init = [p0.lat, p0.lng];
+            initZoom = 14;
+          }
+        }
+      } catch {}
+      const map = L.map(ref.current, { zoomControl: false }).setView(init, initZoom);
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
       mapRef.current = map;
