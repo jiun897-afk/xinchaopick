@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import MascotIcon from "./MascotIcon";
 
@@ -18,6 +19,7 @@ const CATS: { key: string; sub: string; bg: string }[] = [
 
 export default function CategoryIcons() {
   const router = useRouter();
+  const [openAll, setOpenAll] = useState(false);
   return (
     <div
       className="selcard"
@@ -27,9 +29,57 @@ export default function CategoryIcons() {
         boxShadow: "0 6px 20px rgba(240,78,26,.25)",
       }}
     >
-      <div className="sclabel" style={{ color: "rgba(255,255,255,.9)" }}>
-        업종으로 찾기 <span style={{ fontWeight: 700, opacity: 0.75 }}>· 옆으로 넘겨보세요</span>
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 9 }}>
+        <div className="sclabel" style={{ color: "rgba(255,255,255,.9)", marginBottom: 0 }}>
+          업종으로 찾기 {!openAll && <span style={{ fontWeight: 700, opacity: 0.75 }}>· 옆으로 넘겨보세요</span>}
+        </div>
+        <span
+          onClick={() => setOpenAll((v) => !v)}
+          style={{
+            marginLeft: "auto",
+            width: 28,
+            height: 28,
+            borderRadius: "50%",
+            background: "rgba(255,255,255,.95)",
+            color: "var(--brand-dark)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 17,
+            fontWeight: 900,
+            cursor: "pointer",
+            boxShadow: "0 2px 8px rgba(120,30,4,.25)",
+            lineHeight: 1,
+          }}
+        >
+          {openAll ? "−" : "+"}
+        </span>
       </div>
+      {openAll ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 8, paddingBottom: 4 }}>
+          {CATS.map((c) => (
+            <div
+              key={c.key}
+              onClick={() => router.push(c.key === "전체 보기" ? "/browse" : "/browse?cat=" + encodeURIComponent(c.key))}
+              style={{
+                background: c.bg,
+                borderRadius: 14,
+                padding: "10px 12px",
+                display: "flex",
+                alignItems: "center",
+                gap: 9,
+                cursor: "pointer",
+                boxShadow: "0 2px 8px rgba(140,35,5,.12)",
+              }}
+            >
+              <MascotIcon name={c.key} size={40} />
+              <div style={{ fontSize: 12.5, fontWeight: 900, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {c.key}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
       <div
         style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, scrollSnapType: "x mandatory" }}
         className="regionrow"
@@ -78,6 +128,7 @@ export default function CategoryIcons() {
           </div>
         ))}
       </div>
+      )}
     </div>
   );
 }
