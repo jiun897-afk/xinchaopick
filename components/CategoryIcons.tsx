@@ -31,7 +31,7 @@ export default function CategoryIcons() {
     >
       <div style={{ display: "flex", alignItems: "center", marginBottom: 9 }}>
         <div className="sclabel" style={{ color: "rgba(255,255,255,.9)", marginBottom: 0 }}>
-          업종으로 찾기 {!openAll && <span style={{ fontWeight: 700, opacity: 0.75 }}>· 옆으로 넘겨보세요</span>}
+          업종으로 찾기
         </div>
         <span
           onClick={() => setOpenAll((v) => !v)}
