@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "595461525117",
+    "project_id": "vejaview",
+    "storage_bucket": "vejaview.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:595461525117:android:cfe068d2261cb9129fab14",
+        "android_client_info": {
+          "package_name": "com.vejaview.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLioYkYUDBEaZPJryttdffyXVuKIGO5Kc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

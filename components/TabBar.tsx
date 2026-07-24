@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSupabase } from "../lib/supabase";
 import { playChime, initChime } from "../lib/chime";
+import { initNativePush } from "../lib/nativePush";
 
 const TABS = [
   { href: "/", label: "홈", icon: "home" },
@@ -108,6 +109,7 @@ export default function TabBar() {
       } = await supabase!.auth.getSession();
       poll(true);
       if (session) {
+        initNativePush(supabase!); // APK 안에서만 동작 (FCM 토큰 등록)
         // 실시간: 새 알림 도착 즉시 뱃지+소리
         ch = supabase!
           .channel("notif-rt-" + session.user.id)
