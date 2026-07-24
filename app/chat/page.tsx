@@ -23,6 +23,7 @@ export default function ChatListPage() {
   const [q, setQ] = useState("");
   const [found, setFound] = useState<{ id: string; nickname: string; handle: string } | null | "none">(null);
   const [sBusy, setSBusy] = useState(false);
+  const [tab, setTab] = useState<"chats" | "friends">("chats");
 
   async function searchHandle() {
     if (!supabase) return;
@@ -127,6 +128,35 @@ export default function ChatListPage() {
       )}
 
       {!guest && (
+        <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
+          {(
+            [
+              { k: "chats", label: "채팅" },
+              { k: "friends", label: "친구" + (friends.length ? " " + friends.length : "") },
+            ] as const
+          ).map((t) => (
+            <span
+              key={t.k}
+              onClick={() => setTab(t.k)}
+              style={{
+                flex: 1,
+                textAlign: "center",
+                padding: "10px 0",
+                borderRadius: 12,
+                fontSize: 13.5,
+                fontWeight: 900,
+                cursor: "pointer",
+                background: tab === t.k ? "var(--ink)" : "var(--chip)",
+                color: tab === t.k ? "#fff" : "var(--ink2)",
+              }}
+            >
+              {t.label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {!guest && tab === "friends" && (
         <>
           {/* 아이디 검색 (아이디를 아는 사람만 채팅 시작 가능) */}
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
@@ -163,25 +193,37 @@ export default function ChatListPage() {
             </div>
           )}
 
-          {/* 친구 목록 */}
-          {friends.length > 0 && (
-            <>
-              <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 18 }}>친구 {friends.length}</div>
-              <div style={{ display: "flex", gap: 10, overflowX: "auto", paddingBottom: 4, marginTop: 8 }} className="regionrow">
-                {friends.map((f) => (
-                  <div key={f.id} onClick={() => startChat(f.id)} style={{ textAlign: "center", width: 60, flexShrink: 0, cursor: "pointer" }}>
-                    <div style={{ width: 50, height: 50, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 19, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto" }}>
-                      {f.nickname[0]?.toUpperCase()}
-                    </div>
-                    <div style={{ fontSize: 10.5, fontWeight: 800, color: "var(--ink2)", marginTop: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {f.nickname}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
+          {/* 친구 리스트 (세로) */}
+          <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 20 }}>친구 {friends.length}</div>
+          {friends.length === 0 && (
+            <div style={{ marginTop: 12, textAlign: "center", padding: "24px 0", fontSize: 13, color: "var(--ink3)", lineHeight: 1.8 }}>
+              아직 친구가 없어요.
+              <br />
+              위에서 아이디로 검색하거나, 상대 QR을 찍어 추가해보세요!
+            </div>
           )}
+          {friends.map((f) => (
+            <div
+              key={f.id}
+              style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "13px 2px" }}
+            >
+              <div style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {f.nickname[0]?.toUpperCase()}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 800 }}>{f.nickname}</div>
+                {f.handle && <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 2 }}>@{f.handle}</div>}
+              </div>
+              <button className="btn pri" style={{ padding: "9px 15px", fontSize: 12.5 }} onClick={() => startChat(f.id)}>
+                💬 채팅
+              </button>
+            </div>
+          ))}
+        </>
+      )}
 
+      {!guest && tab === "chats" && (
+        <>
           {/* 1:1 채팅방 목록 */}
           {dms.length > 0 && (
             <>
@@ -207,9 +249,9 @@ export default function ChatListPage() {
         </>
       )}
 
-      {!guest && rooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
+      {!guest && tab === "chats" && rooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
 
-      {!guest && rooms !== null && rooms.length === 0 && dms.length === 0 && (
+      {!guest && tab === "chats" && rooms !== null && rooms.length === 0 && dms.length === 0 && (
         <div style={{ marginTop: 30, textAlign: "center", padding: "30px 0" }}>
           <div style={{ fontSize: 15.5, fontWeight: 800 }}>아직 열린 채팅이 없어요</div>
           <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
@@ -223,7 +265,11 @@ export default function ChatListPage() {
         </div>
       )}
 
+      {!guest && tab === "chats" && (rooms ?? []).length > 0 && (
+        <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 18 }}>캠페인 채팅</div>
+      )}
       {!guest &&
+        tab === "chats" &&
         (rooms ?? []).map((r) => (
           <Link
             key={r.id}
