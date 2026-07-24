@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../lib/supabase";
+import { playChime } from "../lib/chime";
 
 export default function NotificationBell() {
   const supabase = getSupabase();
   const [count, setCount] = useState(0);
+  const prevRef = { current: null as number | null };
   const [loggedIn, setLoggedIn] = useState(false);
 
   useEffect(() => {
@@ -26,7 +28,11 @@ export default function NotificationBell() {
         .select("id", { count: "exact", head: true })
         .eq("user_id", session.user.id)
         .eq("read", false);
-      setCount(n ?? 0);
+      setCount((prev) => {
+        const next = n ?? 0;
+        if (prev !== null && next > prev) playChime();
+        return next;
+      });
     }
     poll();
     timer = setInterval(poll, 30000);

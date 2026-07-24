@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { getSupabase } from "../lib/supabase";
+import { playChime } from "../lib/chime";
 
 const TABS = [
   { href: "/", label: "홈", icon: "home" },
@@ -93,7 +94,11 @@ export default function TabBar() {
         .select("id", { count: "exact", head: true })
         .eq("user_id", session.user.id)
         .eq("read", false);
-      setUnread(count ?? 0);
+      setUnread((prev) => {
+        const next = count ?? 0;
+        if (next > prev) playChime();
+        return next;
+      });
     }
     poll();
     timer = setInterval(poll, 45000);
