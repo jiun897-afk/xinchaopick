@@ -3,6 +3,9 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import MascotIcon from "./MascotIcon";
+import SnsLogo from "./SnsLogo";
+
+const CH_ROW = ["전체", "블로그", "인스타", "유튜브", "쇼츠", "릴스", "클립", "틱톡", "페북", "스레드", "X"];
 
 type Campaign = {
   id: string;
@@ -138,6 +141,7 @@ export default function CampaignGrid({
 }) {
   const [campType, setCampType] = useState<"" | "체험단" | "기자단">(initialCampType);
   const [cat, setCat] = useState(initialCat);
+  const [ch, setCh] = useState("전체");
   const [region, setRegion] = useState("전체");
   const [sort, setSort] = useState("default");
   const [minP, setMinP] = useState(0);
@@ -148,6 +152,7 @@ export default function CampaignGrid({
     if (campType === "기자단") r = r.filter((c) => c.camp_type === "기자단");
     else if (campType === "체험단") r = r.filter((c) => c.camp_type !== "기자단");
     if (cat !== "전체") r = r.filter((c) => c.category === cat);
+    if (ch !== "전체") r = r.filter((c) => (MISSION_SHORT[c.mission_type] ?? c.mission_type) === ch);
     if (todayOnly) r = r.filter((c) => c.today_available);
     if (minP > 0) r = r.filter((c) => (c.reward_points ?? 0) >= minP);
     if (showRegions && region !== "전체") {
@@ -156,7 +161,20 @@ export default function CampaignGrid({
     if (sort === "value") r = [...r].sort((a, b) => offerValue(b) - offerValue(a));
     else if (sort === "point") r = [...r].sort((a, b) => (b.reward_points ?? 0) - (a.reward_points ?? 0));
     return r;
-  }, [list, campType, cat, region, sort, minP, todayOnly, showRegions]);
+  }, [list, campType, cat, ch, region, sort, minP, todayOnly, showRegions]);
+
+  const filterActive =
+    campType !== initialCampType || cat !== initialCat || ch !== "전체" || region !== "전체" || todayOnly || minP > 0 || sort !== "default";
+
+  function resetAll() {
+    setCampType(initialCampType);
+    setCat(initialCat);
+    setCh("전체");
+    setRegion("전체");
+    setTodayOnly(false);
+    setMinP(0);
+    setSort("default");
+  }
 
   const selStyle: React.CSSProperties = {
     border: "1px solid var(--line)",
@@ -216,6 +234,50 @@ export default function CampaignGrid({
           <IconRow items={REGIONS} sel={region} onSel={setRegion} label="지역" />
         </div>
       )}
+      {!hideChannelRow && (
+        <div className="selcard">
+          <div className="sclabel">SNS 채널</div>
+          <div style={{ display: "flex", gap: 7, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
+            {CH_ROW.map((k) => {
+              const on = ch === k;
+              return (
+                <div key={k} onClick={() => setCh(on && k !== "전체" ? "전체" : k)} style={{ textAlign: "center", width: 52, flexShrink: 0, cursor: "pointer" }}>
+                  <div
+                    style={{
+                      width: 46,
+                      height: 46,
+                      margin: "0 auto",
+                      borderRadius: 14,
+                      background: "#F7F5F1",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: on ? "2.5px solid var(--brand)" : "2.5px solid transparent",
+                      boxShadow: on ? "0 4px 12px rgba(240,78,26,.18)" : "none",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {k === "전체" ? (
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--brand-dark)" strokeWidth="2.4" strokeLinecap="round">
+                        <rect x="3.5" y="3.5" width="7" height="7" rx="2" />
+                        <rect x="13.5" y="3.5" width="7" height="7" rx="2" />
+                        <rect x="3.5" y="13.5" width="7" height="7" rx="2" />
+                        <rect x="13.5" y="13.5" width="7" height="7" rx="2" />
+                      </svg>
+                    ) : (
+                      <SnsLogo name={k} size={26} />
+                    )}
+                  </div>
+                  <div style={{ marginTop: 5, fontSize: 10.5, fontWeight: 800, color: on ? "var(--brand-dark)" : "var(--ink2)", whiteSpace: "nowrap" }}>
+                    {k}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="selcard">
         <IconRow items={CATS} sel={cat} onSel={setCat} label="업종" shape="square" />
       </div>
@@ -236,6 +298,14 @@ export default function CampaignGrid({
         >
           오늘 가능
         </span>
+        {filterActive && (
+          <span
+            onClick={resetAll}
+            style={{ fontSize: 12, fontWeight: 800, padding: "7px 13px", borderRadius: 999, cursor: "pointer", background: "#fff", color: "var(--ink3)", border: "1px solid var(--line)" }}
+          >
+            ↺ 초기화
+          </span>
+        )}
         <span style={{ marginLeft: "auto", display: "flex", gap: 6 }}>
           <select style={selStyle} value={minP} onChange={(e) => setMinP(Number(e.target.value))}>
             <option value={0}>포인트 전체</option>
@@ -249,6 +319,10 @@ export default function CampaignGrid({
             <option value="point">포인트순</option>
           </select>
         </span>
+      </div>
+
+      <div style={{ marginTop: 14, fontSize: 12, fontWeight: 800, color: "var(--ink3)" }}>
+        {campType || "전체"} {ch !== "전체" ? "· " + ch : ""} {cat !== "전체" ? "· " + cat : ""} — <b style={{ color: "var(--brand-dark)" }}>{filtered.length}개</b> 캠페인
       </div>
 
       {filtered.length === 0 && (
