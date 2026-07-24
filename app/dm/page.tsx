@@ -24,6 +24,17 @@ export default function DmPage() {
   const [viewer, setViewer] = useState<string | null>(null);
   const [sendingImg, setSendingImg] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
+  const [selMode, setSelMode] = useState(false);
+  const [selIds, setSelIds] = useState<Set<string>>(new Set());
+
+  function toggleSel(id: string) {
+    setSelIds((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  }
   const imgInRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
@@ -133,13 +144,19 @@ export default function DmPage() {
   }
 
   function reportPartner() {
-    setReportOpen(true);
+    setSelIds(new Set());
+    setSelMode(true);
   }
 
   async function submitReport(reason: string) {
     if (!supabase || !roomId || !partner) return;
     setReportOpen(false);
-    const { error } = await supabase.rpc("report_chat", { p_kind: "dm", p_room: roomId, p_target: partner.id, p_reason: reason });
+    const ex = msgs
+      .filter((m) => selIds.has(m.id))
+      .map((m) => (m.sender_id === me ? "나" : "상대") + ": " + (m.image_url ? "[사진] " + m.image_url : m.content))
+      .join("\n");
+    const { error } = await supabase.rpc("report_chat", { p_kind: "dm", p_room: roomId, p_target: partner.id, p_reason: reason, p_excerpt: ex || null });
+    setSelIds(new Set());
     if (error) alert(error.message);
     else alert("신고가 접수됐어요. 운영팀이 확인할게요.");
   }
@@ -156,7 +173,7 @@ export default function DmPage() {
           <div style={{ fontSize: 11, color: "var(--ink3)" }}>{blocked ? "차단한 상대" : "회원 간 1:1 대화"}</div>
         </div>
         {partner && (
-          <span onClick={reportPartner} style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: "var(--ink3)", cursor: "pointer", flexShrink: 0, padding: "6px 4px" }}>
+          <span onClick={reportPartner} style={{ marginLeft: "auto", color: "var(--ink2)", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}>
             신고
           </span>
         )}
@@ -167,7 +184,7 @@ export default function DmPage() {
               await supabase.from("friends").insert({ user_id: me, friend_id: partner.id });
               setIsFriend(true);
             }}
-            style={{ fontSize: 12, fontWeight: 800, color: "var(--brand-dark)", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
+            style={{ color: "var(--brand-dark)", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}
           >
             ＋ 친구 추가
           </span>
@@ -186,13 +203,20 @@ export default function DmPage() {
                 setBlocked(true);
               }
             }}
-            style={{ fontSize: 12, fontWeight: 800, color: blocked ? "var(--ink3)" : "#C0392B", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
+            style={{ color: blocked ? "var(--ink3)" : "#C0392B", fontSize: 13, fontWeight: 800, cursor: "pointer", flexShrink: 0, padding: "9px 13px", border: "1px solid var(--line)", borderRadius: 999, background: "#fff" }}
           >
             {blocked ? "차단 해제" : "차단"}
           </span>
         )}
       </div>
 
+      {selMode && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "var(--brand-bg)", border: "1px solid var(--brand)", borderRadius: 12, padding: "9px 12px", marginTop: 8 }}>
+          <span style={{ fontSize: 12.5, fontWeight: 800, color: "var(--brand-dark)", flex: 1 }}>신고할 대화를 눌러 선택하세요 ({selIds.size}개)</span>
+          <button className="btn ghost" style={{ padding: "8px 13px", fontSize: 12.5 }} onClick={() => { setSelMode(false); setSelIds(new Set()); }}>취소</button>
+          <button className="btn pri" style={{ padding: "8px 15px", fontSize: 12.5 }} onClick={() => { setSelMode(false); setReportOpen(true); }}>다음</button>
+        </div>
+      )}
       <div style={{ flex: 1, overflowY: "auto", padding: "14px 2px" }}>
         {msgs.length === 0 && (
           <div style={{ textAlign: "center", fontSize: 12.5, color: "var(--ink3)", padding: "30px 0" }}>
@@ -203,7 +227,7 @@ export default function DmPage() {
           const mine = m.sender_id === me;
           const lastMine = mine && msgs.slice(i + 1).every((x) => x.sender_id !== me);
           return (
-            <div key={m.id} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginTop: 8 }}>
+            <div key={m.id} onClick={() => selMode && toggleSel(m.id)} style={{ display: "flex", flexDirection: "column", alignItems: mine ? "flex-end" : "flex-start", marginTop: 8, borderRadius: 12, background: selIds.has(m.id) ? "rgba(240,78,26,.12)" : undefined, outline: selIds.has(m.id) ? "1.5px solid var(--brand)" : undefined, padding: selMode ? 4 : undefined, cursor: selMode ? "pointer" : undefined }}>
               <div
                 style={{
                   maxWidth: "78%",
@@ -223,7 +247,7 @@ export default function DmPage() {
                   <img
                     src={m.image_url}
                     alt=""
-                    onClick={() => setViewer(m.image_url)}
+                    onClick={(e) => { if (selMode) return; e.stopPropagation(); setViewer(m.image_url); }}
                     style={{ maxWidth: 200, width: "100%", borderRadius: 12, display: "block", cursor: "pointer", marginBottom: m.content && m.content !== "📷 사진" ? 6 : 0 }}
                   />
                 )}
@@ -261,7 +285,12 @@ export default function DmPage() {
 
       <div style={{ display: "flex", gap: 8, paddingTop: 10, borderTop: "1px solid var(--line)", alignItems: "center" }}>
         <input ref={imgInRef} type="file" accept="image/*" style={{ display: "none" }} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) sendImage(f); }} />
-        <span onClick={() => imgInRef.current?.click()} style={{ fontSize: 20, cursor: "pointer", padding: "0 2px", flexShrink: 0 }}>📷</span>
+        <span onClick={() => imgInRef.current?.click()} style={{ width: 42, height: 42, borderRadius: "50%", background: "var(--chip)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", flexShrink: 0, alignSelf: "center" }}>
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--ink2)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+            <circle cx="12" cy="13" r="4" />
+          </svg>
+        </span>
         <input
           style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 999, padding: "12px 16px", fontSize: 14, fontFamily: "inherit", outline: "none" }}
           placeholder="메시지 입력"
@@ -269,7 +298,7 @@ export default function DmPage() {
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && !e.nativeEvent.isComposing && send()}
         />
-        <button className="btn pri" style={{ padding: "0 18px", borderRadius: 999 }} disabled={busy} onClick={() => send()}>
+        <button className="btn pri" style={{ padding: "13px 22px", borderRadius: 999, fontSize: 14.5 }} disabled={busy} onClick={() => send()}>
           전송
         </button>
       </div>

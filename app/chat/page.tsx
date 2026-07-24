@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import Avatar from "../../components/Avatar";
@@ -32,6 +32,7 @@ export default function ChatListPage() {
   const [found, setFound] = useState<{ id: string; nickname: string; handle: string; avatar_url?: string | null } | null | "none">(null);
   const [sBusy, setSBusy] = useState(false);
   const [tab, setTab] = useState<"dm" | "camp" | "friends">("dm");
+  const longRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -198,7 +199,28 @@ export default function ChatListPage() {
             </div>
           )}
           {friends.map((f) => (
-            <div key={f.id} style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "13px 2px" }}>
+            <div
+              key={f.id}
+              onPointerDown={() => {
+                longRef.current = setTimeout(async () => {
+                  if (!supabase) return;
+                  if (confirm(f.nickname + "님을 친구에서 삭제할까요?")) {
+                    const {
+                      data: { session },
+                    } = await supabase.auth.getSession();
+                    if (session) {
+                      await supabase.from("friends").delete().eq("user_id", session.user.id).eq("friend_id", f.id);
+                      setFriends((l) => l.filter((x) => x.id !== f.id));
+                    }
+                  }
+                }, 600);
+              }}
+              onPointerUp={() => longRef.current && clearTimeout(longRef.current)}
+              onPointerMove={() => longRef.current && clearTimeout(longRef.current)}
+              onPointerLeave={() => longRef.current && clearTimeout(longRef.current)}
+              onContextMenu={(e) => e.preventDefault()}
+              style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "13px 2px", touchAction: "pan-y", userSelect: "none", WebkitUserSelect: "none" }}
+            >
               <Avatar url={f.avatar_url} name={f.nickname} size={46} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 800 }}>{f.nickname}</div>
