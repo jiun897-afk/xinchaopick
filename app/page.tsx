@@ -6,6 +6,7 @@ import RegionRow from "../components/RegionRow";
 import HomeSearch from "../components/HomeSearch";
 import CampaignGrid from "../components/CampaignGrid";
 import NotificationBell from "../components/NotificationBell";
+import ChannelIcons from "../components/ChannelIcons";
 
 export const revalidate = 60;
 
@@ -120,6 +121,7 @@ export default async function Home() {
             </div>
           </div>
           <RegionRow />
+          <ChannelIcons />
           <CampaignGrid list={list} />
         </div>
       </section>
