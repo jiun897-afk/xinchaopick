@@ -219,7 +219,7 @@ export default async function Home() {
             <br />
             고객센터 1666-0464 · 카카오톡 채널 @베자뷰 · help@vejaview.com
             <br />
-            <a href="/terms" style={{ textDecoration: "underline" }}>이용약관</a> · <a href="/privacy" style={{ textDecoration: "underline" }}>개인정보처리방침</a> · <a href="/partner" style={{ textDecoration: "underline" }}>사장님 입점 안내</a> · <a href="/app.html" style={{ textDecoration: "underline" }}>앱 디자인 시안</a> · <a href="/admin.html" style={{ textDecoration: "underline" }}>운영 콘솔</a>
+            <a href="/terms" style={{ textDecoration: "underline" }}>이용약관</a> · <a href="/privacy" style={{ textDecoration: "underline" }}>개인정보처리방침</a> · <a href="/partner" style={{ textDecoration: "underline" }}>사장님 입점 안내</a>
           </div>
         </div>
       </footer>

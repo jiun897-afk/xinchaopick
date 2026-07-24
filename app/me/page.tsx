@@ -121,14 +121,18 @@ export default function MePage() {
           { href: "/owner/topup", label: "크레딧 충전 (사장님)" },
           { href: "/owner/coupons", label: "쿠폰 관리 (사장님)" },
           { href: "/saved", label: "찜한 캠페인" },
-          { href: "/app.html", label: "앱 디자인 시안 (설계도)" },
-          { href: "/admin/banners", label: "홈 배너 관리 (운영자)" },
-          { href: "/admin/withdrawals", label: "출금 관리 (운영자)" },
-          { href: "/admin/topups", label: "충전 관리 (운영자)" },
-          { href: "/admin/disputes", label: "분쟁 중재 (운영자)" },
-          { href: "/admin/reports", label: "후기 신고 관리 (운영자)" },
-          { href: "/admin.html", label: "운영 콘솔 (관리자)" },
           { href: "/partner", label: "사장님 입점 안내" },
+          ...(email === "admin@jmgroup.kr"
+            ? [
+                { href: "/admin/banners", label: "홈 배너 관리 (운영자)" },
+                { href: "/admin/withdrawals", label: "출금 관리 (운영자)" },
+                { href: "/admin/topups", label: "충전 관리 (운영자)" },
+                { href: "/admin/disputes", label: "분쟁 중재 (운영자)" },
+                { href: "/admin/reports", label: "후기 신고 관리 (운영자)" },
+                { href: "/admin.html", label: "운영 콘솔 (관리자)" },
+                { href: "/app.html", label: "앱 디자인 시안 (설계도)" },
+              ]
+            : []),
         ].map((m) => (
           <Link
             key={m.href}
