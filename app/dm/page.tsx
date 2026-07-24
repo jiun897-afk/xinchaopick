@@ -217,7 +217,7 @@ export default function DmPage() {
           <button className="btn pri" style={{ padding: "8px 15px", fontSize: 12.5 }} onClick={() => { setSelMode(false); setReportOpen(true); }}>다음</button>
         </div>
       )}
-      <div style={{ flex: 1, overflowY: "auto", padding: "14px 2px" }}>
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "14px 2px" }}>
         {msgs.length === 0 && (
           <div style={{ textAlign: "center", fontSize: 12.5, color: "var(--ink3)", padding: "30px 0" }}>
             첫 메시지를 보내보세요!
@@ -248,7 +248,7 @@ export default function DmPage() {
                     src={m.image_url}
                     alt=""
                     onClick={(e) => { if (selMode) return; e.stopPropagation(); setViewer(m.image_url); }}
-                    style={{ maxWidth: 200, width: "100%", borderRadius: 12, display: "block", cursor: "pointer", marginBottom: m.content && m.content !== "📷 사진" ? 6 : 0 }}
+                    style={{ width: 200, maxWidth: "58vw", height: "auto", borderRadius: 12, display: "block", cursor: "pointer", marginBottom: m.content && m.content !== "📷 사진" ? 6 : 0 }}
                   />
                 )}
                 {(!m.image_url || m.content !== "📷 사진") && m.content}
@@ -268,7 +268,7 @@ export default function DmPage() {
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginTop: 8 }}>
             <div style={{ maxWidth: "78%", background: "var(--brand)", borderRadius: "16px 16px 4px 16px", padding: 6, position: "relative", opacity: 0.85 }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={sendingImg} alt="" style={{ maxWidth: 200, width: "100%", borderRadius: 12, display: "block", filter: "brightness(.75)" }} />
+              <img src={sendingImg} alt="" style={{ width: 180, maxWidth: "58vw", height: "auto", borderRadius: 12, display: "block", filter: "brightness(.75)" }} />
               <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 <span style={{ background: "rgba(0,0,0,.55)", color: "#fff", fontSize: 11.5, fontWeight: 800, borderRadius: 999, padding: "6px 12px", display: "flex", alignItems: "center", gap: 7 }}>
                   <span style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", animation: "vjspin .8s linear infinite" }} />
