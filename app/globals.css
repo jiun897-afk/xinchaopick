@@ -210,13 +210,23 @@ footer.site { border-top: 1px solid var(--line); padding: 30px 0 46px; }
   background: rgba(255, 255, 255, 0.97); backdrop-filter: blur(10px);
   border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
 }
-.tabbar-app .ti { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 0 8px; font-size: 10.5px; font-weight: 700; color: var(--ink3); }
+.tabbar-app .ti { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 9px; font-size: 11.5px; font-weight: 800; color: var(--ink3); }
 .tabbar-app .ti.on { color: var(--brand-dark); }
-.tabbar-app svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tabbar-app svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* 가운데 검색: 떠 있는 주황 원형 버튼 */
+.tabbar-app .ti.tsearch { margin-top: -22px; gap: 3px; color: var(--brand-dark); }
+.tsearch .bub {
+  width: 58px; height: 58px; border-radius: 50%;
+  background: linear-gradient(135deg, #ff7a45, #f04e1a);
+  border: 4px solid #fff;
+  box-shadow: 0 6px 18px rgba(240, 78, 26, 0.45);
+  display: flex; align-items: center; justify-content: center;
+}
+.tsearch .bub svg { width: 25px; height: 25px; stroke: #fff; stroke-width: 2.4; }
 
 @media (max-width: 640px) {
   .tabbar-app { display: flex; }
-  body { padding-bottom: 74px; }
+  body { padding-bottom: 82px; }
   .hero { display: none; }
   header.site + .wrap { margin-top: 14px; }
   .hero h1 { font-size: 27px; }

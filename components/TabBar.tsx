@@ -107,8 +107,19 @@ export default function TabBar() {
   return (
     <nav className="tabbar-app">
       {TABS.map((t) => (
-        <Link key={t.href} href={t.href} className={"ti" + (pathname === t.href ? " on" : "")} style={{ position: "relative" }}>
-          <Icon name={t.icon} />
+        <Link
+          key={t.href}
+          href={t.href}
+          className={"ti" + (pathname === t.href ? " on" : "") + (t.icon === "search" ? " tsearch" : "")}
+          style={{ position: "relative" }}
+        >
+          {t.icon === "search" ? (
+            <span className="bub">
+              <Icon name="search" />
+            </span>
+          ) : (
+            <Icon name={t.icon} />
+          )}
           {t.label}
           {t.href === "/me" && (unread ?? 0) > 0 && (
             <span style={{ position: "absolute", top: 6, right: "calc(50% - 16px)", width: 8, height: 8, borderRadius: "50%", background: "var(--brand)" }} />
