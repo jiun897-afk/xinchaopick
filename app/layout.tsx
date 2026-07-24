@@ -3,9 +3,15 @@ import "./globals.css";
 import TabBar from "../components/TabBar";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://vejaview.com"),
   title: "베자뷰 — 베트남의 모든 체험, 리뷰로 돌려받다",
-  description:
-    "다낭 맛집·마사지·액티비티를 무료로 체험하고 네이버 블로그·유튜브·인스타그램 리뷰로 돌려받으세요. 베트남 체험단 플랫폼 베자뷰.",
+  description: "베트남 체험단 · 기자단 플랫폼",
+  openGraph: {
+    title: "베자뷰",
+    description: "베트남 체험단 · 기자단 플랫폼",
+    siteName: "베자뷰",
+    url: "https://vejaview.com",
+  },
 };
 
 export default function RootLayout({
