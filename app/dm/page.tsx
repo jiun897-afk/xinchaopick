@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import Avatar from "../../components/Avatar";
 import { compressImage } from "../../lib/imageTool";
+import ReportModal from "../../components/ReportModal";
 
 /* 유저 간 1:1 채팅 (DM) */
 type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null };
@@ -22,6 +23,7 @@ export default function DmPage() {
   const [err, setErr] = useState("");
   const [viewer, setViewer] = useState<string | null>(null);
   const [sendingImg, setSendingImg] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const imgInRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
@@ -130,11 +132,14 @@ export default function DmPage() {
     }
   }
 
-  async function reportPartner() {
+  function reportPartner() {
+    setReportOpen(true);
+  }
+
+  async function submitReport(reason: string) {
     if (!supabase || !roomId || !partner) return;
-    const reason = prompt("신고 사유를 알려주세요 (예: 욕설, 부적절한 사진, 광고 등)");
-    if (!reason || !reason.trim()) return;
-    const { error } = await supabase.rpc("report_chat", { p_kind: "dm", p_room: roomId, p_target: partner.id, p_reason: reason.trim() });
+    setReportOpen(false);
+    const { error } = await supabase.rpc("report_chat", { p_kind: "dm", p_room: roomId, p_target: partner.id, p_reason: reason });
     if (error) alert(error.message);
     else alert("신고가 접수됐어요. 운영팀이 확인할게요.");
   }
@@ -279,6 +284,7 @@ export default function DmPage() {
           </div>
         </div>
       )}
+      {reportOpen && <ReportModal onCancel={() => setReportOpen(false)} onSubmit={submitReport} />}
     </div>
   );
 }

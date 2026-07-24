@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import { compressImage } from "../../lib/imageTool";
+import ReportModal from "../../components/ReportModal";
 
 type Msg = { id: string; sender_id: string; content: string; created_at: string; read_at: string | null; image_url: string | null };
 type Room = {
@@ -34,6 +35,7 @@ export default function ChatRoomPage() {
   const [showQuick, setShowQuick] = useState(false);
   const [viewer, setViewer] = useState<string | null>(null);
   const [sendingImg, setSendingImg] = useState<string | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
   const imgInRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
@@ -142,12 +144,15 @@ export default function ChatRoomPage() {
     }
   }
 
-  async function reportPartner() {
+  function reportPartner() {
+    setReportOpen(true);
+  }
+
+  async function submitReport(reason: string) {
     if (!supabase || !appId || !room || !me) return;
     const other = room.campaigns?.owner_id === me ? room.user_id : room.campaigns?.owner_id;
-    const reason = prompt("신고 사유를 알려주세요 (예: 욕설, 부적절한 사진, 노쇼 등)");
-    if (!reason || !reason.trim()) return;
-    const { error } = await supabase.rpc("report_chat", { p_kind: "camp", p_room: appId, p_target: other ?? null, p_reason: reason.trim() });
+    setReportOpen(false);
+    const { error } = await supabase.rpc("report_chat", { p_kind: "camp", p_room: appId, p_target: other ?? null, p_reason: reason });
     if (error) alert(error.message);
     else alert("신고가 접수됐어요. 운영팀이 확인할게요.");
   }
@@ -302,6 +307,7 @@ export default function ChatRoomPage() {
           </div>
         </div>
       )}
+      {reportOpen && <ReportModal onCancel={() => setReportOpen(false)} onSubmit={submitReport} />}
     </div>
   );
 }
