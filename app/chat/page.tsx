@@ -35,6 +35,18 @@ export default function ChatListPage() {
   const longRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const roomLongRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressRef = useRef(false);
+  const pressPos = useRef<{ x: number; y: number } | null>(null);
+  const [leaveTarget, setLeaveTarget] = useState<ChatRoom | null>(null);
+  const [leaveBusy, setLeaveBusy] = useState(false);
+
+  async function leaveRoom() {
+    if (!leaveTarget || !supabase) return;
+    setLeaveBusy(true);
+    await supabase.rpc("leave_dm_room", { p_room: leaveTarget.rid });
+    setChatRooms((prev) => (prev ?? []).filter((x) => !(x.kind === "dm" && x.rid === leaveTarget.rid)));
+    setLeaveBusy(false);
+    setLeaveTarget(null);
+  }
 
   useEffect(() => {
     if (!supabase) {
@@ -292,23 +304,27 @@ export default function ChatListPage() {
               onClick={(e) => {
                 if (suppressRef.current) e.preventDefault();
               }}
-              onPointerDown={() => {
+              onPointerDown={(e) => {
                 if (r.kind !== "dm") return;
                 // 꾹 눌러서 채팅방 나가기 (카톡식)
-                roomLongRef.current = setTimeout(async () => {
+                pressPos.current = { x: e.clientX, y: e.clientY };
+                roomLongRef.current = setTimeout(() => {
                   roomLongRef.current = null;
                   suppressRef.current = true;
-                  if (confirm(r.title + "님과의 채팅방을 나갈까요?\n대화 내용이 사라지고 목록에서 삭제돼요.")) {
-                    await supabase?.rpc("leave_dm_room", { p_room: r.rid });
-                    setChatRooms((prev) => (prev ?? []).filter((x) => !(x.kind === "dm" && x.rid === r.rid)));
-                  }
+                  setLeaveTarget(r);
                   setTimeout(() => {
                     suppressRef.current = false;
                   }, 400);
-                }, 600);
+                }, 500);
               }}
               onPointerUp={() => roomLongRef.current && clearTimeout(roomLongRef.current)}
-              onPointerMove={() => roomLongRef.current && clearTimeout(roomLongRef.current)}
+              onPointerMove={(e) => {
+                // 손가락이 12px 이상 움직였을 때만 취소 (미세 떨림으로 꾹누르기가 끊기지 않게)
+                if (!roomLongRef.current || !pressPos.current) return;
+                const dx = e.clientX - pressPos.current.x;
+                const dy = e.clientY - pressPos.current.y;
+                if (dx * dx + dy * dy > 144) clearTimeout(roomLongRef.current);
+              }}
               onPointerLeave={() => roomLongRef.current && clearTimeout(roomLongRef.current)}
             >
               {r.kind === "camp" ? (
@@ -361,6 +377,49 @@ export default function ChatListPage() {
             </Link>
           ))}
         </>
+      )}
+      {leaveTarget && (
+        <div
+          onClick={() => setLeaveTarget(null)}
+          style={{ position: "fixed", inset: 0, zIndex: 970, background: "rgba(20,15,10,.5)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "100%", maxWidth: 480, background: "#fff", borderRadius: "22px 22px 0 0", padding: "22px 18px 28px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Avatar url={leaveTarget.image} name={leaveTarget.title} size={44} />
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 900 }}>{leaveTarget.title}</div>
+                <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 2 }}>채팅방 관리</div>
+              </div>
+            </div>
+            <div style={{ fontSize: 12.5, color: "var(--ink2)", marginTop: 14, lineHeight: 1.6, background: "var(--chip)", borderRadius: 12, padding: "10px 13px" }}>
+              나가면 대화 내용이 사라지고 목록에서 삭제돼요.
+              <br />
+              상대가 다시 메시지를 보내면 새 대화로 이어져요.
+            </div>
+            <button
+              onClick={leaveRoom}
+              disabled={leaveBusy}
+              style={{
+                width: "100%",
+                marginTop: 14,
+                padding: "15px 0",
+                borderRadius: 14,
+                border: "none",
+                background: "#E0483E",
+                color: "#fff",
+                fontSize: 15,
+                fontWeight: 900,
+                fontFamily: "inherit",
+                cursor: "pointer",
+              }}
+            >
+              {leaveBusy ? "나가는 중…" : "🚪 채팅방 나가기"}
+            </button>
+            <button className="btn ghost" style={{ width: "100%", marginTop: 8, padding: "13px 0" }} onClick={() => setLeaveTarget(null)}>
+              취소
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
