@@ -33,6 +33,7 @@ export default function ChatRoomPage() {
   const [err, setErr] = useState("");
   const [showQuick, setShowQuick] = useState(false);
   const [viewer, setViewer] = useState<string | null>(null);
+  const [sendingImg, setSendingImg] = useState<string | null>(null);
   const imgInRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const lastCount = useRef(0);
@@ -120,8 +121,11 @@ export default function ChatRoomPage() {
     if (!supabase || !appId || !me) return;
     setBusy(true);
     setErr("");
+    const preview = URL.createObjectURL(f);
+    setSendingImg(preview);
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 60);
     try {
-      const blob = await compressImage(f, 1280, 0.8);
+      const blob = await compressImage(f, 1080, 0.75);
       const path = me + "/" + Date.now() + ".jpg";
       const { error: ue } = await supabase.storage.from("chat").upload(path, blob, { contentType: "image/jpeg" });
       if (ue) throw new Error(ue.message);
@@ -132,6 +136,8 @@ export default function ChatRoomPage() {
     } catch (e: any) {
       setErr(e.message);
     } finally {
+      URL.revokeObjectURL(preview);
+      setSendingImg(null);
       setBusy(false);
     }
   }
@@ -226,6 +232,20 @@ export default function ChatRoomPage() {
             </div>
           );
         })}
+        {sendingImg && (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginTop: 8 }}>
+            <div style={{ maxWidth: "78%", background: "var(--brand)", borderRadius: "16px 16px 4px 16px", padding: 6, position: "relative", opacity: 0.85 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={sendingImg} alt="" style={{ maxWidth: 200, width: "100%", borderRadius: 12, display: "block", filter: "brightness(.75)" }} />
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <span style={{ background: "rgba(0,0,0,.55)", color: "#fff", fontSize: 11.5, fontWeight: 800, borderRadius: 999, padding: "6px 12px", display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid rgba(255,255,255,.4)", borderTopColor: "#fff", animation: "vjspin .8s linear infinite" }} />
+                  전송 중…
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
