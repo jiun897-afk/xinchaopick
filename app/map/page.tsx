@@ -42,7 +42,7 @@ const CH_SHORT: Record<string, string> = {
   "X(엑스)": "X",
   "영상": "유튜브",
 };
-const SNS_OPTS = ["전체", "블로그", "클립", "유튜브", "쇼츠", "인스타", "릴스", "틱톡", "페북", "스레드", "X", "기자단"];
+const SNS_OPTS = ["전체", "블로그", "클립", "유튜브", "쇼츠", "인스타", "릴스", "틱톡", "페북", "스레드", "X"];
 
 function inVietnam(lat: number, lng: number) {
   return lat > 8 && lat < 24 && lng > 101.5 && lng < 110.5;
@@ -134,7 +134,8 @@ export default function MapPage() {
       ((st as Stat[]) ?? []).forEach((x) => (sm[x.place_id] = x));
       setStats(sm);
       const bp: Record<string, Camp[]> = {};
-      ((cp as Camp[]) ?? []).forEach((c) => {
+      // 기자단은 방문 없는 원고형이라 지도에서 제외
+      ((cp as Camp[]) ?? []).filter((c) => c.camp_type !== "기자단").forEach((c) => {
         (bp[c.place_id] = bp[c.place_id] ?? []).push(c);
       });
       setByPlace(bp);
@@ -224,8 +225,7 @@ export default function MapPage() {
     if (sns !== "전체") {
       r = r.filter((p) => {
         const c = agg[p.id];
-        if (!c) return false;
-        return sns === "기자단" ? c.jj : c.chs.includes(sns);
+        return !!c && c.chs.includes(sns);
       });
     }
     const st = (id: string) => stats[id] ?? { review_count: 0, avg_rating: 0 };
