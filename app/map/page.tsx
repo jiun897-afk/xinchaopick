@@ -70,6 +70,7 @@ export default function MapPage() {
   const dateRef = useRef("");
   const [pos, setPos] = useState<{ lat: number; lng: number } | null>(null);
   const [noGeo, setNoGeo] = useState(false);
+  const [farAway, setFarAway] = useState(false);
   const [view, setView] = useState<"map" | "list">("map");
   const [rows, setRows] = useState<P[] | null>(null);
   const [stats, setStats] = useState<Record<string, Stat>>({});
@@ -95,6 +96,7 @@ export default function MapPage() {
         .bindPopup("내 위치");
     }
     if (fly || inVietnam(la, ln)) map.setView([la, ln], 14);
+    setFarAway(!inVietnam(la, ln));
   }
 
   function locate(fly: boolean) {
@@ -134,7 +136,7 @@ export default function MapPage() {
       L.control.zoom({ position: "bottomright" }).addTo(map);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", { attribution: "© OpenStreetMap" }).addTo(map);
       mapRef.current = map;
-      locate(false);
+      locate(true); // 첫 진입: GPS 잡히면 내 위치로 이동 (베트남 밖이어도)
 
       if (!supabase) {
         setRows([]);
@@ -532,6 +534,34 @@ export default function MapPage() {
               </Link>
             );
           })}
+        </div>
+      )}
+
+      {farAway && view === "map" && (
+        <div
+          onClick={() => {
+            const map = mapRef.current;
+            if (map) map.setView(DANANG, 13);
+            setFarAway(false);
+          }}
+          style={{
+            position: "absolute",
+            bottom: 24,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 500,
+            background: "var(--brand)",
+            color: "#fff",
+            borderRadius: 999,
+            padding: "11px 18px",
+            fontSize: 12.5,
+            fontWeight: 800,
+            boxShadow: "0 4px 14px rgba(240,78,26,.4)",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          지금 베트남 밖이시네요 · 다낭 업체 보기 →
         </div>
       )}
 
