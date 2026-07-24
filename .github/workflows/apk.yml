@@ -8,6 +8,9 @@ on:
       - "android-app/**"
       - ".github/workflows/apk.yml"
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -45,3 +48,14 @@ jobs:
           name: vejaview-apk
           path: vejaview.apk
           retention-days: 14
+
+      - name: Push APK to apk-release branch
+        run: |
+          mkdir /tmp/apkout && cp vejaview.apk /tmp/apkout/
+          cd /tmp/apkout
+          git init -b apk-release
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add vejaview.apk
+          git commit -m "APK build ${{ github.run_number }}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" apk-release
