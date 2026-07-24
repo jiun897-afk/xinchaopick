@@ -123,16 +123,16 @@ function Scene({ name, gid }: { name: string; gid: string }) {
     case "투어·액티비티": // 튜브 타고 둥둥 + 선글라스
       return (
         <g>
-          <g transform="translate(24 19) scale(0.9)">
+          <path d="M4 40 Q12 36 24 40 Q36 44 44 40" stroke="#5BB8E8" strokeWidth="3" fill="none" strokeLinecap="round" />
+          <g transform="translate(24 17) scale(0.88)">
             <Nonla />
             <Face exp="smile" gid={gid} />
-            <rect x="-9.5" y="-4.5" width="8" height="5.5" rx="2.4" fill="#26211C" />
-            <rect x="1.5" y="-4.5" width="8" height="5.5" rx="2.4" fill="#26211C" />
+            <rect x="-10" y="-4.5" width="8.5" height="6" rx="2.6" fill="#26211C" />
+            <rect x="1.5" y="-4.5" width="8.5" height="6" rx="2.6" fill="#26211C" />
             <path d="M-1.5 -2.5 h3" stroke="#26211C" strokeWidth="1.6" />
           </g>
-          <circle cx="24" cy="34" r="11.5" fill="none" stroke="#FF6B6B" strokeWidth="6" />
-          <path d="M24 22.5 A11.5 11.5 0 0 1 35.5 34" fill="none" stroke="#fff" strokeWidth="6" strokeDasharray="6 8" />
-          <path d="M2 44 Q8 41 14 44 M34 44 Q40 41 46 44" stroke="#5BB8E8" strokeWidth="2.6" fill="none" strokeLinecap="round" />
+          <path d="M8 32 a16 9 0 0 0 32 0 a16 9 0 0 0 -32 0" fill="none" stroke="#FF6B6B" strokeWidth="6.5" />
+          <path d="M12 36.5 a16 9 0 0 0 10 3.4 M30 39.6 a16 9 0 0 0 8 -4" fill="none" stroke="#fff" strokeWidth="6.5" strokeLinecap="butt" strokeDasharray="5 26" />
         </g>
       );
     case "네일·뷰티": // 윙크하며 네일 자랑
