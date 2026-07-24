@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import CampaignGrid from "../../components/CampaignGrid";
+import SnsLogo from "../../components/SnsLogo";
 
 const CH_META: Record<string, { emoji: string; title: string; missions: string[] | null }> = {
   "블로그": { emoji: "✍️", title: "블로그 체험단", missions: ["네이버 블로그"] },
@@ -53,8 +54,8 @@ export default function ChannelPage() {
       </Link>
       {meta && (
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14, marginBottom: 16 }}>
-          <div style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--brand-bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22 }}>
-            {meta.emoji}
+          <div style={{ width: 46, height: 46, borderRadius: 14, background: "#fff", border: "1px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <SnsLogo name={ch ?? "블로그"} size={28} />
           </div>
           <div>
             <h1 style={{ fontSize: 21, fontWeight: 900 }}>{meta.title}</h1>

@@ -69,12 +69,18 @@ header.site {
 .livebadge.off { background: var(--chip); color: var(--ink3); }
 .livebadge .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 
-section.list { padding: 44px 0 70px; }
+section.list { padding: 34px 0 70px; background: #FAF8F5; }
+.selcard {
+  background: #fff; border: 1px solid var(--line); border-radius: 18px;
+  padding: 13px 15px 9px; margin-top: 10px;
+  box-shadow: 0 2px 12px rgba(38, 33, 28, 0.04);
+}
+.selcard .sclabel { font-size: 11px; font-weight: 900; color: var(--ink3); letter-spacing: 0.3px; margin-bottom: 9px; }
 .stitle { font-size: 24px; font-weight: 900; }
 .ssub { font-size: 14px; color: var(--ink3); margin-top: 5px; }
 .shead { display: flex; align-items: flex-end; margin-bottom: 22px; }
 
-.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; margin-top: 18px; }
 .gcard {
   border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: #fff;
   cursor: pointer; transition: box-shadow 0.15s, transform 0.15s;

@@ -86,8 +86,8 @@ function IconRow({
   const sq = shape === "square";
   const size = sq ? 46 : 54;
   return (
-    <div style={{ margin: "10px 0 4px" }}>
-      {label && <div style={{ fontSize: 11, fontWeight: 900, color: "var(--ink3)", letterSpacing: 0.3, marginBottom: 8 }}>{label}</div>}
+    <div>
+      {label && <div className="sclabel">{label}</div>}
       <div style={{ display: "flex", gap: sq ? 8 : 6, overflowX: "auto", paddingBottom: 4 }} className="regionrow">
         {items.map((it) => {
           const on = sel === it.key;
@@ -164,10 +164,16 @@ export default function CampaignGrid({
 
   return (
     <>
-      {showRegions && <IconRow items={REGIONS} sel={region} onSel={setRegion} label="지역" />}
-      <IconRow items={CATS} sel={cat} onSel={setCat} label="업종" shape="square" />
+      {showRegions && (
+        <div className="selcard">
+          <IconRow items={REGIONS} sel={region} onSel={setRegion} label="지역" />
+        </div>
+      )}
+      <div className="selcard">
+        <IconRow items={CATS} sel={cat} onSel={setCat} label="업종" shape="square" />
+      </div>
 
-      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0 16px" }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "14px 0 0" }}>
         <span
           onClick={() => setTodayOnly((v) => !v)}
           style={{
