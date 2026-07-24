@@ -92,6 +92,14 @@ export default function TabBar() {
     if (!supabase) return;
     let timer: ReturnType<typeof setInterval>;
     let ch: any = null;
+    let deb: ReturnType<typeof setTimeout> | null = null;
+    function refreshChatUnread() {
+      if (deb) clearTimeout(deb);
+      deb = setTimeout(async () => {
+        const { data: cu } = await supabase!.rpc("unread_msg_count");
+        setChatUnread(typeof cu === "number" ? cu : 0);
+      }, 400);
+    }
     async function poll(silent = false) {
       const {
         data: { session },
@@ -137,10 +145,20 @@ export default function TabBar() {
               playChime();
             }
           )
-          .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, async () => {
-            // RLS로 내 방 메시지만 이벤트가 옴 — 안읽음 수 즉시 갱신
-            const { data: cu } = await supabase!.rpc("unread_msg_count");
-            setChatUnread(typeof cu === "number" ? cu : 0);
+          .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload: any) => {
+            // 즉시 반영(+1) 후 서버값으로 보정
+            if (payload?.eventType === "INSERT" && payload?.new?.sender_id && payload.new.sender_id !== session.user.id) {
+              setChatUnread((u) => u + 1);
+              playChime();
+            }
+            refreshChatUnread();
+          })
+          .on("postgres_changes", { event: "*", schema: "public", table: "dm_messages" }, (payload: any) => {
+            if (payload?.eventType === "INSERT" && payload?.new?.sender_id && payload.new.sender_id !== session.user.id) {
+              setChatUnread((u) => u + 1);
+              playChime();
+            }
+            refreshChatUnread();
           })
           .subscribe();
       }

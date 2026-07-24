@@ -39,6 +39,8 @@ export default function ChatListPage() {
       setGuest(true);
       return;
     }
+    let ch: any = null;
+    let deb: ReturnType<typeof setTimeout> | null = null;
     (async () => {
       const {
         data: { session },
@@ -48,11 +50,18 @@ export default function ChatListPage() {
         return;
       }
       const me = session.user.id;
-      const [{ data: cr }, { data: fr }] = await Promise.all([
-        supabase.rpc("chat_rooms"),
+      const loadRooms = async () => {
+        const { data: cr } = await supabase.rpc("chat_rooms");
+        setChatRooms((cr as ChatRoom[]) ?? []);
+      };
+      const refresh = () => {
+        if (deb) clearTimeout(deb);
+        deb = setTimeout(loadRooms, 300);
+      };
+      const [, { data: fr }] = await Promise.all([
+        loadRooms(),
         supabase.from("friends").select("friend_id").eq("user_id", me),
       ]);
-      setChatRooms(((cr as ChatRoom[]) ?? []));
       const fids = ((fr as any[]) ?? []).map((x) => x.friend_id);
       if (fids.length) {
         const { data: pv } = await supabase.rpc("profiles_view", { p_ids: fids });
@@ -60,7 +69,17 @@ export default function ChatListPage() {
         ((pv as any[]) ?? []).forEach((p) => (nm[p.id] = p));
         setFriends(fids.map((id) => ({ id, nickname: nm[id]?.nickname ?? "회원", handle: nm[id]?.handle ?? null, avatar_url: nm[id]?.avatar_url ?? null })));
       }
+      // 새 메시지/읽음 변화 → 목록·뱃지 실시간 갱신
+      ch = supabase
+        .channel("chatlist-" + me)
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, refresh)
+        .on("postgres_changes", { event: "*", schema: "public", table: "dm_messages" }, refresh)
+        .subscribe();
     })();
+    return () => {
+      if (deb) clearTimeout(deb);
+      if (ch) supabase.removeChannel(ch);
+    };
   }, [supabase]);
 
   async function searchHandle() {
@@ -129,9 +148,9 @@ export default function ChatListPage() {
         <div style={{ display: "flex", gap: 8, marginTop: 14 }}>
           {(
             [
-              { k: "dm", label: "채팅" },
-              { k: "camp", label: "캠페인" },
-              { k: "friends", label: "친구" + (friends.length ? " " + friends.length : "") },
+              { k: "dm", label: "채팅", n: (chatRooms ?? []).filter((r) => r.kind === "dm").reduce((a, r) => a + r.unread, 0) },
+              { k: "camp", label: "캠페인", n: (chatRooms ?? []).filter((r) => r.kind === "camp").reduce((a, r) => a + r.unread, 0) },
+              { k: "friends", label: "친구" + (friends.length ? " " + friends.length : ""), n: 0 },
             ] as const
           ).map((t) => (
             <span
@@ -139,7 +158,10 @@ export default function ChatListPage() {
               onClick={() => setTab(t.k)}
               style={{
                 flex: 1,
-                textAlign: "center",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 6,
                 padding: "10px 0",
                 borderRadius: 12,
                 fontSize: 13.5,
@@ -150,6 +172,11 @@ export default function ChatListPage() {
               }}
             >
               {t.label}
+              {t.n > 0 && (
+                <span style={{ minWidth: 17, height: 17, borderRadius: 999, background: "#E0483E", color: "#fff", fontSize: 10, fontWeight: 900, display: "inline-flex", alignItems: "center", justifyContent: "center", padding: "0 4px" }}>
+                  {t.n > 99 ? "99+" : t.n}
+                </span>
+              )}
             </span>
           ))}
         </div>
