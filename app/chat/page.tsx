@@ -12,10 +12,13 @@ type Room = {
   role: "reviewer" | "owner";
 };
 
+type DmRoom = { id: string; partner: string };
+
 export default function ChatListPage() {
   const supabase = getSupabase();
   const [guest, setGuest] = useState(false);
   const [rooms, setRooms] = useState<Room[] | null>(null);
+  const [dms, setDms] = useState<DmRoom[]>([]);
 
   useEffect(() => {
     if (!supabase) {
@@ -50,6 +53,17 @@ export default function ChatListPage() {
       const seen = new Set<string>();
       const all = [...a, ...b].filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
       setRooms(all);
+
+      // 유저 간 1:1 채팅방
+      const { data: dr } = await supabase.from("dm_rooms").select("id, user_a, user_b").order("created_at", { ascending: false });
+      const drs = (dr as any[]) ?? [];
+      if (drs.length) {
+        const others = drs.map((r) => (r.user_a === me ? r.user_b : r.user_a));
+        const { data: profs } = await supabase.from("profiles").select("id, nickname").in("id", others);
+        const nm: Record<string, string> = {};
+        (profs ?? []).forEach((p: any) => (nm[p.id] = p.nickname));
+        setDms(drs.map((r) => ({ id: r.id, partner: nm[r.user_a === me ? r.user_b : r.user_a] ?? "회원" })));
+      }
     })();
   }, [supabase]);
 
@@ -71,7 +85,29 @@ export default function ChatListPage() {
 
       {!guest && rooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
 
-      {!guest && rooms !== null && rooms.length === 0 && (
+      {!guest && dms.length > 0 && (
+        <>
+          <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 20 }}>1:1 채팅</div>
+          {dms.map((d) => (
+            <Link
+              key={d.id}
+              href={"/dm?id=" + d.id}
+              style={{ display: "flex", gap: 13, alignItems: "center", border: "1px solid var(--line)", borderRadius: 16, padding: "14px 16px", marginTop: 10 }}
+            >
+              <div style={{ width: 46, height: 46, borderRadius: "50%", background: "var(--brand)", color: "#fff", fontWeight: 900, fontSize: 17, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                {d.partner[0]?.toUpperCase() ?? "?"}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 800 }}>{d.partner}</div>
+                <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 3 }}>회원 간 대화</div>
+              </div>
+              <span style={{ color: "var(--ink3)" }}>›</span>
+            </Link>
+          ))}
+        </>
+      )}
+
+      {!guest && rooms !== null && rooms.length === 0 && dms.length === 0 && (
         <div style={{ marginTop: 30, textAlign: "center", padding: "30px 0" }}>
           <div style={{ fontSize: 15.5, fontWeight: 800 }}>아직 열린 채팅이 없어요</div>
           <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>

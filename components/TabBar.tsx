@@ -80,6 +80,12 @@ export default function TabBar() {
   const [unread, setUnread] = useState<number | null>(null);
   const [chatUnread, setChatUnread] = useState<number>(0);
   const supabase = getSupabase();
+  // 채팅방에서는 탭바 숨김 (입력창이 화면 맨 아래 붙게)
+  const hideTab = pathname?.startsWith("/chatroom") || pathname?.startsWith("/dm");
+  useEffect(() => {
+    document.body.classList.toggle("no-tabbar", !!hideTab);
+    return () => document.body.classList.remove("no-tabbar");
+  }, [hideTab]);
   useEffect(() => {
     initChime(); // 첫 터치 때 오디오 잠금 해제 (모바일 자동재생 정책)
     if (!supabase) return;
@@ -139,6 +145,7 @@ export default function TabBar() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase]);
+  if (hideTab) return null;
   return (
     <nav className="tabbar-app">
       {TABS.map((t) => (
