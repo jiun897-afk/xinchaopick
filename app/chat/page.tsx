@@ -5,26 +5,62 @@ import Link from "next/link";
 import { getSupabase } from "../../lib/supabase";
 import Avatar from "../../components/Avatar";
 
-type Room = {
-  id: string;
-  user_id: string;
-  status: string;
-  campaigns: { store_name: string; owner_id: string; image_url: string | null } | null;
-  role: "reviewer" | "owner";
+type ChatRoom = {
+  kind: "camp" | "dm";
+  rid: string;
+  title: string;
+  image: string | null;
+  last_msg: string | null;
+  last_at: string;
+  unread: number;
 };
 
-type DmRoom = { id: string; partner: string; avatar?: string | null };
+function fmtTime(s: string) {
+  const d = new Date(s);
+  const now = new Date();
+  if (d.toDateString() === now.toDateString())
+    return d.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+  return d.getMonth() + 1 + "/" + d.getDate();
+}
 
 export default function ChatListPage() {
   const supabase = getSupabase();
   const [guest, setGuest] = useState(false);
-  const [rooms, setRooms] = useState<Room[] | null>(null);
-  const [dms, setDms] = useState<DmRoom[]>([]);
+  const [chatRooms, setChatRooms] = useState<ChatRoom[] | null>(null);
   const [friends, setFriends] = useState<{ id: string; nickname: string; handle: string | null; avatar_url?: string | null }[]>([]);
   const [q, setQ] = useState("");
   const [found, setFound] = useState<{ id: string; nickname: string; handle: string; avatar_url?: string | null } | null | "none">(null);
   const [sBusy, setSBusy] = useState(false);
   const [tab, setTab] = useState<"chats" | "friends">("chats");
+
+  useEffect(() => {
+    if (!supabase) {
+      setGuest(true);
+      return;
+    }
+    (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setGuest(true);
+        return;
+      }
+      const me = session.user.id;
+      const [{ data: cr }, { data: fr }] = await Promise.all([
+        supabase.rpc("chat_rooms"),
+        supabase.from("friends").select("friend_id").eq("user_id", me),
+      ]);
+      setChatRooms(((cr as ChatRoom[]) ?? []));
+      const fids = ((fr as any[]) ?? []).map((x) => x.friend_id);
+      if (fids.length) {
+        const { data: pv } = await supabase.rpc("profiles_view", { p_ids: fids });
+        const nm: Record<string, any> = {};
+        ((pv as any[]) ?? []).forEach((p) => (nm[p.id] = p));
+        setFriends(fids.map((id) => ({ id, nickname: nm[id]?.nickname ?? "회원", handle: nm[id]?.handle ?? null, avatar_url: nm[id]?.avatar_url ?? null })));
+      }
+    })();
+  }, [supabase]);
 
   async function searchHandle() {
     if (!supabase) return;
@@ -54,63 +90,12 @@ export default function ChatListPage() {
     } = await supabase.auth.getSession();
     if (!session) return;
     await supabase.from("friends").insert({ user_id: session.user.id, friend_id: otherId });
-    setFriends((f) => (f.some((x) => x.id === otherId) ? f : [...f, { id: otherId, nickname: (found as any)?.nickname ?? "회원", handle: (found as any)?.handle ?? null }]));
+    setFriends((f) =>
+      f.some((x) => x.id === otherId)
+        ? f
+        : [...f, { id: otherId, nickname: (found as any)?.nickname ?? "회원", handle: (found as any)?.handle ?? null, avatar_url: (found as any)?.avatar_url ?? null }]
+    );
   }
-
-  useEffect(() => {
-    if (!supabase) {
-      setGuest(true);
-      return;
-    }
-    (async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        setGuest(true);
-        return;
-      }
-      const me = session.user.id;
-      const [{ data: mine }, { data: owned }] = await Promise.all([
-        supabase
-          .from("applications")
-          .select("id, user_id, status, campaigns(store_name, owner_id, image_url)")
-          .eq("user_id", me)
-          .in("status", ["selected", "completed"]),
-        supabase
-          .from("applications")
-          .select("id, user_id, status, campaigns!inner(store_name, owner_id, image_url)")
-          .eq("campaigns.owner_id", me)
-          .in("status", ["selected", "completed"]),
-      ]);
-      const a = ((mine as unknown as Room[]) ?? []).map((r) => ({ ...r, role: "reviewer" as const }));
-      const b = ((owned as unknown as Room[]) ?? [])
-        .filter((r) => r.user_id !== me)
-        .map((r) => ({ ...r, role: "owner" as const }));
-      const seen = new Set<string>();
-      const all = [...a, ...b].filter((r) => (seen.has(r.id) ? false : (seen.add(r.id), true)));
-      setRooms(all);
-
-      // 1:1 채팅방 + 친구 목록 (동시 조회로 속도 개선)
-      const [{ data: dr }, { data: fr }] = await Promise.all([
-        supabase.from("dm_rooms").select("id, user_a, user_b").order("created_at", { ascending: false }),
-        supabase.from("friends").select("friend_id").eq("user_id", me),
-      ]);
-      const drs = (dr as any[]) ?? [];
-      const fids = ((fr as any[]) ?? []).map((x) => x.friend_id);
-      const needIds = Array.from(new Set([...drs.map((r) => (r.user_a === me ? r.user_b : r.user_a)), ...fids]));
-      if (needIds.length) {
-        const { data: profs } = await supabase.rpc("profiles_view", { p_ids: needIds });
-        const nm: Record<string, any> = {};
-        ((profs as any[]) ?? []).forEach((p: any) => (nm[p.id] = p));
-        setDms(drs.map((r) => {
-          const oid = r.user_a === me ? r.user_b : r.user_a;
-          return { id: r.id, partner: nm[oid]?.nickname ?? "회원", avatar: nm[oid]?.avatar_url ?? null };
-        }));
-        setFriends(fids.map((id) => ({ id, nickname: nm[id]?.nickname ?? "회원", handle: nm[id]?.handle ?? null, avatar_url: nm[id]?.avatar_url ?? null })));
-      }
-    })();
-  }, [supabase]);
 
   return (
     <div className="wrap" style={{ maxWidth: 640, paddingTop: 24, paddingBottom: 90 }}>
@@ -119,17 +104,7 @@ export default function ChatListPage() {
         <Link
           href="/my-id"
           aria-label="내 아이디 · QR"
-          style={{
-            marginLeft: "auto",
-            width: 40,
-            height: 40,
-            borderRadius: 12,
-            border: "1px solid var(--line)",
-            background: "#fff",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          style={{ marginLeft: "auto", width: 40, height: 40, borderRadius: 12, border: "1px solid var(--line)", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="2">
             <rect x="3" y="3" width="7" height="7" rx="1.5" />
@@ -138,9 +113,6 @@ export default function ChatListPage() {
             <path d="M14 14h3v3h-3zM19 19h2M14 20h2M21 14v2" strokeLinecap="round" />
           </svg>
         </Link>
-      </div>
-      <div style={{ fontSize: 12.5, color: "var(--ink3)", marginTop: 3 }}>
-        선정된 캠페인의 사장님·리뷰어와 방문 일정을 조율하세요
       </div>
 
       {guest && (
@@ -181,9 +153,9 @@ export default function ChatListPage() {
         </div>
       )}
 
+      {/* ── 친구 탭 ── */}
       {!guest && tab === "friends" && (
         <>
-          {/* 아이디 검색 (아이디를 아는 사람만 채팅 시작 가능) */}
           <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
             <input
               style={{ flex: 1, minWidth: 0, border: "1.5px solid var(--line)", borderRadius: 999, padding: "11px 16px", fontSize: 13.5, fontFamily: "inherit", outline: "none" }}
@@ -216,7 +188,6 @@ export default function ChatListPage() {
             </div>
           )}
 
-          {/* 친구 리스트 (세로) */}
           <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 20 }}>친구 {friends.length}</div>
           {friends.length === 0 && (
             <div style={{ marginTop: 12, textAlign: "center", padding: "24px 0", fontSize: 13, color: "var(--ink3)", lineHeight: 1.8 }}>
@@ -226,10 +197,7 @@ export default function ChatListPage() {
             </div>
           )}
           {friends.map((f) => (
-            <div
-              key={f.id}
-              style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "13px 2px" }}
-            >
+            <div key={f.id} style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "13px 2px" }}>
               <Avatar url={f.avatar_url} name={f.nickname} size={46} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 14.5, fontWeight: 800 }}>{f.nickname}</div>
@@ -243,80 +211,85 @@ export default function ChatListPage() {
         </>
       )}
 
+      {/* ── 채팅 탭: 최신 메시지순 ── */}
       {!guest && tab === "chats" && (
         <>
-          {/* 1:1 채팅방 목록 */}
-          {dms.length > 0 && (
-            <>
-              <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 18 }}>1:1 채팅</div>
-              {dms.map((d) => (
-                <Link
-                  key={d.id}
-                  href={"/dm?id=" + d.id}
-                  style={{ display: "flex", gap: 13, alignItems: "center", border: "1px solid var(--line)", borderRadius: 16, padding: "13px 16px", marginTop: 10 }}
-                >
-                  <Avatar url={d.avatar} name={d.partner} size={46} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 800 }}>{d.partner}</div>
-                    <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 3 }}>1:1 대화</div>
-                  </div>
-                  <span style={{ color: "var(--ink3)" }}>›</span>
-                </Link>
-              ))}
-            </>
+          {chatRooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
+          {chatRooms !== null && chatRooms.length === 0 && (
+            <div style={{ marginTop: 30, textAlign: "center", padding: "30px 0" }}>
+              <div style={{ fontSize: 15.5, fontWeight: 800 }}>아직 열린 채팅이 없어요</div>
+              <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
+                캠페인에 선정되면 사장님과의 채팅방이 열리고,
+                <br />
+                친구 탭에서 아이디로 1:1 채팅을 시작할 수 있어요.
+              </p>
+              <Link className="btn pri" style={{ marginTop: 14, padding: "12px 22px" }} href="/">
+                체험단 둘러보기
+              </Link>
+            </div>
           )}
+          {(chatRooms ?? []).map((r) => (
+            <Link
+              key={r.kind + r.rid}
+              href={(r.kind === "camp" ? "/chatroom?id=" : "/dm?id=") + r.rid}
+              style={{ display: "flex", gap: 12, alignItems: "center", borderBottom: "1px solid var(--line)", padding: "14px 2px" }}
+            >
+              {r.kind === "camp" ? (
+                <div
+                  style={{
+                    width: 50,
+                    height: 50,
+                    borderRadius: 13,
+                    backgroundColor: "var(--chip)",
+                    backgroundImage: r.image ? "url(" + r.image + ")" : undefined,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    flexShrink: 0,
+                  }}
+                />
+              ) : (
+                <Avatar url={r.image} name={r.title} size={50} />
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 800, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {r.title}
+                  {r.kind === "camp" && (
+                    <span style={{ marginLeft: 6, fontSize: 9.5, fontWeight: 900, background: "var(--brand-bg)", color: "var(--brand-dark)", borderRadius: 5, padding: "2px 6px" }}>
+                      캠페인
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--ink3)", marginTop: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {r.last_msg ?? "대화를 시작해보세요"}
+                </div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: 10.5, color: "var(--ink3)" }}>{fmtTime(r.last_at)}</div>
+                {r.unread > 0 && (
+                  <span
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 18,
+                      height: 18,
+                      borderRadius: 999,
+                      background: "#E0483E",
+                      color: "#fff",
+                      fontSize: 10,
+                      fontWeight: 900,
+                      padding: "0 5px",
+                      marginTop: 4,
+                    }}
+                  >
+                    {r.unread > 99 ? "99+" : r.unread}
+                  </span>
+                )}
+              </div>
+            </Link>
+          ))}
         </>
       )}
-
-      {!guest && tab === "chats" && rooms === null && <div style={{ marginTop: 24, fontSize: 14, color: "var(--ink3)" }}>불러오는 중…</div>}
-
-      {!guest && tab === "chats" && rooms !== null && rooms.length === 0 && dms.length === 0 && (
-        <div style={{ marginTop: 30, textAlign: "center", padding: "30px 0" }}>
-          <div style={{ fontSize: 15.5, fontWeight: 800 }}>아직 열린 채팅이 없어요</div>
-          <p style={{ fontSize: 13, color: "var(--ink2)", marginTop: 8, lineHeight: 1.7 }}>
-            캠페인에 선정되면 사장님과의 채팅방이
-            <br />
-            자동으로 열려요.
-          </p>
-          <Link className="btn pri" style={{ marginTop: 14, padding: "12px 22px" }} href="/">
-            체험단 둘러보기
-          </Link>
-        </div>
-      )}
-
-      {!guest && tab === "chats" && (rooms ?? []).length > 0 && (
-        <div style={{ fontSize: 12, fontWeight: 900, color: "var(--ink3)", marginTop: 18 }}>캠페인 채팅</div>
-      )}
-      {!guest &&
-        tab === "chats" &&
-        (rooms ?? []).map((r) => (
-          <Link
-            key={r.id}
-            href={"/chatroom?id=" + r.id}
-            style={{ display: "flex", gap: 13, alignItems: "center", border: "1px solid var(--line)", borderRadius: 16, padding: "14px 16px", marginTop: 12 }}
-          >
-            <div
-              style={{
-                width: 52,
-                height: 52,
-                borderRadius: 12,
-                backgroundColor: "var(--chip)",
-                backgroundImage: r.campaigns?.image_url ? "url(" + r.campaigns.image_url + ")" : undefined,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-                flexShrink: 0,
-              }}
-            />
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 800 }}>{r.campaigns?.store_name}</div>
-              <div style={{ fontSize: 11.5, color: "var(--ink3)", marginTop: 3 }}>
-                {r.role === "owner" ? "리뷰어와의 대화 (사장님)" : "사장님과의 대화"}
-                {r.status === "completed" ? " · 완료된 캠페인" : ""}
-              </div>
-            </div>
-            <span style={{ color: "var(--ink3)" }}>›</span>
-          </Link>
-        ))}
     </div>
   );
 }

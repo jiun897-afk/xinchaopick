@@ -14,6 +14,7 @@ export default function DmPage() {
   const [me, setMe] = useState<string | null>(null);
   const [partner, setPartner] = useState<{ id: string; nickname: string; avatar_url?: string | null } | null>(null);
   const [blocked, setBlocked] = useState(false);
+  const [isFriend, setIsFriend] = useState<boolean | null>(null);
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,13 +61,15 @@ export default function DmPage() {
       const { data: r } = await supabase.from("dm_rooms").select("id, user_a, user_b").eq("id", roomId).maybeSingle();
       if (r) {
         const other = (r as any).user_a === session.user.id ? (r as any).user_b : (r as any).user_a;
-        const [{ data: pv }, { data: blk }] = await Promise.all([
+        const [{ data: pv }, { data: blk }, { data: fr }] = await Promise.all([
           supabase.rpc("profiles_view", { p_ids: [other] }),
           supabase.from("blocks").select("blocked_id").eq("blocked_id", other).maybeSingle(),
+          supabase.from("friends").select("friend_id").eq("friend_id", other).maybeSingle(),
         ]);
         const p = Array.isArray(pv) ? pv[0] : pv;
         setPartner({ id: other, nickname: (p as any)?.nickname ?? "회원", avatar_url: (p as any)?.avatar_url ?? null });
         setBlocked(!!blk);
+        setIsFriend(!!fr);
       }
       loadMsgs(roomId);
       ch = supabase
@@ -109,6 +112,18 @@ export default function DmPage() {
           <div style={{ fontSize: 15, fontWeight: 900 }}>{partner?.nickname ?? "채팅"}</div>
           <div style={{ fontSize: 11, color: "var(--ink3)" }}>{blocked ? "차단한 상대" : "회원 간 1:1 대화"}</div>
         </div>
+        {partner && isFriend === false && !blocked && (
+          <span
+            onClick={async () => {
+              if (!supabase || !me || !partner) return;
+              await supabase.from("friends").insert({ user_id: me, friend_id: partner.id });
+              setIsFriend(true);
+            }}
+            style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: "var(--brand-dark)", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
+          >
+            ＋ 친구 추가
+          </span>
+        )}
         {partner && (
           <span
             onClick={async () => {
@@ -123,7 +138,7 @@ export default function DmPage() {
                 setBlocked(true);
               }
             }}
-            style={{ marginLeft: "auto", fontSize: 12, fontWeight: 800, color: blocked ? "var(--ink3)" : "#C0392B", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
+            style={{ marginLeft: isFriend === false && !blocked ? 0 : "auto", fontSize: 12, fontWeight: 800, color: blocked ? "var(--ink3)" : "#C0392B", cursor: "pointer", flexShrink: 0, padding: "6px 8px" }}
           >
             {blocked ? "차단 해제" : "차단"}
           </span>
